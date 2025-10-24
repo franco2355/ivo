@@ -8,7 +8,7 @@ Sistema de gestión de gimnasio implementado con **arquitectura de microservicio
 
 ```bash
 # Levantar bases de datos y servicios
-docker-compose -f docker-compose.new.yml up -d mysql mongodb rabbitmq memcached
+docker-compose -f docker-compose.new.yml up -d mysql mongo rabbitmq memcached
 ```
 
 ### 2. Ejecutar Microservicios
@@ -61,13 +61,13 @@ Frontend (React)
 
 ### Microservicios
 
-| Servicio | Puerto | Base de Datos | Estado | Descripción |
-|----------|--------|---------------|--------|-------------|
-| **users-api** | 8080 | MySQL | ✅ Funcional | Autenticación, JWT, CRUD usuarios |
-| **subscriptions-api** | 8081 | MongoDB | ✅ Funcional | Planes y suscripciones + eventos |
-| **activities-api** | 8082 | MySQL | ✅ Funcional | Actividades, sucursales, inscripciones |
-| **payments-api** | 8083 | MongoDB | ✅ Funcional | Pagos genéricos, gateways múltiples |
-| **search-api** | 8084 | In-Memory | ✅ Funcional | Búsqueda con caché de 2 niveles |
+| Servicio              | Puerto | Base de Datos | Estado       | Descripción                            |
+| --------------------- | ------ | ------------- | ------------ | -------------------------------------- |
+| **users-api**         | 8080   | MySQL         | ✅ Funcional | Autenticación, JWT, CRUD usuarios      |
+| **subscriptions-api** | 8081   | MongoDB       | ✅ Funcional | Planes y suscripciones + eventos       |
+| **activities-api**    | 8082   | MySQL         | ✅ Funcional | Actividades, sucursales, inscripciones |
+| **payments-api**      | 8083   | MongoDB       | ✅ Funcional | Pagos genéricos, gateways múltiples    |
+| **search-api**        | 8084   | In-Memory     | ✅ Funcional | Búsqueda con caché de 2 niveles        |
 
 ---
 
@@ -124,19 +124,23 @@ Cada microservicio tiene su propio README con detalles específicos:
 ### Patrones Implementados
 
 - **Arquitectura Limpia** (Clean Architecture)
+
   - Separación de capas: Domain, Repository, Services, Controllers
   - Dependency Injection manual
   - DTOs separados de Entities
 
 - **Event-Driven Architecture**
+
   - RabbitMQ para comunicación asíncrona
   - Eventos: subscription.created, inscription.created, etc.
 
 - **Cache-Aside Pattern**
+
   - Caché de dos niveles (CCache local + Memcached distribuido)
   - TTL configurables
 
 - **Repository Pattern**
+
   - Abstracción de acceso a datos
   - Interfaces + implementaciones (MongoDB, MySQL)
 
@@ -198,19 +202,23 @@ Cada microservicio tiene su propio README con detalles específicos:
 ## 🛠️ Tecnologías
 
 ### Backend
+
 - **Go 1.23** - Todos los microservicios
 - **Gin** - Framework web HTTP
 
 ### Bases de Datos
+
 - **MySQL 8.0** - users-api, activities-api
 - **MongoDB 7.0** - subscriptions-api, payments-api
 
 ### Mensajería y Caché
+
 - **RabbitMQ 3.12** - Comunicación asíncrona
 - **Memcached 1.6** - Caché distribuido
 - **CCache** - Caché local in-memory
 
 ### Infraestructura
+
 - **Docker & Docker Compose**
 - **Apache Solr 9** (opcional para search-api)
 
@@ -282,18 +290,21 @@ curl "http://localhost:8084/search?q=yoga&type=activity"
 ## 🚧 Próximos Pasos
 
 ### Corto Plazo
+
 - [ ] Implementar frontend completo (React)
 - [ ] Agregar tests unitarios y de integración
 - [ ] Migrar search-api a Apache Solr
 - [ ] Implementar métricas (Prometheus + Grafana)
 
 ### Mediano Plazo
+
 - [ ] API Gateway (Kong/Traefik)
 - [ ] Service Discovery (Consul)
 - [ ] Distributed Tracing (Jaeger)
 - [ ] Autenticación OAuth2
 
 ### Largo Plazo
+
 - [ ] Migrar a Kubernetes
 - [ ] CI/CD completo (GitHub Actions)
 - [ ] Monitoreo avanzado (ELK Stack)
@@ -303,6 +314,7 @@ curl "http://localhost:8084/search?q=yoga&type=activity"
 ## 🆘 Soporte
 
 Para preguntas o problemas:
+
 1. Revisar la documentación del microservicio específico
 2. Consultar [ARQUITECTURA_MICROSERVICIOS.md](documentacion/ARQUITECTURA_MICROSERVICIOS.md)
 3. Verificar logs: `docker-compose logs <servicio>`
