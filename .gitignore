@@ -38,9 +38,10 @@ temp/
 # Docker
 docker-compose.override.yml
 
-# Documentación temporal de análisis (excluir documentos internos/históricos)
-ANALISIS_ESTADO_PROYECTO.md
-MIGRACION_PENDIENTE.md
-NORMALIZACION_COMPLETA.md
-RESUMEN_FINAL_NORMALIZACION.md
-MICROSERVICE_TEMPLATE.md
+# Documentación - excluir todos los .md excepto los especificados
+*.md
+*.MD
+
+# Excepciones - archivos .md que SÍ se deben versionar
+!payments-api/CONTRATO_INTEGRACION_SUBSCRIPTIONS.md
+!payments-api/DIAGRAMA_ARQUITECTURA.md

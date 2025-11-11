@@ -1,0 +1,13 @@
+{
+  "entity_type": "inscription",
+  "entity_id": "insc_yoga_123",
+  "user_id": "user_789",
+  "amount": 2000.00,
+  "currency": "ARS",
+  "payment_method": "credit_card",
+  "payment_gateway": "mock",
+  "metadata": {
+    "activity_name": "Yoga Matutino",
+    "customer_email": "juan@test.com"
+  }
+}

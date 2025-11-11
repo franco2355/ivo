@@ -1,0 +1,227 @@
+.admin-pagos-container {
+    padding: 2rem 0;
+}
+
+.admin-pagos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.admin-pagos-header h2 {
+    font-size: 1.8rem;
+    color: #333;
+}
+
+.btn-refrescar {
+    padding: 0.8rem 1.5rem;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-refrescar:hover {
+    background: #0b7dda;
+}
+
+.estadisticas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card-admin {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card-admin.success {
+    border-left: 4px solid #4CAF50;
+}
+
+.stat-card-admin.warning {
+    border-left: 4px solid #FF9800;
+}
+
+.stat-card-admin.money {
+    border-left: 4px solid #2196F3;
+}
+
+.stat-card-admin .stat-icon {
+    font-size: 2.5rem;
+}
+
+.stat-card-admin .stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-card-admin .stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.stat-card-admin .stat-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.filtros-pagos {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filtros-pagos button {
+    padding: 0.7rem 1.2rem;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.filtros-pagos button:hover {
+    border-color: #333;
+}
+
+.filtros-pagos button.filtro-activo {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+.pagos-table-container {
+    background: white;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+.pagos-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.pagos-table th {
+    background: #f5f5f5;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+}
+
+.pagos-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.id-cell {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.concepto-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.entity-type {
+    font-size: 0.85rem;
+    color: #666;
+    text-transform: capitalize;
+}
+
+.entity-name {
+    font-weight: bold;
+    color: #333;
+}
+
+.monto-cell {
+    font-weight: bold;
+    color: #4CAF50;
+    font-size: 1.1rem;
+}
+
+.badge-estado {
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.fecha-cell {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.no-pagos-admin {
+    background: white;
+    padding: 3rem;
+    text-align: center;
+    border-radius: 8px;
+    color: #666;
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #ddd;
+}
+
+.tab {
+    padding: 1rem 2rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.3s;
+}
+
+.tab:hover {
+    color: #333;
+    background: #f5f5f5;
+}
+
+.tab.tab-active {
+    color: #333;
+    border-bottom-color: #333;
+    font-weight: bold;
+}
+
+.admin-content {
+    min-height: 400px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.section-header h3 {
+    font-size: 1.5rem;
+    color: #333;
+}

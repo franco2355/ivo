@@ -10,17 +10,28 @@ const Header = ( ) => {
         localStorage.removeItem("isLoggedIn");
         localStorage.removeItem("isAdmin");
         localStorage.removeItem("access_token");
+        localStorage.removeItem("idUsuario");
         navigate("/");
     }
-    
+
     return (
         <header>
-            <div className="header-container"> 
+            <div className="header-container">
                 <nav className="header-content">
-                    <h1 className="header-title">GymPro</h1> 
-                    <div className="header-links"> 
-                        <a href="/">Inicio 🏠</a>
+                    <h1 className="header-title" onClick={() => navigate("/")}>GymPro</h1>
+                    <div className="header-links">
+                        {isLoggedIn && !isAdmin && (
+                            <a href="/dashboard">Dashboard 📊</a>
+                        )}
                         <a href="/actividades">Actividades 🏋🏽‍♂️</a>
+                        <a href="/planes">Planes 📋</a>
+                        <a href="/sucursales">Sucursales 📍</a>
+                        {isLoggedIn && !isAdmin && (
+                            <>
+                                <a href="/mi-suscripcion">Mi Suscripción 💳</a>
+                                <a href="/pagos">Pagos 💰</a>
+                            </>
+                        )}
                         {isAdmin && (
                             <a href="/admin">Panel Admin 👨🏼‍🔧</a>
                         )}

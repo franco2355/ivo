@@ -4,45 +4,102 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/yourusername/payments-api/internal/clients"
 	"github.com/yourusername/payments-api/internal/config"
 	"github.com/yourusername/payments-api/internal/controllers"
 	"github.com/yourusername/payments-api/internal/dao"
 	"github.com/yourusername/payments-api/internal/database"
+	"github.com/yourusername/payments-api/internal/domain/dtos"
+	"github.com/yourusername/payments-api/internal/gateways"
 	"github.com/yourusername/payments-api/internal/middleware"
 	"github.com/yourusername/payments-api/internal/services"
 )
 
 func main() {
-	// 1. Cargar configuración
-	cfg := config.LoadConfig()
+	log.Println("🚀 Iniciando Payments API con arquitectura de gateways...")
 
-	// 2. Conectar a MongoDB
+	// ========== 1. CONFIGURACIÓN ==========
+	cfg := config.LoadConfig()
+	log.Printf("✅ Configuración cargada: Puerto=%s, MongoDB=%s", cfg.Port, cfg.MongoURI)
+
+	// ========== 2. CONECTAR A MONGODB ==========
 	mongoDB, err := database.NewMongoDB(cfg.MongoURI, cfg.MongoDatabase)
 	if err != nil {
 		log.Fatalf("❌ Error conectando a MongoDB: %v", err)
 	}
 	defer mongoDB.Close()
+	log.Println("✅ Conectado a MongoDB exitosamente")
 
-	// 3. Inicializar DAOs (Implementaciones de Repository) con DI
+	// ========== 3. CAPA DE DATOS (REPOSITORY) ==========
+	// Implementación del repository con MongoDB
 	paymentRepo := dao.NewPaymentRepositoryMongo(mongoDB.Database)
+	log.Println("✅ Repository inicializado (MongoDB)")
 
-	// 4. Inicializar Services (Lógica de Negocio) con DI
-	paymentService := services.NewPaymentServiceNew(paymentRepo)
+	// ========== 4. CAPA DE GATEWAYS (FACTORY PATTERN) ==========
+	// El factory permite crear instancias de gateways en runtime
+	gatewayFactory := gateways.NewGatewayFactory(cfg)
+	log.Println("✅ Gateway Factory inicializado")
+	log.Printf("   Gateways soportados: %v", gatewayFactory.GetSupportedGateways())
 
-	// 5. Inicializar Controllers (Capa HTTP) con DI
+	// ========== 4.5. RABBITMQ EVENT PUBLISHER (OPCIONAL) ==========
+	// Si está configurado, publicará eventos cuando cambien estados de pagos
+	var eventPublisher services.EventPublisher
+	if cfg.RabbitMQ.URL != "" {
+		rabbitMQClient, err := clients.NewRabbitMQPublisher(cfg.RabbitMQ.URL, cfg.RabbitMQ.Exchange)
+		if err != nil {
+			log.Printf("⚠️  RabbitMQ no disponible (continuando sin eventos): %v", err)
+			eventPublisher = clients.NewNoOpEventPublisher()
+		} else {
+			defer rabbitMQClient.Close()
+			eventPublisher = clients.NewPaymentEventPublisher(rabbitMQClient)
+			log.Println("✅ RabbitMQ Publisher inicializado")
+		}
+	} else {
+		log.Println("ℹ️  RabbitMQ no configurado (eventos desactivados)")
+		eventPublisher = clients.NewNoOpEventPublisher()
+	}
+
+	// ========== 5. CAPA DE NEGOCIO (SERVICES) ==========
+	// Servicio completo con gateways integrados + eventos ⭐
+	paymentService := services.NewPaymentService(paymentRepo, gatewayFactory, eventPublisher)
+	log.Println("✅ Payment Service inicializado (con gateways + eventos)")
+
+	// ========== 6. CAPA DE PRESENTACIÓN (CONTROLLERS) ==========
+	// Payment controller (maneja todos los endpoints de pagos)
 	paymentController := controllers.NewPaymentController(paymentService)
 
-	// 6. Configurar Gin Router
+	// Webhook controller (procesa notificaciones de gateways)
+	webhookController := controllers.NewWebhookController(gatewayFactory, paymentRepo, paymentService)
+	log.Println("✅ Controllers inicializados (Payment + Webhook)")
+
+	// ========== 7. CONFIGURAR GIN ROUTER ==========
 	router := gin.Default()
 	router.Use(middleware.CORS())
 
-	// 7. Registrar Rutas
-	registerRoutes(router, paymentController)
+	// ========== 8. REGISTRAR RUTAS ==========
+	registerRoutes(router, paymentController, webhookController, paymentService)
 
-	// 8. Iniciar servidor
-	log.Printf("🚀 Payments API corriendo en puerto %s", cfg.Port)
-	log.Println("📦 Arquitectura: Controllers → Services → Repositories")
+	// ========== 9. INICIAR SERVIDOR ==========
+	log.Println("")
+	log.Println("╔══════════════════════════════════════════════════════════════╗")
+	log.Println("║         🎉 PAYMENTS API CON GATEWAYS INICIADA 🎉            ║")
+	log.Println("╚══════════════════════════════════════════════════════════════╝")
+	log.Printf("🌐 Puerto: %s", cfg.Port)
+	log.Println("📦 Arquitectura: Controllers → Services → Gateways → Repositories")
 	log.Println("💉 Dependency Injection: Activada")
+	log.Println("🏗️  Patrones: Strategy + Factory + Repository")
+	log.Println("")
+	log.Println("📋 Endpoints disponibles:")
+	log.Println("   GET    /healthz                         - Health check")
+	log.Println("   POST   /payments                        - Crear pago (básico)")
+	log.Println("   POST   /payments/process                - Pago único con Checkout Pro ⭐")
+	log.Println("   POST   /payments/recurring              - Pago recurrente con Preapprovals ⭐")
+	log.Println("   GET    /payments/:id                    - Obtener pago")
+	log.Println("   GET    /payments/:id/sync               - Sincronizar estado con gateway ⭐")
+	log.Println("   POST   /payments/:id/refund             - Procesar reembolso ⭐")
+	log.Println("   POST   /webhooks/mercadopago            - Webhook de Mercado Pago")
+	log.Println("   POST   /webhooks/:gateway               - Webhook genérico")
+	log.Println("")
 
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("❌ Error iniciando servidor: %v", err)
@@ -50,19 +107,178 @@ func main() {
 }
 
 // registerRoutes - Registra todas las rutas HTTP
-func registerRoutes(router *gin.Engine, paymentController *controllers.PaymentController) {
-	// Health check
+func registerRoutes(
+	router *gin.Engine,
+	paymentController *controllers.PaymentController,
+	webhookController *controllers.WebhookController,
+	paymentService *services.PaymentService,
+) {
+	// ========== HEALTH CHECK ==========
 	router.GET("/healthz", paymentController.HealthCheck)
 
-	// Rutas de pagos
+	// ========== RUTAS BÁSICAS (compatibilidad) ==========
 	paymentRoutes := router.Group("/payments")
 	{
 		paymentRoutes.POST("", paymentController.CreatePayment)
 		paymentRoutes.GET("/:id", paymentController.GetPayment)
 		paymentRoutes.GET("/user/:user_id", paymentController.GetPaymentsByUser)
-		paymentRoutes.GET("/entity", paymentController.GetPaymentsByEntity)   // Query: ?entity_type=subscription&entity_id=123
-		paymentRoutes.GET("/status", paymentController.GetPaymentsByStatus)   // Query: ?status=pending
+		paymentRoutes.GET("/entity", paymentController.GetPaymentsByEntity)
+		paymentRoutes.GET("/status", paymentController.GetPaymentsByStatus)
 		paymentRoutes.PATCH("/:id/status", paymentController.UpdatePaymentStatus)
 		paymentRoutes.POST("/:id/process", paymentController.ProcessPayment)
+
+		// ========== RUTAS MEJORADAS CON GATEWAYS ⭐ ==========
+		// Crear y procesar pago ÚNICO con Checkout Pro
+		paymentRoutes.POST("/process", createPaymentWithGatewayHandler(paymentService))
+
+		// Crear y procesar pago RECURRENTE con Preapprovals ⭐
+		paymentRoutes.POST("/recurring", createRecurringPaymentHandler(paymentService))
+
+		// Sincronizar estado con gateway
+		paymentRoutes.GET("/:id/sync", syncPaymentStatusHandler(paymentService))
+
+		// Procesar reembolso
+		paymentRoutes.POST("/:id/refund", refundPaymentHandler(paymentService))
+	}
+
+	// ========== WEBHOOKS ==========
+	webhookRoutes := router.Group("/webhooks")
+	{
+		// Webhook específico de Mercado Pago
+		webhookRoutes.POST("/mercadopago", webhookController.HandleMercadoPagoWebhook)
+
+		// Webhook genérico (funciona para cualquier gateway)
+		webhookRoutes.POST("/:gateway", webhookController.HandleGenericWebhook)
+	}
+}
+
+// ========== HANDLERS PARA RUTAS MEJORADAS ==========
+
+// createPaymentWithGatewayHandler - Crea un pago y lo procesa en el gateway
+func createPaymentWithGatewayHandler(service *services.PaymentService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req struct {
+			EntityType     string                 `json:"entity_type" binding:"required"`
+			EntityID       string                 `json:"entity_id" binding:"required"`
+			UserID         string                 `json:"user_id" binding:"required"`
+			Amount         float64                `json:"amount" binding:"required,gt=0"`
+			Currency       string                 `json:"currency" binding:"required"`
+			PaymentMethod  string                 `json:"payment_method" binding:"required"`
+			PaymentGateway string                 `json:"payment_gateway" binding:"required"` // "mercadopago", "mock"
+			CallbackURL    string                 `json:"callback_url,omitempty"`
+			WebhookURL     string                 `json:"webhook_url,omitempty"`
+			Metadata       map[string]interface{} `json:"metadata,omitempty"`
+		}
+
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Convertir a DTO
+		dto := dtos.CreatePaymentRequest{
+			EntityType:     req.EntityType,
+			EntityID:       req.EntityID,
+			UserID:         req.UserID,
+			Amount:         req.Amount,
+			Currency:       req.Currency,
+			PaymentMethod:  req.PaymentMethod,
+			PaymentGateway: req.PaymentGateway,
+			CallbackURL:    req.CallbackURL,
+			WebhookURL:     req.WebhookURL,
+			Metadata:       req.Metadata,
+		}
+
+		result, err := service.ProcessPaymentWithGateway(c.Request.Context(), dto)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(201, result)
+	}
+}
+
+// syncPaymentStatusHandler - Sincroniza el estado de un pago con el gateway
+func syncPaymentStatusHandler(service *services.PaymentService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		paymentID := c.Param("id")
+
+		result, err := service.SyncPaymentStatus(c.Request.Context(), paymentID)
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(200, result)
+	}
+}
+
+// createRecurringPaymentHandler - Crea un pago recurrente (débito automático)
+func createRecurringPaymentHandler(service *services.PaymentService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req struct {
+			EntityType     string                 `json:"entity_type" binding:"required"`
+			EntityID       string                 `json:"entity_id" binding:"required"`
+			UserID         string                 `json:"user_id" binding:"required"`
+			Amount         float64                `json:"amount" binding:"required,gt=0"`
+			Currency       string                 `json:"currency" binding:"required"`
+			PaymentMethod  string                 `json:"payment_method" binding:"required"`
+			PaymentGateway string                 `json:"payment_gateway" binding:"required"` // "mercadopago"
+			Frequency      int                    `json:"frequency" binding:"required,gt=0"`  // 1, 2, 3...
+			FrequencyType  string                 `json:"frequency_type" binding:"required"`  // "months", "days", "weeks"
+			Metadata       map[string]interface{} `json:"metadata,omitempty"`
+		}
+
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Convertir a DTO
+		dto := dtos.CreatePaymentRequest{
+			EntityType:     req.EntityType,
+			EntityID:       req.EntityID,
+			UserID:         req.UserID,
+			Amount:         req.Amount,
+			Currency:       req.Currency,
+			PaymentMethod:  req.PaymentMethod,
+			PaymentGateway: req.PaymentGateway,
+			Metadata:       req.Metadata,
+		}
+
+		result, err := service.ProcessRecurringPayment(c.Request.Context(), dto, req.Frequency, req.FrequencyType)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(201, result)
+	}
+}
+
+// refundPaymentHandler - Procesa un reembolso a través del gateway
+func refundPaymentHandler(service *services.PaymentService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		paymentID := c.Param("id")
+
+		var req struct {
+			Amount float64 `json:"amount" binding:"required,gt=0"`
+		}
+
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		err := service.RefundPayment(c.Request.Context(), paymentID, req.Amount)
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"message": "Reembolso procesado exitosamente",
+		})
 	}
 }

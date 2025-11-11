@@ -15,6 +15,8 @@ type CreatePaymentRequest struct {
 	Currency       string                 `json:"currency" binding:"required"`
 	PaymentMethod  string                 `json:"payment_method" binding:"required"`
 	PaymentGateway string                 `json:"payment_gateway,omitempty"`
+	CallbackURL    string                 `json:"callback_url,omitempty"`
+	WebhookURL     string                 `json:"webhook_url,omitempty"`
 	Metadata       map[string]interface{} `json:"metadata,omitempty"`
 }
 

@@ -1,0 +1,16 @@
+{
+  "entity_type": "subscription",
+  "entity_id": "sub_premium_001",
+  "user_id": "user_789",
+  "amount": 5000.00,
+  "currency": "ARS",
+  "payment_method": "credit_card",
+  "payment_gateway": "mock",
+  "metadata": {
+    "plan_name": "Plan Premium",
+    "customer_email": "juan@test.com",
+    "customer_name": "Juan Pérez",
+    "period_start": "2025-11-01",
+    "period_end": "2025-11-30"
+  }
+}

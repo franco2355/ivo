@@ -10,11 +10,11 @@ import (
 
 // PaymentController - Controlador HTTP para pagos con DI
 type PaymentController struct {
-	service *services.PaymentServiceNew
+	service *services.PaymentService
 }
 
 // NewPaymentController - Constructor con Dependency Injection
-func NewPaymentController(service *services.PaymentServiceNew) *PaymentController {
+func NewPaymentController(service *services.PaymentService) *PaymentController {
 	return &PaymentController{
 		service: service,
 	}

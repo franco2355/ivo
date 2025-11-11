@@ -1,0 +1,178 @@
+{
+  "info": {
+    "name": "Payments API - Gimnasio",
+    "description": "Colección completa para probar el Payments API con Mock y MercadoPago",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8083/healthz",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["healthz"]
+        }
+      }
+    },
+    {
+      "name": "2. Crear Pago - Mock Gateway",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"entity_type\": \"subscription\",\n  \"entity_id\": \"sub_gym_001\",\n  \"user_id\": \"user_456\",\n  \"amount\": 2500.00,\n  \"currency\": \"ARS\",\n  \"payment_method\": \"credit_card\",\n  \"payment_gateway\": \"mock\",\n  \"metadata\": {\n    \"customer_email\": \"juan@gimnasio.com\",\n    \"customer_name\": \"Juan Pérez\",\n    \"plan_name\": \"Plan Premium Mensual\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8083/payments/process",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["payments", "process"]
+        }
+      }
+    },
+    {
+      "name": "3. Crear Pago - MercadoPago",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"entity_type\": \"subscription\",\n  \"entity_id\": \"sub_gym_002\",\n  \"user_id\": \"user_789\",\n  \"amount\": 3500.00,\n  \"currency\": \"ARS\",\n  \"payment_method\": \"credit_card\",\n  \"payment_gateway\": \"mercadopago\",\n  \"callback_url\": \"https://tugimnasio.com/payment/success\",\n  \"webhook_url\": \"http://localhost:8083/webhooks/mercadopago\",\n  \"metadata\": {\n    \"customer_email\": \"maria@gimnasio.com\",\n    \"customer_name\": \"María González\",\n    \"plan_name\": \"Plan Full\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8083/payments/process",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["payments", "process"]
+        }
+      }
+    },
+    {
+      "name": "4. Obtener Pago por ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8083/payments/690658e10419635d28c1fc35",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["payments", "690658e10419635d28c1fc35"]
+        }
+      }
+    },
+    {
+      "name": "5. Obtener Pagos de un Usuario",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8083/payments/user/user_456",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["payments", "user", "user_456"]
+        }
+      }
+    },
+    {
+      "name": "6. Obtener Pagos por Entity",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8083/payments/entity?entity_type=subscription&entity_id=sub_gym_001",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["payments", "entity"],
+          "query": [
+            {
+              "key": "entity_type",
+              "value": "subscription"
+            },
+            {
+              "key": "entity_id",
+              "value": "sub_gym_001"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. Obtener Pagos por Estado",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8083/payments/status?status=completed",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["payments", "status"],
+          "query": [
+            {
+              "key": "status",
+              "value": "completed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "8. Sincronizar Pago con Gateway",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8083/payments/6906638c5fecec8279a5b14e/sync",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["payments", "6906638c5fecec8279a5b14e", "sync"]
+        }
+      }
+    },
+    {
+      "name": "9. Webhook - MercadoPago",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"123456789\",\n  \"type\": \"payment\",\n  \"action\": \"payment.updated\",\n  \"data\": {\n    \"id\": \"123456789\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8083/webhooks/mercadopago",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["webhooks", "mercadopago"]
+        }
+      }
+    }
+  ]
+}
