@@ -11,12 +11,14 @@ import (
 // SubscriptionController - Controlador HTTP para suscripciones
 type SubscriptionController struct {
 	subscriptionService *services.SubscriptionService // DI
+	healthService       *services.HealthService       // DI
 }
 
 // NewSubscriptionController - Constructor con DI
-func NewSubscriptionController(subscriptionService *services.SubscriptionService) *SubscriptionController {
+func NewSubscriptionController(subscriptionService *services.SubscriptionService, healthService *services.HealthService) *SubscriptionController {
 	return &SubscriptionController{
 		subscriptionService: subscriptionService,
+		healthService:       healthService,
 	}
 }
 
@@ -98,8 +100,15 @@ func (c *SubscriptionController) CancelSubscription(ctx *gin.Context) {
 
 // HealthCheck - GET /healthz
 func (c *SubscriptionController) HealthCheck(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "healthy",
-		"service": "subscriptions-api",
-	})
+	healthStatus := c.healthService.CheckHealth(ctx.Request.Context())
+
+	// Determinar código HTTP según el estado
+	statusCode := http.StatusOK
+	if healthStatus.Status == "degraded" {
+		statusCode = http.StatusServiceUnavailable
+	} else if healthStatus.Status == "unhealthy" {
+		statusCode = http.StatusServiceUnavailable
+	}
+
+	ctx.JSON(statusCode, healthStatus)
 }
