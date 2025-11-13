@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // PlanRepositoryMongo - Implementación de PlanRepository con MongoDB
@@ -51,6 +52,42 @@ func (r *PlanRepositoryMongo) FindAll(ctx context.Context, filters map[string]in
 	cursor, err := r.collection.Find(ctx, filters)
 	if err != nil {
 		return nil, fmt.Errorf("error al listar planes: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var plans []*entities.Plan
+	if err := cursor.All(ctx, &plans); err != nil {
+		return nil, fmt.Errorf("error al decodificar planes: %w", err)
+	}
+
+	return plans, nil
+}
+
+// FindAllPaginated - Busca planes con paginación real
+func (r *PlanRepositoryMongo) FindAllPaginated(ctx context.Context, filters map[string]interface{}, page, pageSize int64, sortBy string, sortDesc bool) ([]*entities.Plan, error) {
+	// Configurar opciones de paginación
+	opts := options.Find()
+
+	// Skip: saltar los registros de las páginas anteriores
+	skip := (page - 1) * pageSize
+	opts.SetSkip(skip)
+
+	// Limit: limitar cantidad de resultados
+	opts.SetLimit(pageSize)
+
+	// Ordenamiento
+	if sortBy != "" {
+		sortOrder := 1 // Ascendente
+		if sortDesc {
+			sortOrder = -1 // Descendente
+		}
+		opts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
+	}
+
+	// Ejecutar query
+	cursor, err := r.collection.Find(ctx, filters, opts)
+	if err != nil {
+		return nil, fmt.Errorf("error al listar planes paginados: %w", err)
 	}
 	defer cursor.Close(ctx)
 

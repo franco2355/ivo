@@ -31,14 +31,16 @@ func main() {
 	// 4. Inicializar Clients (Servicios Externos) con DI
 	usersValidator := clients.NewUsersAPIValidator(cfg.UsersAPIURL)
 
-	eventPublisher, err := clients.NewRabbitMQEventPublisher(cfg.RabbitMQURL, cfg.RabbitMQExchange)
+	// Intentar conectar a RabbitMQ, si falla usar NullEventPublisher
+	var eventPublisher services.EventPublisher
+	rabbitPublisher, err := clients.NewRabbitMQEventPublisher(cfg.RabbitMQURL, cfg.RabbitMQExchange)
 	if err != nil {
 		log.Printf("⚠️  Warning: No se pudo conectar a RabbitMQ: %v", err)
-		// En desarrollo, continuar sin RabbitMQ
-		// En producción, esto sería un error fatal
-	}
-	if eventPublisher != nil {
-		defer eventPublisher.Close()
+		log.Println("⚠️  Usando NullEventPublisher como fallback")
+		eventPublisher = clients.NewNullEventPublisher()
+	} else {
+		eventPublisher = rabbitPublisher
+		defer rabbitPublisher.Close()
 	}
 
 	// 5. Inicializar Services (Lógica de Negocio) con DI
@@ -49,17 +51,18 @@ func main() {
 		usersValidator,
 		eventPublisher,
 	)
+	healthService := services.NewHealthService(mongoDB.Client, eventPublisher)
 
 	// 6. Inicializar Controllers (Capa HTTP) con DI
 	planController := controllers.NewPlanController(planService)
-	subscriptionController := controllers.NewSubscriptionController(subscriptionService)
+	subscriptionController := controllers.NewSubscriptionController(subscriptionService, healthService)
 
 	// 7. Configurar Gin Router
 	router := gin.Default()
 	router.Use(middleware.CORS())
 
 	// 8. Registrar Rutas
-	registerRoutes(router, planController, subscriptionController)
+	registerRoutes(router, planController, subscriptionController, cfg)
 
 	// 9. Iniciar servidor
 	log.Printf("🚀 Subscriptions API corriendo en puerto %s", cfg.Port)
@@ -76,20 +79,29 @@ func registerRoutes(
 	router *gin.Engine,
 	planController *controllers.PlanController,
 	subscriptionController *controllers.SubscriptionController,
+	cfg *config.Config,
 ) {
-	// Health check
+	// Health check (público)
 	router.GET("/healthz", subscriptionController.HealthCheck)
 
-	// Rutas de planes
-	planRoutes := router.Group("/plans")
+	// Rutas públicas de planes (solo lectura)
+	publicPlanRoutes := router.Group("/plans")
 	{
-		planRoutes.POST("", planController.CreatePlan)
-		planRoutes.GET("", planController.ListPlans)
-		planRoutes.GET("/:id", planController.GetPlan)
+		publicPlanRoutes.GET("", planController.ListPlans)
+		publicPlanRoutes.GET("/:id", planController.GetPlan)
 	}
 
-	// Rutas de suscripciones
+	// Rutas protegidas de planes (solo admins)
+	protectedPlanRoutes := router.Group("/plans")
+	protectedPlanRoutes.Use(middleware.JWTAuth(cfg.JWTSecret))
+	protectedPlanRoutes.Use(middleware.RequireRole("admin"))
+	{
+		protectedPlanRoutes.POST("", planController.CreatePlan)
+	}
+
+	// Rutas protegidas de suscripciones (requieren autenticación)
 	subscriptionRoutes := router.Group("/subscriptions")
+	subscriptionRoutes.Use(middleware.JWTAuth(cfg.JWTSecret))
 	{
 		subscriptionRoutes.POST("", subscriptionController.CreateSubscription)
 		subscriptionRoutes.GET("/:id", subscriptionController.GetSubscription)

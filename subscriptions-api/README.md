@@ -2,6 +2,44 @@
 
 Microservicio de gestión de suscripciones y planes con **arquitectura limpia completa** y **dependency injection**.
 
+## ✨ Funcionalidades Críticas Implementadas
+
+### 🔒 1. Autenticación JWT
+- Middleware de autenticación con tokens JWT
+- Control de acceso basado en roles (user, admin)
+- Rutas públicas y protegidas
+- Validación automática de tokens
+- Ver documentación completa: [AUTH.md](./AUTH.md)
+
+### 🛡️ 2. Manejo Robusto de RabbitMQ
+- `NullEventPublisher` para evitar panics cuando RabbitMQ no está disponible
+- Fallback automático sin detener el servicio
+- Logs claros cuando eventos no se publican
+
+### 📊 3. Índices de MongoDB
+- Índices optimizados para queries frecuentes
+- Índice compuesto para búsqueda de suscripciones activas por usuario
+- Índices en campos de filtrado (estado, plan_id, sucursal_id)
+- Creación automática al iniciar la aplicación
+
+### 🧪 4. Tests Unitarios
+- Tests completos para `PlanService` y `SubscriptionService`
+- Mocks de repositories y servicios externos
+- Cobertura de casos exitosos y de error
+- Estructura: `internal/services/*_test.go`
+
+### 📄 5. Paginación Real en MongoDB
+- Implementación real con `Skip()` y `Limit()`
+- No pagina en memoria (eficiente con miles de registros)
+- Soporte para ordenamiento por múltiples campos
+- Límite máximo de 100 registros por página
+
+### 🩺 6. Health Check Avanzado
+- Verificación de MongoDB (ping con timeout)
+- Verificación de RabbitMQ (detecta NullEventPublisher)
+- Retorna uptime y versión del servicio
+- HTTP 503 cuando hay dependencias caídas
+
 ## 🏗️ Arquitectura
 
 ```
@@ -225,41 +263,51 @@ GET    /healthz            - Health check
 
 ## 🧪 Testing
 
-Para testear este microservicio, crear mocks de las interfaces:
+### Tests Unitarios
+```bash
+# Ejecutar todos los tests
+go test ./internal/services/... -v
 
-```go
-// mocks/plan_repository_mock.go
-type PlanRepositoryMock struct {
-    mock.Mock
-}
+# Con cobertura
+go test ./internal/services/... -cover
 
-func (m *PlanRepositoryMock) FindByID(ctx context.Context, id primitive.ObjectID) (*entities.Plan, error) {
-    args := m.Called(ctx, id)
-    return args.Get(0).(*entities.Plan), args.Error(1)
-}
-
-// services/plan_service_test.go
-func TestCreatePlan(t *testing.T) {
-    // Arrange
-    mockRepo := new(PlanRepositoryMock)
-    service := NewPlanService(mockRepo)
-
-    // Act & Assert
-    ...
-}
+# Test específico
+go test ./internal/services/... -run TestPlanService_CreatePlan -v
 ```
+
+### Testing Manual
+
+**Opción 1: Script automatizado**
+```bash
+chmod +x test-api.sh
+./test-api.sh
+```
+
+**Opción 2: Guía completa de testing**
+Ver **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** para ejemplos detallados con cURL, Postman, y casos de uso completos.
 
 ## 🚀 Ejecución
 
+### Local
 ```bash
-# Local
-go mod tidy
-go run cmd/api/main.go
+# 1. Levantar dependencias
+docker run -d -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=admin mongo
+docker run -d -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 
-# Docker
+# 2. Instalar dependencias
+go mod tidy
+
+# 3. Ejecutar servicio
+go run cmd/api/main.go
+```
+
+### Docker
+```bash
 docker build -t subscriptions-api .
 docker run -p 8081:8081 --env-file .env subscriptions-api
 ```
+
+Ver **[QUICKSTART.md](./QUICKSTART.md)** para guía detallada de inicio rápido.
 
 ## 📝 Ejemplo de Uso
 
