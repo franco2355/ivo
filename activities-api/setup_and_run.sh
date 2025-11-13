@@ -1,10 +1,6 @@
 #!/bin/bash
 
-# Script para instalar dependencias y ejecutar activities-api
-# Autor: Claude Code
-# Fecha: 2025-11-07
-
-set -e  # Detener si hay algún error
+set -e  
 
 echo "==========================================="
 echo "  SETUP Y EJECUCIÓN DE ACTIVITIES-API"
