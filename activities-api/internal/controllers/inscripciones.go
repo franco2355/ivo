@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"activities-api/internal/domain"
 	"activities-api/internal/services"
 	"net/http"
 	"strings"

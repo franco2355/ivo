@@ -1,6 +1,8 @@
 module activities-api
 
-go 1.22
+go 1.23.0
+
+toolchain go1.23.12
 
 require (
 	github.com/gin-gonic/gin v1.10.0
