@@ -43,7 +43,7 @@ const Dashboard = () => {
             // Obtener inscripciones del usuario (backend principal)
             try {
                 console.log('[Dashboard] Cargando inscripciones...');
-                const inscResponse = await fetch(ACTIVITIES_API.inscripcionesByUsuario(userId), {
+                const inscResponse = await fetch(`${USERS_API.base}/inscripciones`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
                     }
@@ -64,7 +64,7 @@ const Dashboard = () => {
                         inscActivas.map(async (insc) => {
                             try {
                                 const actResponse = await fetch(
-                                    ACTIVITIES_API.actividadById(insc.id_actividad)
+                                    `${USERS_API.base}/actividades/${insc.id_actividad}`
                                 );
                                 if (actResponse.ok) {
                                     const actividad = await actResponse.json();
