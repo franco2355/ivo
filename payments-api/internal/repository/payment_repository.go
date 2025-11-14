@@ -16,6 +16,9 @@ type PaymentRepository interface {
 	// FindByID busca un pago por su ID
 	FindByID(ctx context.Context, id primitive.ObjectID) (*entities.Payment, error)
 
+	// FindAll busca todos los pagos
+	FindAll(ctx context.Context) ([]*entities.Payment, error)
+
 	// FindByUser busca todos los pagos de un usuario
 	FindByUser(ctx context.Context, userID string) ([]*entities.Payment, error)
 

@@ -423,6 +423,36 @@ func (s *PaymentService) GetPaymentByID(ctx context.Context, paymentID string) (
 	), nil
 }
 
+// GetAllPayments - Obtiene todos los pagos
+func (s *PaymentService) GetAllPayments(ctx context.Context) ([]dtos.PaymentResponse, error) {
+	payments, err := s.paymentRepo.FindAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]dtos.PaymentResponse, len(payments))
+	for i, payment := range payments {
+		responses[i] = dtos.ToPaymentResponse(
+			payment.ID,
+			payment.EntityType,
+			payment.EntityID,
+			payment.UserID,
+			payment.Amount,
+			payment.Currency,
+			payment.Status,
+			payment.PaymentMethod,
+			payment.PaymentGateway,
+			payment.TransactionID,
+			payment.Metadata,
+			payment.CreatedAt,
+			payment.UpdatedAt,
+			payment.ProcessedAt,
+		)
+	}
+
+	return responses, nil
+}
+
 // GetPaymentsByUser - Obtiene todos los pagos de un usuario
 func (s *PaymentService) GetPaymentsByUser(ctx context.Context, userID string) ([]dtos.PaymentResponse, error) {
 	payments, err := s.paymentRepo.FindByUser(ctx, userID)

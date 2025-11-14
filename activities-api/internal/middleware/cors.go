@@ -9,11 +9,26 @@ import (
 // CORSMiddleware maneja las políticas de CORS
 func CORSMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		ctx.Header("Access-Control-Allow-Origin", "*")
+		origin := ctx.Request.Header.Get("Origin")
+		if origin == "" {
+			origin = "http://localhost:5173"
+		}
+		// Permitir orígenes específicos
+		allowedOrigins := map[string]bool{
+			"http://localhost:5173": true,
+			"http://localhost:3000": true,
+		}
+
+		if allowedOrigins[origin] {
+			ctx.Header("Access-Control-Allow-Origin", origin)
+			ctx.Header("Access-Control-Allow-Credentials", "true")
+		} else {
+			ctx.Header("Access-Control-Allow-Origin", "http://localhost:5173")
+		}
+
 		ctx.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		ctx.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		ctx.Header("Access-Control-Expose-Headers", "Content-Length")
-		ctx.Header("Access-Control-Allow-Credentials", "true")
 
 		// Handle preflight requests
 		if ctx.Request.Method == http.MethodOptions {

@@ -11,10 +11,23 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./BDD:/docker-entrypoint-initdb.d
     networks:
       - app-network
 
-  backend:
+  mongo:
+    image: mongo:7.0
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=gimnasio
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+
+  users-api:
     build: ./backend
     ports:
       - "8080:8080"
@@ -32,12 +45,85 @@ services:
     networks:
       - app-network
 
+  subscriptions-api:
+    build: ./subscriptions-api
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+      - mongo
+    environment:
+      - PORT=8081
+      - MONGO_URI=mongodb://mongo:27017
+      - MONGO_DATABASE=gimnasio
+      - USERS_API_URL=http://users-api:8080
+      - PAYMENTS_API_URL=http://payments-api:8083
+      - JWT_SECRET='d6d6c772219f3b65cc8254983632c930f6197c54b3a8de71e31689d839a386b4'
+    networks:
+      - app-network
+
+  activities-api:
+    build: ./activities-api
+    ports:
+      - "8082:8082"
+    depends_on:
+      - db
+    environment:
+      - DB_USER=root
+      - DB_PASS=root
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_SCHEMA=gimnasio
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8082
+    networks:
+      - app-network
+
+  payments-api:
+    build: ./payments-api
+    ports:
+      - "8083:8083"
+    depends_on:
+      - db
+      - mongo
+    environment:
+      - PORT=8083
+      - MONGO_URI=mongodb://mongo:27017
+      - MONGO_DATABASE=gimnasio
+      - MERCADOPAGO_ACCESS_TOKEN=""
+      - MERCADOPAGO_PUBLIC_KEY=""
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - RABBITMQ_EXCHANGE=gym_events
+    networks:
+      - app-network
+
+  search-api:
+    build: ./search-api
+    ports:
+      - "8084:8084"
+    depends_on:
+      - db
+    environment:
+      - DB_USER=root
+      - DB_PASS=root
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_SCHEMA=gimnasio
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8084
+    networks:
+      - app-network
+
   frontend:
     build: ./frontend
     ports:
       - "5173:5173"
     depends_on:
-      - backend
+      - users-api
+      - subscriptions-api
+      - activities-api
+      - payments-api
+      - search-api
     networks:
       - app-network
 
@@ -47,3 +133,4 @@ networks:
 
 volumes:
   mysql_data:
+  mongo_data:

@@ -1,28 +1,63 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockPlanes } from '../data/mockData';
 import '../styles/Planes.css';
+
+const API_URL = 'http://localhost:8081';
 
 const Planes = () => {
     const [planes, setPlanes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 
     useEffect(() => {
-        // Simular carga de API
-        setTimeout(() => {
-            setPlanes(mockPlanes);
-            setLoading(false);
-        }, 500);
+        console.log('[Planes] Componente montado, cargando planes...');
+        cargarPlanes();
     }, []);
 
+    const cargarPlanes = async () => {
+        try {
+            console.log('[Planes] Cargando planes desde API...');
+            setLoading(true);
+            setError(null);
+
+            const response = await fetch(`${API_URL}/plans`);
+            console.log('[Planes] Response:', response.status);
+
+            if (!response.ok) {
+                throw new Error('Error al cargar planes');
+            }
+
+            const data = await response.json();
+            console.log('[Planes] Data recibida:', data);
+
+            if (data && data.plans && Array.isArray(data.plans)) {
+                // Filtrar solo los planes activos para mostrar a los usuarios
+                const planesActivos = data.plans.filter(plan => plan.activo === true);
+                console.log('[Planes] ✅ Planes activos:', planesActivos.length);
+                setPlanes(planesActivos);
+            } else {
+                throw new Error('Formato de respuesta inválido');
+            }
+        } catch (err) {
+            console.error('[Planes] ❌ Error:', err);
+            setError('No se pudieron cargar los planes. Por favor, intenta más tarde.');
+            setPlanes([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSelectPlan = (planId) => {
+        console.log('[Planes] Usuario seleccionó plan:', planId);
+
         if (!isLoggedIn) {
             alert("Debes iniciar sesión para suscribirte a un plan");
             navigate('/login');
             return;
         }
+
         // Navegar al checkout con el plan seleccionado
         navigate(`/checkout/${planId}`);
     };
@@ -30,7 +65,40 @@ const Planes = () => {
     if (loading) {
         return (
             <div className="planes-container">
-                <div className="loading-message">Cargando planes...</div>
+                <div className="loading-message">
+                    <div className="spinner"></div>
+                    <p>Cargando planes disponibles...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="planes-container">
+                <div className="planes-header">
+                    <h1>Nuestros Planes</h1>
+                </div>
+                <div className="error-message">
+                    <p>⚠️ {error}</p>
+                    <button className="btn-retry" onClick={cargarPlanes}>
+                        🔄 Reintentar
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (planes.length === 0) {
+        return (
+            <div className="planes-container">
+                <div className="planes-header">
+                    <h1>Nuestros Planes</h1>
+                </div>
+                <div className="no-planes-message">
+                    <p>📋 No hay planes disponibles en este momento.</p>
+                    <p>Por favor, volvé más tarde o contactanos para más información.</p>
+                </div>
             </div>
         );
     }
@@ -51,38 +119,57 @@ const Planes = () => {
                         {plan.popular && <div className="popular-badge">Más Popular</div>}
                         {plan.ahorro && <div className="ahorro-badge">{plan.ahorro}</div>}
 
-                        <div className="plan-header" style={{ borderTopColor: plan.color }}>
+                        <div className="plan-header" style={{ borderTopColor: plan.color || '#4CAF50' }}>
                             <h2>{plan.nombre}</h2>
                             <p className="plan-descripcion">{plan.descripcion}</p>
                         </div>
 
                         <div className="plan-precio">
                             <span className="precio-signo">$</span>
-                            <span className="precio-monto">{plan.precio_mensual.toFixed(2)}</span>
+                            <span className="precio-monto">{plan.precio_mensual?.toFixed(2)}</span>
                             <span className="precio-periodo">/ mes</span>
                         </div>
 
-                        {plan.duracion_dias > 30 && (
+                        {plan.duracion_dias && plan.duracion_dias > 30 && (
                             <div className="plan-duracion">
                                 Compromiso de {plan.duracion_dias} días
+                            </div>
+                        )}
+
+                        {plan.tipo_acceso && (
+                            <div className="plan-acceso">
+                                <strong>Tipo de acceso:</strong> {plan.tipo_acceso === 'completo' ? 'Completo' : 'Limitado'}
+                            </div>
+                        )}
+
+                        {plan.max_clases_semana && plan.max_clases_semana > 0 && (
+                            <div className="plan-clases">
+                                <strong>Clases por semana:</strong> {plan.max_clases_semana}
                             </div>
                         )}
 
                         <div className="plan-beneficios">
                             <h3>Beneficios incluidos:</h3>
                             <ul>
-                                {plan.beneficios.map((beneficio, index) => (
-                                    <li key={index}>
+                                {plan.beneficios && plan.beneficios.length > 0 ? (
+                                    plan.beneficios.map((beneficio, index) => (
+                                        <li key={index}>
+                                            <span className="check-icon">✓</span>
+                                            {beneficio}
+                                        </li>
+                                    ))
+                                ) : (
+                                    <li>
                                         <span className="check-icon">✓</span>
-                                        {beneficio}
+                                        Acceso al gimnasio por {plan.duracion_dias} días
                                     </li>
-                                ))}
+                                )}
                             </ul>
                         </div>
 
                         <button
                             className="btn-seleccionar-plan"
-                            style={{ backgroundColor: plan.color }}
+                            style={{ backgroundColor: plan.color || '#4CAF50' }}
                             onClick={() => handleSelectPlan(plan.id)}
                         >
                             Seleccionar Plan

@@ -92,6 +92,7 @@ func main() {
 	log.Println("📋 Endpoints disponibles:")
 	log.Println("   GET    /healthz                         - Health check")
 	log.Println("   POST   /payments                        - Crear pago (básico)")
+	log.Println("   GET    /payments                        - Listar todos los pagos")
 	log.Println("   POST   /payments/process                - Pago único con Checkout Pro ⭐")
 	log.Println("   POST   /payments/recurring              - Pago recurrente con Preapprovals ⭐")
 	log.Println("   GET    /payments/:id                    - Obtener pago")
@@ -120,6 +121,7 @@ func registerRoutes(
 	paymentRoutes := router.Group("/payments")
 	{
 		paymentRoutes.POST("", paymentController.CreatePayment)
+		paymentRoutes.GET("", paymentController.GetAllPayments)
 		paymentRoutes.GET("/:id", paymentController.GetPayment)
 		paymentRoutes.GET("/user/:user_id", paymentController.GetPaymentsByUser)
 		paymentRoutes.GET("/entity", paymentController.GetPaymentsByEntity)

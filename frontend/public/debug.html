@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug - Verificar Token y Permisos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #388e3c;
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Gestión de Planes</h1>
+
+    <div class="section">
+        <h2>1. localStorage</h2>
+        <div id="localStorage-info"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. Decodificar Token JWT</h2>
+        <div id="token-info"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Probar DELETE de Plan</h2>
+        <input type="text" id="planId" placeholder="ID del plan (ej: 6916bd95af44aa107869a87a)" style="width: 400px; padding: 8px;">
+        <button class="btn" onclick="testDelete()">🗑️ Probar DELETE</button>
+        <div id="delete-result"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Listar Planes</h2>
+        <button class="btn" onclick="listPlans()">📋 Listar Planes</button>
+        <div id="plans-list"></div>
+    </div>
+
+    <script>
+        // Función para decodificar JWT
+        function decodeJWT(token) {
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                    return { error: 'Token inválido - no tiene 3 partes' };
+                }
+                const payload = JSON.parse(atob(parts[1]));
+                return payload;
+            } catch (e) {
+                return { error: 'Error al decodificar: ' + e.message };
+            }
+        }
+
+        // Mostrar localStorage
+        function showLocalStorage() {
+            const info = document.getElementById('localStorage-info');
+            const token = localStorage.getItem('access_token');
+            const isAdmin = localStorage.getItem('isAdmin');
+            const idUsuario = localStorage.getItem('idUsuario');
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+
+            let html = '<div class="info">';
+            html += `<strong>access_token:</strong> ${token ? token.substring(0, 50) + '...' : '<span class="error">❌ NO ENCONTRADO</span>'}<br>`;
+            html += `<strong>isAdmin:</strong> ${isAdmin || '<span class="error">❌ NO ENCONTRADO</span>'}<br>`;
+            html += `<strong>idUsuario:</strong> ${idUsuario || '<span class="error">❌ NO ENCONTRADO</span>'}<br>`;
+            html += `<strong>isLoggedIn:</strong> ${isLoggedIn || '<span class="error">❌ NO ENCONTRADO</span>'}`;
+            html += '</div>';
+            info.innerHTML = html;
+
+            // Decodificar token
+            if (token) {
+                const payload = decodeJWT(token);
+                const tokenInfo = document.getElementById('token-info');
+                let tokenHtml = '<pre>' + JSON.stringify(payload, null, 2) + '</pre>';
+
+                if (payload.role === 'admin' || payload.is_admin === true) {
+                    tokenHtml += '<div class="success">✅ Token tiene permisos de ADMIN</div>';
+                } else {
+                    tokenHtml += '<div class="error">❌ Token NO tiene permisos de admin</div>';
+                }
+
+                // Verificar expiración
+                if (payload.exp) {
+                    const now = Math.floor(Date.now() / 1000);
+                    if (payload.exp < now) {
+                        tokenHtml += '<div class="error">❌ Token EXPIRADO</div>';
+                    } else {
+                        const remaining = Math.floor((payload.exp - now) / 60);
+                        tokenHtml += `<div class="success">✅ Token válido por ${remaining} minutos más</div>`;
+                    }
+                }
+
+                tokenInfo.innerHTML = tokenHtml;
+            }
+        }
+
+        // Probar DELETE
+        async function testDelete() {
+            const planId = document.getElementById('planId').value.trim();
+            const resultDiv = document.getElementById('delete-result');
+
+            if (!planId) {
+                resultDiv.innerHTML = '<div class="error">❌ Ingresa un ID de plan</div>';
+                return;
+            }
+
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                resultDiv.innerHTML = '<div class="error">❌ No hay token en localStorage</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="info">⏳ Enviando petición DELETE...</div>';
+
+            try {
+                const response = await fetch(`http://localhost:8081/plans/${planId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const contentType = response.headers.get('content-type');
+                let data = {};
+
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    data = { text: await response.text() };
+                }
+
+                let html = `<div class="info">`;
+                html += `<strong>HTTP Status:</strong> ${response.status} ${response.statusText}<br>`;
+                html += `<strong>Respuesta:</strong><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                html += `</div>`;
+
+                if (response.ok) {
+                    html += '<div class="success">✅ Plan eliminado exitosamente</div>';
+                } else {
+                    html += `<div class="error">❌ Error: ${data.error || data.message || 'Error desconocido'}</div>`;
+                }
+
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error de red: ${error.message}</div>`;
+            }
+        }
+
+        // Listar planes
+        async function listPlans() {
+            const resultDiv = document.getElementById('plans-list');
+            resultDiv.innerHTML = '<div class="info">⏳ Cargando planes...</div>';
+
+            try {
+                const response = await fetch('http://localhost:8081/plans');
+                const data = await response.json();
+
+                let html = '<div class="info">';
+                html += `<strong>Total de planes:</strong> ${data.total || 0}<br><br>`;
+
+                if (data.plans && data.plans.length > 0) {
+                    html += '<table border="1" cellpadding="8" style="width:100%; border-collapse: collapse;">';
+                    html += '<tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Estado</th></tr>';
+
+                    data.plans.forEach(plan => {
+                        html += `<tr>`;
+                        html += `<td><code>${plan.id}</code></td>`;
+                        html += `<td>${plan.nombre}</td>`;
+                        html += `<td>$${plan.precio_mensual}</td>`;
+                        html += `<td>${plan.activo ? '✅ Activo' : '❌ Inactivo'}</td>`;
+                        html += `</tr>`;
+                    });
+
+                    html += '</table>';
+                } else {
+                    html += '<div class="error">No hay planes disponibles</div>';
+                }
+
+                html += '</div>';
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Ejecutar al cargar la página
+        window.onload = function() {
+            showLocalStorage();
+            listPlans();
+        };
+    </script>
+</body>
+</html>

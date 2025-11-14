@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { PAYMENTS_API } from '../config/api';
+import { PAYMENTS_API, USERS_API } from '../config/api';
 import '../styles/AdminPagos.css';
 
 const AdminPagos = () => {
     const [pagos, setPagos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filtroEstado, setFiltroEstado] = useState('all');
+    const [usuarios, setUsuarios] = useState({});
     const [estadisticas, setEstadisticas] = useState({
         total: 0,
         completados: 0,
@@ -43,11 +44,94 @@ const AdminPagos = () => {
             };
             setEstadisticas(stats);
 
+            // Obtener nombres de usuarios únicos
+            const userIds = [...new Set(data.map(p => p.user_id))];
+            await fetchUsuarios(userIds);
+
         } catch (error) {
             console.error("Error al cargar pagos:", error);
             setPagos([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchUsuarios = async (userIds) => {
+        try {
+            const usuariosMap = {};
+
+            // Fetch cada usuario
+            await Promise.all(
+                userIds.map(async (userId) => {
+                    try {
+                        const response = await fetch(USERS_API.userById(userId));
+                        if (response.ok) {
+                            const userData = await response.json();
+                            usuariosMap[userId] = `${userData.nombre} ${userData.apellido}`;
+                        } else {
+                            usuariosMap[userId] = `Usuario #${userId}`;
+                        }
+                    } catch (error) {
+                        console.error(`Error al cargar usuario ${userId}:`, error);
+                        usuariosMap[userId] = `Usuario #${userId}`;
+                    }
+                })
+            );
+
+            setUsuarios(usuariosMap);
+        } catch (error) {
+            console.error("Error al cargar usuarios:", error);
+        }
+    };
+
+    const handleAprobarPago = async (pagoId) => {
+        if (!window.confirm('¿Estás seguro de que deseas aprobar este pago?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(PAYMENTS_API.processPayment(pagoId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error("Error al aprobar el pago");
+            }
+
+            alert('Pago aprobado exitosamente');
+            fetchPagos(); // Refrescar la lista
+        } catch (error) {
+            console.error("Error al aprobar pago:", error);
+            alert(`Error al aprobar el pago: ${error.message}`);
+        }
+    };
+
+    const handleRechazarPago = async (pagoId) => {
+        if (!window.confirm('¿Estás seguro de que deseas rechazar este pago?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(PAYMENTS_API.updateStatus(pagoId), {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: 'failed' })
+            });
+
+            if (!response.ok) {
+                throw new Error("Error al rechazar el pago");
+            }
+
+            alert('Pago rechazado');
+            fetchPagos(); // Refrescar la lista
+        } catch (error) {
+            console.error("Error al rechazar pago:", error);
+            alert(`Error al rechazar el pago: ${error.message}`);
         }
     };
 
@@ -176,13 +260,14 @@ const AdminPagos = () => {
                                 <th>Método</th>
                                 <th>Estado</th>
                                 <th>Fecha</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {pagosFiltrados.map((pago) => (
                                 <tr key={pago.id}>
                                     <td className="id-cell">{pago.id.substring(0, 8)}...</td>
-                                    <td>Usuario #{pago.user_id}</td>
+                                    <td>{usuarios[pago.user_id] || `Usuario #${pago.user_id}`}</td>
                                     <td>
                                         <div className="concepto-cell">
                                             <span className="entity-type">{pago.entity_type}</span>
@@ -204,6 +289,29 @@ const AdminPagos = () => {
                                     </td>
                                     <td className="fecha-cell">
                                         {new Date(pago.created_at).toLocaleDateString('es-AR')}
+                                    </td>
+                                    <td className="acciones-cell">
+                                        {pago.status === 'pending' && (
+                                            <div className="acciones-buttons">
+                                                <button
+                                                    className="btn-aprobar"
+                                                    onClick={() => handleAprobarPago(pago.id)}
+                                                    title="Aprobar pago"
+                                                >
+                                                    ✓ Aprobar
+                                                </button>
+                                                <button
+                                                    className="btn-rechazar"
+                                                    onClick={() => handleRechazarPago(pago.id)}
+                                                    title="Rechazar pago"
+                                                >
+                                                    ✗ Rechazar
+                                                </button>
+                                            </div>
+                                        )}
+                                        {pago.status !== 'pending' && (
+                                            <span className="no-acciones">-</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

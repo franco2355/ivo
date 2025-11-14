@@ -1,9 +1,4 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
+/* Estilos movidos a index.css para mejor control del layout */
 
 .logo {
   height: 6em;

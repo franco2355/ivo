@@ -14,6 +14,10 @@ import Sucursales from '../pages/Sucursales.jsx'
 import Layout from '../components/Layout.jsx'
 import Home from '../pages/Home.jsx'
 import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { initializeMockData } from '../data/mockData.js'
+
+// Inicializar datos mock en localStorage
+initializeMockData();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

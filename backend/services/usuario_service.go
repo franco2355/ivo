@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"os"
 	"proyecto-integrador/clients/usuario"
 	"proyecto-integrador/dto"
@@ -48,12 +49,20 @@ func (us *usuarioService) GenerateToken(username string, password string) (strin
 		return "", IncorrectCredentialsError
 	}
 
+	// Determinar el rol basado en is_admin
+	role := "user"
+	if userdata.IsAdmin {
+		role = "admin"
+	}
+
 	claims := jwt.MapClaims{
 		"iss":        "proyecto2025-morini-heredia",
 		"exp":        time.Now().Add(30 * time.Minute).Unix(),
 		"username":   userdata.Username,
 		"id_usuario": userdata.Id,
+		"user_id":    fmt.Sprintf("%d", userdata.Id), // Para compatibilidad con otras APIs
 		"is_admin":   userdata.IsAdmin,
+		"role":       role, // Para compatibilidad con otras APIs
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 

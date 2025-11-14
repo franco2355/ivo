@@ -68,3 +68,56 @@ func (c *PlanController) ListPlans(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, plans)
 }
+
+// UpdatePlan - PUT /plans/:id
+func (c *PlanController) UpdatePlan(ctx *gin.Context) {
+	id := ctx.Param("id")
+	var req dtos.UpdatePlanRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	plan, err := c.planService.UpdatePlan(ctx.Request.Context(), id, req)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, plan)
+}
+
+// DeletePlan - DELETE /plans/:id
+func (c *PlanController) DeletePlan(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	err := c.planService.DeletePlan(ctx.Request.Context(), id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Plan eliminado exitosamente"})
+}
+
+// TogglePlanStatus - PATCH /plans/:id/status
+func (c *PlanController) TogglePlanStatus(ctx *gin.Context) {
+	id := ctx.Param("id")
+	var req struct {
+		Activo bool `json:"activo"`
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	plan, err := c.planService.TogglePlanStatus(ctx.Request.Context(), id, req.Activo)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, plan)
+}

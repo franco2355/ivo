@@ -92,29 +92,15 @@ const Checkout = () => {
             const payment = await paymentResponse.json();
             console.log("Pago creado:", payment);
 
-            // 3. Procesar el pago (simular aprobación)
-            const processResponse = await fetch(PAYMENTS_API.processPayment(payment.id), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
+            // 3. El pago queda pendiente de aprobación por el administrador
+            // NO procesamos el pago automáticamente
 
-            if (!processResponse.ok) {
-                throw new Error("Error al procesar el pago");
-            }
+            const mensajePago = formData.payment_method === 'cash'
+                ? "Tu solicitud de pago en efectivo ha sido registrada. Por favor, acercate a la sucursal para completar el pago. El administrador aprobará tu pago una vez que se verifique."
+                : "Tu pago con tarjeta ha sido registrado y está pendiente de verificación. El administrador lo revisará y aprobará en breve.";
 
-            const processResult = await processResponse.json();
-            console.log("Pago procesado:", processResult);
-
-            // 4. Aquí se actualizaría el estado de la suscripción cuando la API esté lista
-            // await fetch(SUBSCRIPTIONS_API.updateStatus(suscripcion.id), {
-            //     method: 'PATCH',
-            //     body: JSON.stringify({ estado: "activa", pago_id: payment.id })
-            // });
-
-            alert("¡Pago procesado exitosamente! Tu suscripción está activa.");
-            navigate('/mi-suscripcion');
+            alert(`¡Solicitud enviada! ${mensajePago}`);
+            navigate('/pagos');
 
         } catch (error) {
             console.error("Error en el proceso de pago:", error);

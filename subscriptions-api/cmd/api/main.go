@@ -97,6 +97,9 @@ func registerRoutes(
 	protectedPlanRoutes.Use(middleware.RequireRole("admin"))
 	{
 		protectedPlanRoutes.POST("", planController.CreatePlan)
+		protectedPlanRoutes.PUT("/:id", planController.UpdatePlan)
+		protectedPlanRoutes.DELETE("/:id", planController.DeletePlan)
+		protectedPlanRoutes.PATCH("/:id/status", planController.TogglePlanStatus)
 	}
 
 	// Rutas protegidas de suscripciones (requieren autenticación)

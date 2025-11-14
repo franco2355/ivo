@@ -80,21 +80,21 @@ export const mockPlanes = [
 
 // SUSCRIPCIONES DE USUARIOS (Mock)
 export const mockSuscripciones = {
-  // Usuario ID 5 (ejemplo)
-  "5": {
+  // Usuario ID 1 (admin o primer usuario registrado)
+  "1": {
     id: "sub_001",
-    usuario_id: "5",
+    usuario_id: "1",
     plan_id: "plan_002",
     plan: mockPlanes[1], // Plan Premium
     sucursal_origen_id: "suc_001",
     fecha_inicio: "2025-01-01T00:00:00Z",
-    fecha_vencimiento: "2025-02-01T00:00:00Z",
+    fecha_vencimiento: "2025-02-28T00:00:00Z",
     estado: "activa",
     pago_id: "pay_001",
     metadata: {
       auto_renovacion: true,
       metodo_pago_preferido: "credit_card",
-      notas: "Cliente premium desde enero 2025"
+      notas: "Suscripción de administrador"
     },
     historial_renovaciones: [
       {
@@ -105,6 +105,133 @@ export const mockSuscripciones = {
     ],
     created_at: "2025-01-01T00:00:00Z",
     updated_at: "2025-01-01T00:00:00Z"
+  },
+  // Usuario ID 2 (Ana Gómez)
+  "2": {
+    id: "sub_002",
+    usuario_id: "2",
+    plan_id: "plan_001",
+    plan: mockPlanes[0], // Plan Básico
+    sucursal_origen_id: "suc_002",
+    fecha_inicio: "2025-01-15T00:00:00Z",
+    fecha_vencimiento: "2025-02-15T00:00:00Z",
+    estado: "activa",
+    pago_id: "pay_002",
+    metadata: {
+      auto_renovacion: false,
+      metodo_pago_preferido: "cash"
+    },
+    historial_renovaciones: [
+      {
+        fecha: "2025-01-15T00:00:00Z",
+        pago_id: "pay_002",
+        monto: 50.00
+      }
+    ],
+    created_at: "2025-01-15T00:00:00Z",
+    updated_at: "2025-01-15T00:00:00Z"
+  },
+  // Usuario ID 3 (Bruno Pérez)
+  "3": {
+    id: "sub_003",
+    usuario_id: "3",
+    plan_id: "plan_003",
+    plan: mockPlanes[2], // Plan Trimestral
+    sucursal_origen_id: "suc_001",
+    fecha_inicio: "2024-12-01T00:00:00Z",
+    fecha_vencimiento: "2025-03-01T00:00:00Z",
+    estado: "activa",
+    pago_id: "pay_003",
+    metadata: {
+      auto_renovacion: true,
+      metodo_pago_preferido: "credit_card"
+    },
+    historial_renovaciones: [
+      {
+        fecha: "2024-12-01T00:00:00Z",
+        pago_id: "pay_003",
+        monto: 255.00
+      }
+    ],
+    created_at: "2024-12-01T00:00:00Z",
+    updated_at: "2024-12-01T00:00:00Z"
+  },
+  // Usuario ID 4 (Carla López - Admin)
+  "4": {
+    id: "sub_004",
+    usuario_id: "4",
+    plan_id: "plan_004",
+    plan: mockPlanes[3], // Plan Anual
+    sucursal_origen_id: "suc_003",
+    fecha_inicio: "2024-11-01T00:00:00Z",
+    fecha_vencimiento: "2025-11-01T00:00:00Z",
+    estado: "activa",
+    pago_id: "pay_004",
+    metadata: {
+      auto_renovacion: true,
+      metodo_pago_preferido: "credit_card",
+      notas: "Admin con plan completo"
+    },
+    historial_renovaciones: [
+      {
+        fecha: "2024-11-01T00:00:00Z",
+        pago_id: "pay_004",
+        monto: 840.00
+      }
+    ],
+    created_at: "2024-11-01T00:00:00Z",
+    updated_at: "2024-11-01T00:00:00Z"
+  },
+  // Usuario ID 5 (David Santos)
+  "5": {
+    id: "sub_005",
+    usuario_id: "5",
+    plan_id: "plan_002",
+    plan: mockPlanes[1], // Plan Premium
+    sucursal_origen_id: "suc_001",
+    fecha_inicio: "2025-01-01T00:00:00Z",
+    fecha_vencimiento: "2025-02-01T00:00:00Z",
+    estado: "activa",
+    pago_id: "pay_005",
+    metadata: {
+      auto_renovacion: true,
+      metodo_pago_preferido: "credit_card",
+      notas: "Cliente premium desde enero 2025"
+    },
+    historial_renovaciones: [
+      {
+        fecha: "2025-01-01T00:00:00Z",
+        pago_id: "pay_005",
+        monto: 100.00
+      }
+    ],
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z"
+  },
+  // Usuario ID 6 (Elena Martín)
+  "6": {
+    id: "sub_006",
+    usuario_id: "6",
+    plan_id: "plan_001",
+    plan: mockPlanes[0], // Plan Básico
+    sucursal_origen_id: "suc_002",
+    fecha_inicio: "2025-01-20T00:00:00Z",
+    fecha_vencimiento: "2025-02-20T00:00:00Z",
+    estado: "activa",
+    pago_id: "pay_006",
+    metadata: {
+      auto_renovacion: false,
+      metodo_pago_preferido: "cash"
+    },
+    historial_renovaciones: [
+      {
+        fecha: "2025-01-20T00:00:00Z",
+        pago_id: "pay_006",
+        monto: 50.00
+      }
+    ],
+    created_at: "2025-01-20T00:00:00Z",
+    updated_at: "2025-01-20T00:00:00Z"
   }
 };
 
@@ -143,6 +270,15 @@ export const mockSucursales = [
   }
 ];
 
+// Inicializar suscripciones en localStorage si no existen
+export const initializeMockData = () => {
+  const localSubs = localStorage.getItem('mockSuscripciones');
+  if (!localSubs) {
+    // Primera vez, guardar las suscripciones mock en localStorage
+    localStorage.setItem('mockSuscripciones', JSON.stringify(mockSuscripciones));
+  }
+};
+
 // Funciones helper para obtener mock data
 
 export const getMockPlanById = (planId) => {
@@ -150,6 +286,20 @@ export const getMockPlanById = (planId) => {
 };
 
 export const getMockSuscripcionByUserId = (userId) => {
+  // Primero intentar obtener de localStorage (para suscripciones creadas dinámicamente)
+  const localSubs = localStorage.getItem('mockSuscripciones');
+  if (localSubs) {
+    try {
+      const parsedSubs = JSON.parse(localSubs);
+      if (parsedSubs[userId]) {
+        return parsedSubs[userId];
+      }
+    } catch (e) {
+      console.error('Error parsing localStorage subscriptions:', e);
+    }
+  }
+
+  // Si no está en localStorage, usar el mock predefinido
   return mockSuscripciones[userId] || null;
 };
 
@@ -192,8 +342,18 @@ export const createMockSuscripcion = async (userId, planId) => {
     updated_at: now.toISOString()
   };
 
-  // Guardar en el mock storage
+  // Guardar en memoria
   mockSuscripciones[userId] = newSub;
+
+  // Guardar también en localStorage para persistencia
+  try {
+    const localSubs = localStorage.getItem('mockSuscripciones');
+    const subs = localSubs ? JSON.parse(localSubs) : {};
+    subs[userId] = newSub;
+    localStorage.setItem('mockSuscripciones', JSON.stringify(subs));
+  } catch (e) {
+    console.error('Error saving subscription to localStorage:', e);
+  }
 
   return newSub;
 };
@@ -206,5 +366,6 @@ export default {
   getMockSuscripcionByUserId,
   getMockSucursalById,
   mockApiDelay,
-  createMockSuscripcion
+  createMockSuscripcion,
+  initializeMockData
 };

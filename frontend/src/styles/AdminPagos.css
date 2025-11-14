@@ -167,6 +167,26 @@
     display: inline-block;
 }
 
+.estado-completado {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.estado-pendiente {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.estado-fallido {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.estado-reembolsado {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
 .fecha-cell {
     color: #666;
     font-size: 0.95rem;
@@ -224,4 +244,56 @@
 .section-header h3 {
     font-size: 1.5rem;
     color: #333;
+}
+
+/* Estilos para acciones de pagos */
+.acciones-cell {
+    text-align: center;
+}
+
+.acciones-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.btn-aprobar {
+    padding: 0.5rem 1rem;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-aprobar:hover {
+    background: #45a049;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-rechazar {
+    padding: 0.5rem 1rem;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-rechazar:hover {
+    background: #da190b;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.no-acciones {
+    color: #999;
+    font-style: italic;
 }

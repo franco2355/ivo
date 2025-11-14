@@ -41,7 +41,7 @@ const Login = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    username_or_email: username.trim(),
+                    username: username.trim(),
                     password: password
                 })
             });
@@ -49,12 +49,12 @@ const Login = () => {
             if (response.ok) {
                 const data = await response.json();
 
-                if (!data.token) {
+                if (!data.access_token) {
                     setError("No se recibió ningún token del servidor");
                     return;
                 }
-                
-                storeUserSession(data.token)
+
+                storeUserSession(data.access_token)
                 
                 navigate("/");
             } else {

@@ -20,24 +20,57 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
+            console.log('[Dashboard] Cargando datos para usuario:', userId);
 
             // Obtener suscripción (mock)
             const subData = getMockSuscripcionByUserId(userId);
             setSuscripcion(subData);
 
-            // Obtener inscripciones (activities-api)
+            // Obtener inscripciones del usuario (activities-api)
             try {
-                const inscResponse = await fetch(ACTIVITIES_API.inscripciones, {
+                console.log('[Dashboard] Cargando inscripciones...');
+                const inscResponse = await fetch(ACTIVITIES_API.inscripcionesByUsuario(userId), {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
                     }
                 });
+
+                console.log('[Dashboard] Inscripciones response:', inscResponse.status);
+
                 if (inscResponse.ok) {
                     const inscData = await inscResponse.json();
-                    setInscripciones(inscData.filter(i => i.is_activa));
+                    console.log('[Dashboard] Inscripciones recibidas:', inscData);
+
+                    // Filtrar solo activas
+                    const inscActivas = inscData.filter(i => i.is_activa);
+                    console.log('[Dashboard] Inscripciones activas:', inscActivas.length);
+
+                    // Cargar detalles de cada actividad
+                    const inscConDetalles = await Promise.all(
+                        inscActivas.map(async (insc) => {
+                            try {
+                                const actResponse = await fetch(
+                                    ACTIVITIES_API.actividadById(insc.id_actividad)
+                                );
+                                if (actResponse.ok) {
+                                    const actividad = await actResponse.json();
+                                    return {
+                                        ...insc,
+                                        actividad: actividad // Agregar detalles de la actividad
+                                    };
+                                }
+                            } catch (err) {
+                                console.error(`Error cargando actividad ${insc.id_actividad}:`, err);
+                            }
+                            return insc; // Si falla, devolver solo la inscripción
+                        })
+                    );
+
+                    setInscripciones(inscConDetalles);
+                    console.log('[Dashboard] ✅ Inscripciones con detalles:', inscConDetalles.length);
                 }
             } catch (error) {
-                console.error("Error al cargar inscripciones:", error);
+                console.error("[Dashboard] ❌ Error al cargar inscripciones:", error);
             }
 
             // Obtener pagos recientes (payments-api)
@@ -194,9 +227,15 @@ const Dashboard = () => {
                                     <div className="actividad-mini-info">
                                         <span className="actividad-icono">🏋️</span>
                                         <div>
-                                            <span className="actividad-nombre">Actividad #{insc.id_actividad}</span>
+                                            <span className="actividad-nombre">
+                                                {insc.actividad?.titulo || `Actividad #${insc.id_actividad}`}
+                                            </span>
                                             <span className="actividad-fecha">
-                                                Inscrito: {new Date(insc.fecha_inscripcion).toLocaleDateString('es-AR')}
+                                                {insc.actividad?.dia && insc.actividad?.hora_inicio ? (
+                                                    `${insc.actividad.dia} ${insc.actividad.hora_inicio}`
+                                                ) : (
+                                                    `Inscrito: ${new Date(insc.fecha_inscripcion).toLocaleDateString('es-AR')}`
+                                                )}
                                             </span>
                                         </div>
                                     </div>

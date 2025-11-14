@@ -51,6 +51,17 @@ func (c *PaymentController) GetPayment(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, payment)
 }
 
+// GetAllPayments obtiene todos los pagos
+func (c *PaymentController) GetAllPayments(ctx *gin.Context) {
+	payments, err := c.service.GetAllPayments(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, payments)
+}
+
 // GetPaymentsByUser obtiene todos los pagos de un usuario
 func (c *PaymentController) GetPaymentsByUser(ctx *gin.Context) {
 	userID := ctx.Param("user_id")

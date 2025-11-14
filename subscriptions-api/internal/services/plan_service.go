@@ -122,6 +122,87 @@ func (s *PlanService) ListPlans(ctx context.Context, query dtos.ListPlansQuery) 
 	}, nil
 }
 
+// UpdatePlan - Actualiza un plan existente
+func (s *PlanService) UpdatePlan(ctx context.Context, id string, req dtos.UpdatePlanRequest) (*dtos.PlanResponse, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Obtener plan existente
+	plan, err := s.planRepo.FindByID(ctx, objID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Actualizar campos si están presentes
+	if req.Nombre != nil {
+		plan.Nombre = *req.Nombre
+	}
+	if req.Descripcion != nil {
+		plan.Descripcion = *req.Descripcion
+	}
+	if req.PrecioMensual != nil {
+		plan.PrecioMensual = *req.PrecioMensual
+	}
+	if req.TipoAcceso != nil {
+		plan.TipoAcceso = *req.TipoAcceso
+	}
+	if req.DuracionDias != nil {
+		plan.DuracionDias = *req.DuracionDias
+	}
+	if req.Activo != nil {
+		plan.Activo = *req.Activo
+	}
+	if req.ActividadesPermitidas != nil {
+		plan.ActividadesPermitidas = *req.ActividadesPermitidas
+	}
+
+	plan.UpdatedAt = time.Now()
+
+	// Guardar cambios
+	if err := s.planRepo.Update(ctx, objID, plan); err != nil {
+		return nil, err
+	}
+
+	return s.mapPlanToResponse(plan), nil
+}
+
+// DeletePlan - Elimina un plan
+func (s *PlanService) DeletePlan(ctx context.Context, id string) error {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	return s.planRepo.Delete(ctx, objID)
+}
+
+// TogglePlanStatus - Activa o desactiva un plan
+func (s *PlanService) TogglePlanStatus(ctx context.Context, id string, activo bool) (*dtos.PlanResponse, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Obtener plan existente
+	plan, err := s.planRepo.FindByID(ctx, objID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Actualizar estado
+	plan.Activo = activo
+	plan.UpdatedAt = time.Now()
+
+	// Guardar cambios
+	if err := s.planRepo.Update(ctx, objID, plan); err != nil {
+		return nil, err
+	}
+
+	return s.mapPlanToResponse(plan), nil
+}
+
 // mapPlanToResponse - Helper para mapear entidad a DTO
 func (s *PlanService) mapPlanToResponse(plan *entities.Plan) *dtos.PlanResponse {
 	return &dtos.PlanResponse{

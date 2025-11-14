@@ -48,6 +48,21 @@ func (r *PaymentRepositoryMongo) FindByID(ctx context.Context, id primitive.Obje
 	return &payment, nil
 }
 
+func (r *PaymentRepositoryMongo) FindAll(ctx context.Context) ([]*entities.Payment, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, fmt.Errorf("error al buscar todos los pagos: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var payments []*entities.Payment
+	if err := cursor.All(ctx, &payments); err != nil {
+		return nil, fmt.Errorf("error al decodificar pagos: %w", err)
+	}
+
+	return payments, nil
+}
+
 func (r *PaymentRepositoryMongo) FindByUser(ctx context.Context, userID string) ([]*entities.Payment, error) {
 	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID})
 	if err != nil {
