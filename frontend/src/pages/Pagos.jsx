@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PAYMENTS_API } from '../config/api';
+import {
+    getPaymentStatusBadgeClass,
+    getPaymentStatusLabel,
+    normalizePaymentStatus,
+} from '../utils/paymentStatus';
 import '../styles/Pagos.css';
 
 const Pagos = () => {
@@ -25,7 +30,13 @@ const Pagos = () => {
 
             const data = await response.json();
             console.log("Pagos cargados:", data);
-            setPagos(data);
+            const pagosNormalizados = data.map((pago) => ({
+                ...pago,
+                status: normalizePaymentStatus(
+                    pago.status ?? pago.estado ?? pago.payment_status
+                )
+            }));
+            setPagos(pagosNormalizados);
         } catch (error) {
             console.error("Error al cargar pagos:", error);
             // Si falla la API, mostrar array vacío
@@ -35,35 +46,9 @@ const Pagos = () => {
         }
     };
 
-    const getEstadoBadgeClass = (status) => {
-        switch (status) {
-            case 'completed':
-                return 'estado-completado';
-            case 'pending':
-                return 'estado-pendiente';
-            case 'failed':
-                return 'estado-fallido';
-            case 'refunded':
-                return 'estado-reembolsado';
-            default:
-                return '';
-        }
-    };
+    const getEstadoBadgeClass = (status) => getPaymentStatusBadgeClass(status);
 
-    const getEstadoTexto = (status) => {
-        switch (status) {
-            case 'completed':
-                return 'Completado';
-            case 'pending':
-                return 'Pendiente';
-            case 'failed':
-                return 'Fallido';
-            case 'refunded':
-                return 'Reembolsado';
-            default:
-                return status;
-        }
-    };
+    const getEstadoTexto = (status) => getPaymentStatusLabel(status);
 
     const getMetodoPagoIcono = (metodo) => {
         switch (metodo) {

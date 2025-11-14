@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMockSuscripcionByUserId } from '../data/mockData';
 import { ACTIVITIES_API, PAYMENTS_API } from '../config/api';
+import {
+    getPaymentStatusBadgeClass,
+    getPaymentStatusIcon,
+    getPaymentStatusLabel,
+    normalizePaymentStatus,
+} from '../utils/paymentStatus';
 import '../styles/Dashboard.css';
 
 const Dashboard = () => {
@@ -22,11 +28,19 @@ const Dashboard = () => {
             setLoading(true);
             console.log('[Dashboard] Cargando datos para usuario:', userId);
 
+            if (!userId) {
+                console.warn('[Dashboard] No se encontró usuario en sesión, omitiendo carga.');
+                setSuscripcion(null);
+                setInscripciones([]);
+                setPagosRecientes([]);
+                return;
+            }
+
             // Obtener suscripción (mock)
             const subData = getMockSuscripcionByUserId(userId);
             setSuscripcion(subData);
 
-            // Obtener inscripciones del usuario (activities-api)
+            // Obtener inscripciones del usuario (backend principal)
             try {
                 console.log('[Dashboard] Cargando inscripciones...');
                 const inscResponse = await fetch(ACTIVITIES_API.inscripcionesByUsuario(userId), {
@@ -78,8 +92,14 @@ const Dashboard = () => {
                 const pagosResponse = await fetch(PAYMENTS_API.paymentsByUser(userId));
                 if (pagosResponse.ok) {
                     const pagosData = await pagosResponse.json();
+                    const pagosNormalizados = pagosData.map((pago) => ({
+                        ...pago,
+                        status: normalizePaymentStatus(
+                            pago.status ?? pago.estado ?? pago.payment_status
+                        ),
+                    }));
                     // Tomar solo los últimos 3 pagos
-                    setPagosRecientes(pagosData.slice(0, 3));
+                    setPagosRecientes(pagosNormalizados.slice(0, 3));
                 }
             } catch (error) {
                 console.error("Error al cargar pagos:", error);
@@ -287,8 +307,8 @@ const Dashboard = () => {
                                     </div>
                                     <div className="pago-mini-monto">
                                         <span className="monto">${pago.amount?.toFixed(2)}</span>
-                                        <span className={`estado-pago ${pago.status}`}>
-                                            {pago.status === 'completed' ? '✓' : '⏳'}
+                                        <span className={`estado-pago ${getPaymentStatusBadgeClass(pago.status)}`}>
+                                            {getPaymentStatusIcon(pago.status)} {getPaymentStatusLabel(pago.status)}
                                         </span>
                                     </div>
                                 </div>
