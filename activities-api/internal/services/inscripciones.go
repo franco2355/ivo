@@ -5,6 +5,7 @@ import (
 	"activities-api/internal/repository"
 	"context"
 	"fmt"
+	"sync"
 )
 
 // InscripcionesService define la interfaz del servicio de inscripciones
@@ -46,34 +47,154 @@ func (s *InscripcionesServiceImpl) ListByUser(ctx context.Context, usuarioID uin
 	return responses, nil
 }
 
+// ResultadoValidacion representa el resultado de una validación concurrente
+type ResultadoValidacion struct {
+	Nombre  string
+	Exitoso bool
+	Error   error
+	Datos   interface{}
+}
+
 // Create inscribe a un usuario en una actividad
 // Migrado de backend/services/inscripcion_service.go:44
+// IMPLEMENTA PROCESAMIENTO CONCURRENTE con Go Routines, Channels y WaitGroup
 func (s *InscripcionesServiceImpl) Create(ctx context.Context, usuarioID, actividadID uint) (domain.InscripcionResponse, error) {
-	// TODO: Validación 1 - Validar que el usuario existe (HTTP call a users-api)
+	// PROCESAMIENTO CONCURRENTE - Subdividir validaciones en Go Routines
+	// Crear canal para recibir resultados de las validaciones
+	canalResultados := make(chan ResultadoValidacion, 3)
+
+	// WaitGroup para sincronizar las goroutines
+	var wg sync.WaitGroup
+
+	// Goroutine 1: Validar que la actividad existe
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		actividad, err := s.actividadesRepo.GetByID(ctx, actividadID)
+		if err != nil {
+			canalResultados <- ResultadoValidacion{
+				Nombre:  "actividad",
+				Exitoso: false,
+				Error:   fmt.Errorf("actividad no encontrada: %w", err),
+			}
+			return
+		}
+		canalResultados <- ResultadoValidacion{
+			Nombre:  "actividad",
+			Exitoso: true,
+			Datos:   actividad,
+		}
+	}()
+
+	// Goroutine 2: Validar que el usuario no tenga inscripciones duplicadas
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		inscripciones, err := s.inscripcionesRepo.ListByUser(ctx, usuarioID)
+		if err != nil {
+			canalResultados <- ResultadoValidacion{
+				Nombre:  "duplicados",
+				Exitoso: false,
+				Error:   fmt.Errorf("error verificando inscripciones: %w", err),
+			}
+			return
+		}
+
+		// Verificar si ya está inscripto
+		for _, insc := range inscripciones {
+			if insc.ActividadID == actividadID && insc.IsActiva {
+				canalResultados <- ResultadoValidacion{
+					Nombre:  "duplicados",
+					Exitoso: false,
+					Error:   fmt.Errorf("el usuario ya está inscripto a esta actividad"),
+				}
+				return
+			}
+		}
+
+		canalResultados <- ResultadoValidacion{
+			Nombre:  "duplicados",
+			Exitoso: true,
+		}
+	}()
+
+	// Goroutine 3: Calcular disponibilidad de cupos
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		// Esta validación se podría expandir para verificar cupos en tiempo real
+		// o hacer cálculos más complejos
+		inscripcionesActivas, err := s.inscripcionesRepo.ListByUser(ctx, usuarioID)
+		if err != nil {
+			canalResultados <- ResultadoValidacion{
+				Nombre:  "disponibilidad",
+				Exitoso: false,
+				Error:   fmt.Errorf("error verificando disponibilidad: %w", err),
+			}
+			return
+		}
+
+		// Simular cálculo de disponibilidad (cantidad de inscripciones activas del usuario)
+		conteoActivas := 0
+		for _, insc := range inscripcionesActivas {
+			if insc.IsActiva {
+				conteoActivas++
+			}
+		}
+
+		canalResultados <- ResultadoValidacion{
+			Nombre:  "disponibilidad",
+			Exitoso: true,
+			Datos:   conteoActivas,
+		}
+	}()
+
+	// Cerrar el canal cuando todas las goroutines terminen
+	go func() {
+		wg.Wait()
+		close(canalResultados)
+	}()
+
+	// COMUNICACIÓN mediante CHANNEL - Recolectar resultados
+	var actividadValidada *domain.Actividad
+	erroresValidacion := make(map[string]error)
+
+	// Leer resultados del canal
+	for resultado := range canalResultados {
+		if !resultado.Exitoso {
+			erroresValidacion[resultado.Nombre] = resultado.Error
+		} else {
+			// Guardar datos importantes
+			if resultado.Nombre == "actividad" && resultado.Datos != nil {
+				actividad := resultado.Datos.(domain.Actividad)
+				actividadValidada = &actividad
+			}
+		}
+	}
+
+	// Verificar si hubo errores en las validaciones
+	if len(erroresValidacion) > 0 {
+		// Retornar el primer error encontrado
+		for _, err := range erroresValidacion {
+			return domain.InscripcionResponse{}, err
+		}
+	}
+
+	// Validación adicional: verificar que obtuvimos la actividad
+	if actividadValidada == nil {
+		return domain.InscripcionResponse{}, fmt.Errorf("error en validación de actividad")
+	}
+
+	// TODO: Validación HTTP - Validar usuario existe (HTTP call a users-api)
 	// if err := s.validateUserExists(ctx, usuarioID); err != nil {
 	//     return domain.InscripcionResponse{}, fmt.Errorf("usuario inválido: %w", err)
 	// }
 
-	// TODO: Validación 2 - Validar que tiene suscripción activa (HTTP call a subscriptions-api)
+	// TODO: Validación HTTP - Validar suscripción activa (HTTP call a subscriptions-api)
 	// activeSub, err := s.getActiveSubscription(ctx, usuarioID)
 	// if err != nil {
 	//     return domain.InscripcionResponse{}, fmt.Errorf("no tiene suscripción activa: %w", err)
 	// }
-
-	// TODO: Validación 3 - Validar que el plan cubra la actividad
-	// actividad, err := s.actividadesRepo.GetByID(ctx, actividadID)
-	// if err != nil {
-	//     return domain.InscripcionResponse{}, fmt.Errorf("actividad no encontrada: %w", err)
-	// }
-	// if actividad.RequierePlanPremium && activeSub.Plan.TipoAcceso != "completo" {
-	//     return domain.InscripcionResponse{}, fmt.Errorf("esta actividad requiere plan premium")
-	// }
-
-	// Validar que la actividad existe
-	_, err := s.actividadesRepo.GetByID(ctx, actividadID)
-	if err != nil {
-		return domain.InscripcionResponse{}, fmt.Errorf("actividad no encontrada: %w", err)
-	}
 
 	// Crear inscripción
 	inscripcion := domain.Inscripcion{

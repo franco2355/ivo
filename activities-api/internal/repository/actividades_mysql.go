@@ -66,9 +66,14 @@ func NewMySQLActividadesRepository(cfg config.MySQLConfig) *MySQLActividadesRepo
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
-	// Auto-migration
-	if err := db.AutoMigrate(&dao.Actividad{}, &dao.Sucursal{}); err != nil {
-		log.Fatalf("Error auto-migrating tables: %v", err)
+	// Auto-migration - IMPORTANTE: Primero Sucursal, luego Actividad (por la FK)
+	if err := db.AutoMigrate(&dao.Sucursal{}); err != nil {
+		log.Fatalf("Error auto-migrating Sucursal table: %v", err)
+		return nil
+	}
+
+	if err := db.AutoMigrate(&dao.Actividad{}); err != nil {
+		log.Fatalf("Error auto-migrating Actividad table: %v", err)
 		return nil
 	}
 

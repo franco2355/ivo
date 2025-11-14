@@ -62,7 +62,7 @@ func (s *PlanService) GetPlanByID(ctx context.Context, id string) (*dtos.PlanRes
 	return s.mapPlanToResponse(plan), nil
 }
 
-// ListPlans - Lista planes con filtros
+// ListPlans - Lista planes con filtros y paginación real
 func (s *PlanService) ListPlans(ctx context.Context, query dtos.ListPlansQuery) (*dtos.PaginatedPlansResponse, error) {
 	// Construir filtros
 	filters := make(map[string]interface{})
@@ -70,14 +70,33 @@ func (s *PlanService) ListPlans(ctx context.Context, query dtos.ListPlansQuery) 
 		filters["activo"] = *query.Activo
 	}
 
-	// Obtener planes
-	plansList, err := s.planRepo.FindAll(ctx, filters)
+	// Valores por defecto para paginación
+	page := int64(query.Page)
+	if page < 1 {
+		page = 1
+	}
+	pageSize := int64(query.PageSize)
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	if pageSize > 100 {
+		pageSize = 100 // Límite máximo
+	}
+
+	// Valores por defecto para ordenamiento
+	sortBy := query.SortBy
+	if sortBy == "" {
+		sortBy = "created_at" // Ordenar por fecha de creación por defecto
+	}
+
+	// Obtener total de registros (ANTES de paginar)
+	total, err := s.planRepo.Count(ctx, filters)
 	if err != nil {
 		return nil, err
 	}
 
-	// Obtener total
-	total, err := s.planRepo.Count(ctx, filters)
+	// Obtener planes paginados con PAGINACIÓN REAL
+	plansList, err := s.planRepo.FindAllPaginated(ctx, filters, page, pageSize, sortBy, query.SortDesc)
 	if err != nil {
 		return nil, err
 	}
@@ -88,26 +107,17 @@ func (s *PlanService) ListPlans(ctx context.Context, query dtos.ListPlansQuery) 
 		plans = append(plans, *s.mapPlanToResponse(plan))
 	}
 
-	// Calcular paginación
-	page := query.Page
-	if page < 1 {
-		page = 1
-	}
-	pageSize := query.PageSize
-	if pageSize < 1 {
-		pageSize = 10
-	}
-
-	totalPages := int(total) / pageSize
-	if int(total)%pageSize > 0 {
+	// Calcular total de páginas
+	totalPages := int(total) / int(pageSize)
+	if int(total)%int(pageSize) > 0 {
 		totalPages++
 	}
 
 	return &dtos.PaginatedPlansResponse{
 		Plans:      plans,
 		Total:      int(total),
-		Page:       page,
-		PageSize:   pageSize,
+		Page:       int(page),
+		PageSize:   int(pageSize),
 		TotalPages: totalPages,
 	}, nil
 }

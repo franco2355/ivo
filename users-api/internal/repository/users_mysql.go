@@ -64,11 +64,10 @@ func NewMySQLUsersRepository(cfg config.MySQLConfig) *MySQLUsersRepository {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	// Auto-migration (crea/actualiza tabla)
-	if err := db.AutoMigrate(&dao.User{}); err != nil {
+	/*if err := db.AutoMigrate(&dao.User{}); err != nil {
 		log.Fatalf("Error auto-migrating User table: %v", err)
 		return nil
-	}
-
+	}*/
 	log.Println("✅ Connected to MySQL successfully")
 
 	return &MySQLUsersRepository{
@@ -87,10 +86,9 @@ func (r *MySQLUsersRepository) Create(ctx context.Context, user domain.User) (do
 	if err := r.db.WithContext(ctx).Create(&userDAO).Error; err != nil {
 		// Manejar errores de duplicados (username o email ya existe)
 		if errors.Is(err, gorm.ErrDuplicatedKey) ||
-		   (err.Error() != "" && (
-			   contains(err.Error(), "username") ||
-			   contains(err.Error(), "email") ||
-			   contains(err.Error(), "Duplicate entry"))) {
+			(err.Error() != "" && (contains(err.Error(), "username") ||
+				contains(err.Error(), "email") ||
+				contains(err.Error(), "Duplicate entry"))) {
 			return domain.User{}, errors.New("username or email already exists")
 		}
 		return domain.User{}, fmt.Errorf("error creating user: %w", err)

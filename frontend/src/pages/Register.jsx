@@ -8,6 +8,7 @@ const Register = () => {
         nombre: "",
         apellido: "",
         username: "",
+        email: "",
         password: "",
         confirmPassword: ""
     });
@@ -35,7 +36,7 @@ const Register = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:8080/register', {
+            const response = await fetch("http://localhost:8080/register", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -43,8 +44,9 @@ const Register = () => {
                 body: JSON.stringify({
                     nombre: formData.nombre.trim(),
                     apellido: formData.apellido.trim(),
-                    username: formData.username.trim(),
-                    password: formData.password
+                    username: formData.username.trim(), 
+                    email: formData.email.trim(),       
+                    password: formData.password.trim() 
                 })
             });
 
@@ -111,6 +113,17 @@ const Register = () => {
                         name="username"
                         placeholder="Usuario"
                         value={formData.username}
+                        onChange={handleChange}
+                        disabled={isLoading}
+                        required
+                    />
+                </div>
+                <div className="input-group">
+                    <input
+                        type="text"
+                        name="email"
+                        placeholder="email"
+                        value={formData.email}
                         onChange={handleChange}
                         disabled={isLoading}
                         required
