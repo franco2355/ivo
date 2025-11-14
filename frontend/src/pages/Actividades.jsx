@@ -20,25 +20,83 @@ const Actividades = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetchActividades();
         fetchInscripciones();
     }, []);
 
     useEffect(() => {
-        filtrarActividades();
-    }, [filtros, actividades]);
+        searchActividades();
+    }, [filtros]);
 
-    const fetchActividades = async () => {
+    const searchActividades = async () => {
         try {
-            const response = await fetch("http://localhost:8080/actividades");
+            // Construir query params para search-api
+            const params = new URLSearchParams();
+
+            if (filtros.busqueda) {
+                params.append('q', filtros.busqueda);
+            }
+
+            params.append('type', 'activity');
+            params.append('page', '1');
+            params.append('page_size', '100');
+
+            // Construir URL con filtros
+            let url = `http://localhost:8084/search?${params.toString()}`;
+
+            console.log("Searching activities:", url);
+            const response = await fetch(url);
+
             if (response.ok) {
                 const data = await response.json();
-                console.log("Actividades cargadas:", data);
-                setActividades(data);
-                setActividadesFiltradas(data);
+                console.log("Search results:", data);
+
+                // Aplicar filtros adicionales del lado del cliente (categoría, día, solo inscripto)
+                let results = data.results || [];
+
+                // Filtrar por categoría
+                if (filtros.categoria) {
+                    const categoriaLower = filtros.categoria.toLowerCase();
+                    results = results.filter(actividad =>
+                        actividad.categoria && actividad.categoria.toLowerCase().includes(categoriaLower)
+                    );
+                }
+
+                // Filtrar por día
+                if (filtros.dia) {
+                    results = results.filter(actividad =>
+                        actividad.dia && actividad.dia.toLowerCase() === filtros.dia.toLowerCase()
+                    );
+                }
+
+                // Filtrar solo inscripto
+                if (filtros.soloInscripto) {
+                    const idsInscripto = inscripciones.filter(insc => insc.is_activa).map(insc => insc.id_actividad);
+                    results = results.filter(actividad =>
+                        idsInscripto.includes(parseInt(actividad.id))
+                    );
+                }
+
+                // Mapear campos de search-api a formato esperado por el frontend
+                const mappedResults = results.map(doc => ({
+                    id_actividad: parseInt(doc.id),
+                    titulo: doc.titulo,
+                    descripcion: doc.descripcion,
+                    categoria: doc.categoria,
+                    instructor: doc.instructor,
+                    dia: doc.dia,
+                    hora_inicio: doc.horario_inicio,
+                    hora_fin: doc.horario_final,
+                    cupo: doc.cupo_disponible,
+                    lugares: doc.cupo_disponible,
+                    sucursal_nombre: doc.sucursal_nombre,
+                    id_sucursal: doc.sucursal_id
+                }));
+
+                setActividadesFiltradas(mappedResults);
+                setActividades(mappedResults);
             }
         } catch (error) {
-            console.error("Error al cargar actividades:", error);
+            console.error("Error al buscar actividades:", error);
         }
     };
     
@@ -68,44 +126,6 @@ const Actividades = () => {
         }));
     };
 
-    const filtrarActividades = () => {
-        let actividadesFiltradas = [...actividades];
-
-        // Filtrar por búsqueda (título o descripción)
-        if (filtros.busqueda) {
-            const busquedaLower = filtros.busqueda.toLowerCase();
-            actividadesFiltradas = actividadesFiltradas.filter(actividad =>
-                actividad.titulo.toLowerCase().includes(busquedaLower) ||
-                actividad.descripcion.toLowerCase().includes(busquedaLower)
-            );
-        }
-
-        // Filtrar por categoría (ahora como búsqueda de texto)
-        if (filtros.categoria) {
-            const categoriaLower = filtros.categoria.toLowerCase();
-            actividadesFiltradas = actividadesFiltradas.filter(actividad =>
-                actividad.categoria.toLowerCase().includes(categoriaLower)
-            );
-        }
-
-        // Filtrar por día
-        if (filtros.dia) {
-            actividadesFiltradas = actividadesFiltradas.filter(actividad =>
-                actividad.dia.toLowerCase() === filtros.dia.toLowerCase()
-            );
-        }
-
-        // Filtrar solo inscripto
-        if (filtros.soloInscripto) {
-            const idsInscripto = inscripciones.filter(insc => insc.is_activa).map(insc => insc.id_actividad);
-            actividadesFiltradas = actividadesFiltradas.filter(actividad =>
-                idsInscripto.includes(actividad.id_actividad)
-            );
-        }
-
-        setActividadesFiltradas(actividadesFiltradas);
-    };
-
     const handleEnroling = async (actividadId) => {
         if (!isLoggedIn) {
             navigate("/login");
@@ -133,7 +153,7 @@ const Actividades = () => {
             // Actualizar la lista de inscripciones
             fetchInscripciones();
             // Actualizar la lista de actividades para reflejar el cambio en los cupos
-            fetchActividades();
+            searchActividades();
             alert("¡Inscripción exitosa!");
         } catch (error) {
             console.error("Error al inscribirse:", error);
@@ -161,7 +181,7 @@ const Actividades = () => {
                 alert(`Ups! algo salio mal, vuelve a intentarlo mas tarde`);
             }
 
-            fetchActividades();
+            searchActividades();
         } catch (error) {
             alert(`Ups! algo salio mal, vuelve a intentarlo mas tarde`);
             console.error("Error al desinscribir el usuario:", error);
@@ -178,7 +198,7 @@ const Actividades = () => {
     };
 
     const handleSaveEdit = () => {
-        fetchActividades();
+        searchActividades();
     };
 
     const handleEliminar = async (actividad) => {
@@ -200,7 +220,7 @@ const Actividades = () => {
                 });
 
                 if (response.ok) {
-                    fetchActividades();
+                    searchActividades();
                     alert('Actividad eliminada con éxito');
                 } else {
                     const errorData = await response.json().catch(() => ({}));

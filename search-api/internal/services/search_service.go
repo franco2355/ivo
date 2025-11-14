@@ -3,25 +3,47 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 
 	"github.com/yourusername/gym-management/search-api/internal/domain/dtos"
+	"github.com/yourusername/gym-management/search-api/internal/integrations"
+	"github.com/yourusername/gym-management/search-api/internal/repositories"
 )
 
-// SearchService - Servicio de búsqueda con indexación en memoria
-// NOTA: Esta es una implementación en memoria para desarrollo
-// En producción, reemplazar con integración real a Apache Solr
+// SearchService - Servicio de búsqueda con Solr + MySQL fallback
 type SearchService struct {
-	documents map[string]dtos.SearchDocument
-	mu        sync.RWMutex
+	solrClient   *integrations.SolrClient
+	mysqlRepo    *repositories.MySQLSearchRepository
+	useSolr      bool
+	documents    map[string]dtos.SearchDocument // Cache en memoria
+	mu           sync.RWMutex
 }
 
-// NewSearchService - Constructor
-func NewSearchService() *SearchService {
-	return &SearchService{
-		documents: make(map[string]dtos.SearchDocument),
+// NewSearchService - Constructor con Solr + MySQL fallback
+func NewSearchService(solrClient *integrations.SolrClient, mysqlRepo *repositories.MySQLSearchRepository) *SearchService {
+	service := &SearchService{
+		solrClient: solrClient,
+		mysqlRepo:  mysqlRepo,
+		documents:  make(map[string]dtos.SearchDocument),
+		useSolr:    true,
 	}
+
+	// Verificar disponibilidad de Solr
+	if solrClient != nil {
+		if err := solrClient.Ping(); err != nil {
+			log.Printf("⚠️  Solr not available, using MySQL fallback: %v", err)
+			service.useSolr = false
+		} else {
+			log.Println("✅ Solr connected successfully")
+		}
+	} else {
+		log.Println("⚠️  Solr client not configured, using MySQL fallback")
+		service.useSolr = false
+	}
+
+	return service
 }
 
 // IndexDocument indexa un documento
@@ -29,7 +51,40 @@ func (s *SearchService) IndexDocument(doc dtos.SearchDocument) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Indexar en cache local
 	s.documents[doc.ID] = doc
+
+	// Intentar indexar en Solr si está disponible
+	if s.useSolr && s.solrClient != nil {
+		if err := s.solrClient.IndexDocument(doc); err != nil {
+			log.Printf("⚠️  Error indexing in Solr: %v", err)
+			// No retornamos error, seguimos con cache local
+		}
+	}
+
+	return nil
+}
+
+// IndexDocuments indexa múltiples documentos en batch
+func (s *SearchService) IndexDocuments(docs []dtos.SearchDocument) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Indexar en cache local
+	for _, doc := range docs {
+		s.documents[doc.ID] = doc
+	}
+
+	// Intentar indexar en Solr si está disponible
+	if s.useSolr && s.solrClient != nil {
+		if err := s.solrClient.IndexDocuments(docs); err != nil {
+			log.Printf("⚠️  Error batch indexing in Solr: %v", err)
+			// No retornamos error, seguimos con cache local
+		} else {
+			log.Printf("✅ Indexed %d documents in Solr", len(docs))
+		}
+	}
+
 	return nil
 }
 
@@ -38,15 +93,21 @@ func (s *SearchService) DeleteDocument(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Eliminar de cache local
 	delete(s.documents, id)
+
+	// Intentar eliminar de Solr si está disponible
+	if s.useSolr && s.solrClient != nil {
+		if err := s.solrClient.DeleteDocument(id); err != nil {
+			log.Printf("⚠️  Error deleting from Solr: %v", err)
+		}
+	}
+
 	return nil
 }
 
 // Search realiza una búsqueda en los documentos
 func (s *SearchService) Search(req dtos.SearchRequest) (*dtos.SearchResponse, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	// Valores por defecto
 	if req.Page < 1 {
 		req.Page = 1
@@ -54,6 +115,53 @@ func (s *SearchService) Search(req dtos.SearchRequest) (*dtos.SearchResponse, er
 	if req.PageSize < 1 {
 		req.PageSize = 10
 	}
+
+	var results []dtos.SearchDocument
+	var totalCount int
+	var err error
+
+	// Intentar búsqueda en Solr primero
+	if s.useSolr && s.solrClient != nil {
+		results, totalCount, err = s.solrClient.Search(req)
+		if err != nil {
+			log.Printf("⚠️  Solr search failed, falling back to MySQL: %v", err)
+			s.useSolr = false // Desactivar Solr temporalmente
+		} else {
+			log.Printf("✅ Solr search successful: %d results", totalCount)
+		}
+	}
+
+	// Fallback a MySQL si Solr falla o no está disponible
+	if !s.useSolr && s.mysqlRepo != nil {
+		log.Println("🔍 Using MySQL fulltext search")
+		results, totalCount, err = s.mysqlRepo.SearchActivities(req)
+		if err != nil {
+			return nil, fmt.Errorf("MySQL search failed: %w", err)
+		}
+	}
+
+	// Si ambos fallan, usar cache en memoria (último recurso)
+	if results == nil {
+		log.Println("⚠️  Using in-memory cache as last resort")
+		results, totalCount = s.searchInMemory(req)
+	}
+
+	// Calcular paginación
+	totalPages := (totalCount + req.PageSize - 1) / req.PageSize
+
+	return &dtos.SearchResponse{
+		Results:    results,
+		TotalCount: totalCount,
+		Page:       req.Page,
+		PageSize:   req.PageSize,
+		TotalPages: totalPages,
+	}, nil
+}
+
+// searchInMemory - Búsqueda en memoria (último recurso)
+func (s *SearchService) searchInMemory(req dtos.SearchRequest) ([]dtos.SearchDocument, int) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	var results []dtos.SearchDocument
 
@@ -66,8 +174,6 @@ func (s *SearchService) Search(req dtos.SearchRequest) (*dtos.SearchResponse, er
 
 	// Calcular paginación
 	totalCount := len(results)
-	totalPages := (totalCount + req.PageSize - 1) / req.PageSize
-
 	start := (req.Page - 1) * req.PageSize
 	end := start + req.PageSize
 
@@ -80,13 +186,7 @@ func (s *SearchService) Search(req dtos.SearchRequest) (*dtos.SearchResponse, er
 		results = results[start:end]
 	}
 
-	return &dtos.SearchResponse{
-		Results:    results,
-		TotalCount: totalCount,
-		Page:       req.Page,
-		PageSize:   req.PageSize,
-		TotalPages: totalPages,
-	}, nil
+	return results, totalCount
 }
 
 // matchesSearch verifica si un documento coincide con los criterios de búsqueda

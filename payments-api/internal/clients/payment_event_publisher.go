@@ -21,12 +21,13 @@ func NewPaymentEventPublisher(rabbitMQ *RabbitMQPublisher) *PaymentEventPublishe
 	}
 }
 
-// PublishPaymentCreated - Publica evento cuando un pago es creado
+// PublishPaymentCreated - Publica evento cuando un pago es creado (estado: pending)
 func (p *PaymentEventPublisherRabbitMQ) PublishPaymentCreated(ctx context.Context, payment *entities.Payment) error {
 	event := PaymentEvent{
 		Action:         "payment.created",
 		Type:           "payment",
 		PaymentID:      payment.ID.Hex(),
+		Status:         payment.Status, // "pending" cuando se crea
 		EntityType:     payment.EntityType,
 		EntityID:       payment.EntityID,
 		UserID:         payment.UserID,
@@ -47,6 +48,7 @@ func (p *PaymentEventPublisherRabbitMQ) PublishPaymentCompleted(ctx context.Cont
 		Action:         "payment.completed",
 		Type:           "payment",
 		PaymentID:      payment.ID.Hex(),
+		Status:         "completed", // Estado actualizado
 		EntityType:     payment.EntityType,     // "subscription", "inscription"
 		EntityID:       payment.EntityID,       // ID de la suscripción o inscripción
 		UserID:         payment.UserID,
@@ -67,6 +69,7 @@ func (p *PaymentEventPublisherRabbitMQ) PublishPaymentFailed(ctx context.Context
 		Action:         "payment.failed",
 		Type:           "payment",
 		PaymentID:      payment.ID.Hex(),
+		Status:         "failed", // Estado actualizado
 		EntityType:     payment.EntityType,
 		EntityID:       payment.EntityID,
 		UserID:         payment.UserID,

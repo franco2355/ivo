@@ -43,6 +43,20 @@ func (mp *MercadoPagoGateway) GetName() string {
 // Endpoint: POST /checkout/preferences
 // Docs: https://www.mercadopago.com.ar/developers/es/reference/preferences/_checkout_preferences/post
 func (mp *MercadoPagoGateway) CreatePayment(ctx context.Context, request PaymentRequest) (*PaymentResult, error) {
+	// Asegurar que haya un callback URL
+	callbackURL := request.CallbackURL
+	if callbackURL == "" {
+		callbackURL = "http://localhost:5173" // URL por defecto
+	}
+	fmt.Printf("[MP Gateway] CallbackURL original: '%s', final: '%s'\n", request.CallbackURL, callbackURL)
+
+	// Asegurar que haya un email
+	customerEmail := request.CustomerEmail
+	if customerEmail == "" {
+		customerEmail = "test@example.com" // Email por defecto
+	}
+	fmt.Printf("[MP Gateway] Email original: '%s', final: '%s'\n", request.CustomerEmail, customerEmail)
+
 	// Construir payload de Checkout Pro
 	mpPayload := map[string]interface{}{
 		"items": []map[string]interface{}{
@@ -54,14 +68,24 @@ func (mp *MercadoPagoGateway) CreatePayment(ctx context.Context, request Payment
 			},
 		},
 		"payer": map[string]interface{}{
-			"email": request.CustomerEmail,
+			"email": customerEmail,
 		},
 		"back_urls": map[string]interface{}{
-			"success": request.CallbackURL + "?status=success",
-			"failure": request.CallbackURL + "?status=failure",
-			"pending": request.CallbackURL + "?status=pending",
+			"success": callbackURL + "?status=success",
+			"failure": callbackURL + "?status=failure",
+			"pending": callbackURL + "?status=pending",
 		},
-		"auto_return": "approved", // Redirección automática cuando se aprueba
+		// Configuración de medios de pago (habilitar todos)
+		"payment_methods": map[string]interface{}{
+			"excluded_payment_methods": []interface{}{},
+			"excluded_payment_types":   []interface{}{},
+			"default_installments":     1,
+			"installments":             12, // Permitir hasta 12 cuotas
+		},
+		// Modo binario: finaliza el pago inmediatamente
+		"binary_mode": true,
+		// Comentado auto_return para evitar error con cuentas que no lo tienen habilitado
+		// "auto_return": "approved",
 	}
 
 	// Agregar external_reference si existe
@@ -78,6 +102,10 @@ func (mp *MercadoPagoGateway) CreatePayment(ctx context.Context, request Payment
 	if request.Metadata != nil {
 		mpPayload["metadata"] = request.Metadata
 	}
+
+	// Debug: Imprimir payload FINAL
+	payloadJSON, _ := json.MarshalIndent(mpPayload, "", "  ")
+	fmt.Printf("[MP Gateway] 📤 Payload FINAL a enviar a Mercado Pago:\n%s\n", string(payloadJSON))
 
 	// Hacer request HTTP
 	respData, err := mp.doRequest(ctx, "POST", "/checkout/preferences", mpPayload)
@@ -248,6 +276,9 @@ func (mp *MercadoPagoGateway) doRequest(ctx context.Context, method, endpoint st
 
 	// Verificar código de estado
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		fmt.Printf("[MP Gateway] ❌ ERROR Response status: %d\n", resp.StatusCode)
+		fmt.Printf("[MP Gateway] ❌ ERROR Response body: %s\n", string(body))
+		fmt.Printf("[MP Gateway] ❌ ERROR Request URL: %s\n", url)
 		return nil, fmt.Errorf("Mercado Pago error (status %d): %s", resp.StatusCode, string(body))
 	}
 
