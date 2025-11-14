@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMockSuscripcionByUserId } from '../data/mockData';
-import { ACTIVITIES_API, PAYMENTS_API } from '../config/api';
+import { PAYMENTS_API, USERS_API } from '../config/api';
+import { normalizePaymentStatus } from '../utils/paymentStatus';
 import '../styles/Dashboard.css';
 
 const Dashboard = () => {
@@ -22,14 +23,22 @@ const Dashboard = () => {
             setLoading(true);
             console.log('[Dashboard] Cargando datos para usuario:', userId);
 
+            if (!userId) {
+                console.warn('[Dashboard] No se encontró usuario en sesión, omitiendo carga.');
+                setSuscripcion(null);
+                setInscripciones([]);
+                setPagosRecientes([]);
+                return;
+            }
+
             // Obtener suscripción (mock)
             const subData = getMockSuscripcionByUserId(userId);
             setSuscripcion(subData);
 
-            // Obtener inscripciones del usuario (activities-api)
+            // Obtener inscripciones del usuario (backend principal)
             try {
                 console.log('[Dashboard] Cargando inscripciones...');
-                const inscResponse = await fetch(ACTIVITIES_API.inscripcionesByUsuario(userId), {
+                const inscResponse = await fetch(`${USERS_API.base}/inscripciones`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
                     }
@@ -50,7 +59,7 @@ const Dashboard = () => {
                         inscActivas.map(async (insc) => {
                             try {
                                 const actResponse = await fetch(
-                                    ACTIVITIES_API.actividadById(insc.id_actividad)
+                                    `${USERS_API.base}/actividades/${insc.id_actividad}`
                                 );
                                 if (actResponse.ok) {
                                     const actividad = await actResponse.json();
@@ -78,8 +87,12 @@ const Dashboard = () => {
                 const pagosResponse = await fetch(PAYMENTS_API.paymentsByUser(userId));
                 if (pagosResponse.ok) {
                     const pagosData = await pagosResponse.json();
+                    const pagosNormalizados = pagosData.map((pago) => ({
+                        ...pago,
+                        status: normalizePaymentStatus(pago.status)
+                    }));
                     // Tomar solo los últimos 3 pagos
-                    setPagosRecientes(pagosData.slice(0, 3));
+                    setPagosRecientes(pagosNormalizados.slice(0, 3));
                 }
             } catch (error) {
                 console.error("Error al cargar pagos:", error);
