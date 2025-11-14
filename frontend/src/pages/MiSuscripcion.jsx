@@ -1,50 +1,85 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMockSuscripcionByUserId, mockApiDelay } from '../data/mockData';
+import { SUBSCRIPTIONS_API } from '../config/api';
 import '../styles/MiSuscripcion.css';
 
 const MiSuscripcion = () => {
-    const [suscripcion, setSuscripcion] = useState(null);
+    const [suscripciones, setSuscripciones] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const userId = localStorage.getItem("idUsuario");
 
     useEffect(() => {
-        const fetchSuscripcion = async () => {
+        const fetchSuscripciones = async () => {
             try {
-                await mockApiDelay();
-                const sub = getMockSuscripcionByUserId(userId);
-                setSuscripcion(sub);
+                const token = localStorage.getItem('access_token');
+                console.log('[MiSuscripcion] Cargando suscripciones del usuario:', userId);
+
+                const response = await fetch(SUBSCRIPTIONS_API.subscriptionsByUser(userId), {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                console.log('[MiSuscripcion] Response:', response.status);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('[MiSuscripcion] Suscripciones recibidas:', data);
+                    setSuscripciones(data);
+                } else {
+                    console.error('[MiSuscripcion] Error al cargar suscripciones');
+                    setSuscripciones([]);
+                }
             } catch (error) {
-                console.error("Error al cargar suscripción:", error);
+                console.error("[MiSuscripcion] Error al cargar suscripciones:", error);
+                setSuscripciones([]);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchSuscripcion();
+        fetchSuscripciones();
     }, [userId]);
 
-    const handleCancelar = async () => {
-        if (!window.confirm("¿Estás seguro de que deseas cancelar tu suscripción?")) {
+    const handleCancelar = async (subscriptionId) => {
+        if (!window.confirm("¿Estás seguro de que deseas cancelar esta suscripción?")) {
             return;
         }
 
         try {
-            await mockApiDelay();
-            // Aquí iría la llamada real a la API cuando esté lista
-            // await fetch(SUBSCRIPTIONS_API.subscriptionById(suscripcion.id), { method: 'DELETE' })
-            alert("Suscripción cancelada exitosamente");
-            setSuscripcion({ ...suscripcion, estado: "cancelada" });
+            const token = localStorage.getItem('access_token');
+            const response = await fetch(SUBSCRIPTIONS_API.subscriptionById(subscriptionId), {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                alert("Suscripción cancelada exitosamente");
+                // Recargar suscripciones
+                const newResponse = await fetch(SUBSCRIPTIONS_API.subscriptionsByUser(userId), {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (newResponse.ok) {
+                    const data = await newResponse.json();
+                    setSuscripciones(data);
+                }
+            } else {
+                alert("Error al cancelar la suscripción");
+            }
         } catch (error) {
             console.error("Error al cancelar suscripción:", error);
             alert("Error al cancelar la suscripción");
         }
     };
 
-    const handleRenovar = () => {
-        if (suscripcion && suscripcion.plan) {
-            navigate(`/checkout/${suscripcion.plan.id}`);
+    const handleRenovar = (planId) => {
+        if (planId) {
+            navigate(`/checkout/${planId}`);
         }
     };
 
@@ -74,17 +109,17 @@ const MiSuscripcion = () => {
     if (loading) {
         return (
             <div className="mi-suscripcion-container">
-                <div className="loading-message">Cargando suscripción...</div>
+                <div className="loading-message">Cargando suscripciones...</div>
             </div>
         );
     }
 
-    if (!suscripcion) {
+    if (!suscripciones || suscripciones.length === 0) {
         return (
             <div className="mi-suscripcion-container">
                 <div className="no-suscripcion">
                     <div className="no-suscripcion-icon">📋</div>
-                    <h2>No tenés una suscripción activa</h2>
+                    <h2>No tenés suscripciones</h2>
                     <p>Suscribite a uno de nuestros planes para acceder a todas las actividades</p>
                     <button
                         className="btn-ver-planes"
@@ -97,17 +132,20 @@ const MiSuscripcion = () => {
         );
     }
 
-    const diasRestantes = getDiasRestantes(suscripcion.fecha_vencimiento);
-    const proximoVencer = diasRestantes <= 7 && diasRestantes > 0;
-
     return (
         <div className="mi-suscripcion-container">
             <div className="suscripcion-header">
-                <h1>Mi Suscripción</h1>
+                <h1>Mis Suscripciones</h1>
+                <p>Total: {suscripciones.length} suscripción{suscripciones.length !== 1 ? 'es' : ''}</p>
             </div>
 
             <div className="suscripcion-content">
-                <div className="suscripcion-card">
+                {suscripciones.map((suscripcion) => {
+                    const diasRestantes = getDiasRestantes(suscripcion.fecha_vencimiento);
+                    const proximoVencer = diasRestantes <= 7 && diasRestantes > 0;
+
+                    return (
+                <div key={suscripcion.id} className="suscripcion-card">
                     <div className="suscripcion-plan-header" style={{ borderTopColor: suscripcion.plan?.color }}>
                         <div className="plan-info">
                             <h2>{suscripcion.plan?.nombre || "Plan"}</h2>
@@ -170,10 +208,10 @@ const MiSuscripcion = () => {
                     <div className="suscripcion-acciones">
                         {suscripcion.estado === 'activa' && (
                             <>
-                                <button className="btn-renovar" onClick={handleRenovar}>
+                                <button className="btn-renovar" onClick={() => handleRenovar(suscripcion.plan_id)}>
                                     Renovar Suscripción
                                 </button>
-                                <button className="btn-cancelar" onClick={handleCancelar}>
+                                <button className="btn-cancelar" onClick={() => handleCancelar(suscripcion.id)}>
                                     Cancelar Suscripción
                                 </button>
                             </>
@@ -189,24 +227,26 @@ const MiSuscripcion = () => {
                             </button>
                         )}
                     </div>
-                </div>
 
-                {suscripcion.historial_renovaciones && suscripcion.historial_renovaciones.length > 0 && (
-                    <div className="historial-renovaciones">
-                        <h3>Historial de Renovaciones</h3>
-                        <div className="renovaciones-lista">
-                            {suscripcion.historial_renovaciones.map((renovacion, index) => (
-                                <div key={index} className="renovacion-item">
-                                    <div className="renovacion-fecha">
-                                        {new Date(renovacion.fecha).toLocaleDateString('es-AR')}
+                    {suscripcion.historial_renovaciones && suscripcion.historial_renovaciones.length > 0 && (
+                        <div className="historial-renovaciones">
+                            <h3>Historial de Renovaciones</h3>
+                            <div className="renovaciones-lista">
+                                {suscripcion.historial_renovaciones.map((renovacion, index) => (
+                                    <div key={index} className="renovacion-item">
+                                        <div className="renovacion-fecha">
+                                            {new Date(renovacion.fecha).toLocaleDateString('es-AR')}
+                                        </div>
+                                        <div className="renovacion-monto">${renovacion.monto.toFixed(2)}</div>
+                                        <div className="renovacion-pago">ID: {renovacion.pago_id}</div>
                                     </div>
-                                    <div className="renovacion-monto">${renovacion.monto.toFixed(2)}</div>
-                                    <div className="renovacion-pago">ID: {renovacion.pago_id}</div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
+                );
+                })}
             </div>
         </div>
     );

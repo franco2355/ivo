@@ -29,7 +29,10 @@ func main() {
 	subscriptionRepo := dao.NewSubscriptionRepositoryMongo(mongoDB.Database)
 
 	// 4. Inicializar Clients (Servicios Externos) con DI
-	usersValidator := clients.NewUsersAPIValidator(cfg.UsersAPIURL)
+	// Usamos NullUserValidator porque el usuario ya está validado por JWT
+	// en el middleware de autenticación
+	usersValidator := clients.NewNullUserValidator()
+	log.Println("✅ NullUserValidator inicializado (validación delegada a JWT)")
 
 	// Intentar conectar a RabbitMQ, si falla usar NullEventPublisher
 	var eventPublisher services.EventPublisher
@@ -109,6 +112,7 @@ func registerRoutes(
 		subscriptionRoutes.POST("", subscriptionController.CreateSubscription)
 		subscriptionRoutes.GET("/:id", subscriptionController.GetSubscription)
 		subscriptionRoutes.GET("/active/:user_id", subscriptionController.GetActiveSubscriptionByUser)
+		subscriptionRoutes.GET("/user/:user_id", subscriptionController.GetSubscriptionsByUser)
 		subscriptionRoutes.PATCH("/:id/status", subscriptionController.UpdateSubscriptionStatus)
 		subscriptionRoutes.DELETE("/:id", subscriptionController.CancelSubscription)
 	}

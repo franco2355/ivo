@@ -66,6 +66,19 @@ func (c *SubscriptionController) GetActiveSubscriptionByUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, subscription)
 }
 
+// GetSubscriptionsByUser - GET /subscriptions/user/:user_id
+func (c *SubscriptionController) GetSubscriptionsByUser(ctx *gin.Context) {
+	userID := ctx.Param("user_id")
+
+	subscriptions, err := c.subscriptionService.GetSubscriptionsByUserID(ctx.Request.Context(), userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, subscriptions)
+}
+
 // UpdateSubscriptionStatus - PATCH /subscriptions/:id/status
 func (c *SubscriptionController) UpdateSubscriptionStatus(ctx *gin.Context) {
 	id := ctx.Param("id")

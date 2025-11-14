@@ -33,6 +33,7 @@ export const SUBSCRIPTIONS_API = {
   subscriptions: `${API_BASE_URLS.subscriptions}/subscriptions`,
   subscriptionById: (id) => `${API_BASE_URLS.subscriptions}/subscriptions/${id}`,
   activeSubscription: (userId) => `${API_BASE_URLS.subscriptions}/subscriptions/active/${userId}`,
+  subscriptionsByUser: (userId) => `${API_BASE_URLS.subscriptions}/subscriptions/user/${userId}`,
   updateStatus: (id) => `${API_BASE_URLS.subscriptions}/subscriptions/${id}/status`
 };
 

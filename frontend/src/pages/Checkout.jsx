@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getMockPlanById, createMockSuscripcion } from '../data/mockData';
-import { PAYMENTS_API } from '../config/api';
+import { PAYMENTS_API, SUBSCRIPTIONS_API } from '../config/api';
 import '../styles/Checkout.css';
+
+const API_URL = 'http://localhost:8081';
 
 const Checkout = () => {
     const { planId } = useParams();
@@ -24,16 +25,29 @@ const Checkout = () => {
     useEffect(() => {
         const fetchPlan = async () => {
             try {
-                const planData = getMockPlanById(planId);
-                if (!planData) {
-                    alert("Plan no encontrado");
+                console.log('[Checkout] Cargando plan:', planId);
+
+                // Cargar plan desde la API real
+                const response = await fetch(`${API_URL}/plans/${planId}`);
+                console.log('[Checkout] Response:', response.status);
+
+                if (!response.ok) {
+                    throw new Error('Plan no encontrado');
+                }
+
+                const planData = await response.json();
+                console.log('[Checkout] Plan cargado:', planData);
+
+                if (!planData || !planData.activo) {
+                    alert("Este plan no está disponible");
                     navigate('/planes');
                     return;
                 }
+
                 setPlan(planData);
             } catch (error) {
-                console.error("Error al cargar plan:", error);
-                alert("Error al cargar el plan");
+                console.error("[Checkout] Error al cargar plan:", error);
+                alert("Error al cargar el plan. Por favor, intenta nuevamente.");
                 navigate('/planes');
             } finally {
                 setLoading(false);
@@ -56,11 +70,46 @@ const Checkout = () => {
         setProcessing(true);
 
         try {
-            // 1. Crear suscripción (mock)
-            const suscripcion = await createMockSuscripcion(userId, planId);
-            console.log("Suscripción creada (mock):", suscripcion);
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert('Debes iniciar sesión para continuar');
+                navigate('/login');
+                return;
+            }
 
-            // 2. Crear pago en payments-api (REAL)
+            console.log('[Checkout] Iniciando proceso de suscripción...');
+
+            // 1. Crear suscripción REAL en subscriptions-api
+            const subscriptionData = {
+                usuario_id: userId,
+                plan_id: planId,
+                metodo_pago: formData.payment_method,
+                auto_renovacion: formData.auto_renovacion,
+                notas: formData.payment_method === 'cash'
+                    ? 'Pago pendiente en sucursal'
+                    : `Pago con tarjeta terminada en ${formData.card_number.slice(-4)}`
+            };
+
+            console.log('[Checkout] Creando suscripción:', subscriptionData);
+
+            const subscriptionResponse = await fetch(`${API_URL}/subscriptions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(subscriptionData)
+            });
+
+            if (!subscriptionResponse.ok) {
+                const errorData = await subscriptionResponse.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Error al crear la suscripción');
+            }
+
+            const suscripcion = await subscriptionResponse.json();
+            console.log('[Checkout] ✅ Suscripción creada:', suscripcion);
+
+            // 2. Crear pago en payments-api
             const paymentData = {
                 entity_type: "subscription",
                 entity_id: suscripcion.id,
@@ -68,14 +117,16 @@ const Checkout = () => {
                 amount: plan.precio_mensual,
                 currency: "ARS",
                 payment_method: formData.payment_method,
-                payment_gateway: "mock", // Usar "mock" para testing sin credenciales, o "mercadopago" cuando tengas credenciales
+                payment_gateway: "mock", // Usar "mock" para testing sin credenciales
                 metadata: {
                     plan_nombre: plan.nombre,
                     duracion_dias: plan.duracion_dias,
                     auto_renovacion: formData.auto_renovacion,
-                    card_last4: formData.card_number.slice(-4)
+                    card_last4: formData.payment_method === 'credit_card' ? formData.card_number.slice(-4) : null
                 }
             };
+
+            console.log('[Checkout] Creando pago:', paymentData);
 
             const paymentResponse = await fetch(PAYMENTS_API.payments, {
                 method: 'POST',
@@ -86,25 +137,23 @@ const Checkout = () => {
             });
 
             if (!paymentResponse.ok) {
-                throw new Error("Error al crear el pago");
+                throw new Error("Error al registrar el pago");
             }
 
             const payment = await paymentResponse.json();
-            console.log("Pago creado:", payment);
+            console.log('[Checkout] ✅ Pago creado:', payment);
 
             // 3. El pago queda pendiente de aprobación por el administrador
-            // NO procesamos el pago automáticamente
-
             const mensajePago = formData.payment_method === 'cash'
                 ? "Tu solicitud de pago en efectivo ha sido registrada. Por favor, acercate a la sucursal para completar el pago. El administrador aprobará tu pago una vez que se verifique."
                 : "Tu pago con tarjeta ha sido registrado y está pendiente de verificación. El administrador lo revisará y aprobará en breve.";
 
-            alert(`¡Solicitud enviada! ${mensajePago}`);
-            navigate('/pagos');
+            alert(`¡Suscripción creada exitosamente! ${mensajePago}`);
+            navigate('/mi-suscripcion');
 
         } catch (error) {
-            console.error("Error en el proceso de pago:", error);
-            alert(`Error al procesar el pago: ${error.message}`);
+            console.error("[Checkout] ❌ Error:", error);
+            alert(`Error al procesar la suscripción: ${error.message}`);
         } finally {
             setProcessing(false);
         }
@@ -159,7 +208,7 @@ const Checkout = () => {
                                     checked={formData.payment_method === 'credit_card'}
                                     onChange={handleInputChange}
                                 />
-                                <span>💳 Tarjeta de Crédito/Débito</span>
+                                <span>Tarjeta de Crédito/Débito</span>
                             </label>
                             <label className={`payment-method ${formData.payment_method === 'cash' ? 'selected' : ''}`}>
                                 <input
@@ -169,7 +218,7 @@ const Checkout = () => {
                                     checked={formData.payment_method === 'cash'}
                                     onChange={handleInputChange}
                                 />
-                                <span>💵 Efectivo (en sucursal)</span>
+                                <span>Efectivo (en sucursal)</span>
                             </label>
                         </div>
 
@@ -229,7 +278,7 @@ const Checkout = () => {
 
                         {formData.payment_method === 'cash' && (
                             <div className="cash-info">
-                                <p>📍 Podés abonar en cualquiera de nuestras sucursales.</p>
+                                <p>Podés abonar en cualquiera de nuestras sucursales.</p>
                                 <p>Recordá llevar tu DNI y mencionar que estás abonando el plan <strong>{plan.nombre}</strong>.</p>
                             </div>
                         )}
@@ -279,15 +328,15 @@ const Checkout = () => {
 
                 <div className="checkout-info-section">
                     <div className="info-box">
-                        <h3>🔒 Pago Seguro</h3>
+                        <h3>Pago Seguro</h3>
                         <p>Tu información está protegida con encriptación SSL</p>
                     </div>
                     <div className="info-box">
-                        <h3>✓ Garantía</h3>
+                        <h3>Garantía</h3>
                         <p>7 días de garantía. Si no estás satisfecho, te devolvemos tu dinero.</p>
                     </div>
                     <div className="info-box">
-                        <h3>📞 Soporte</h3>
+                        <h3>Soporte</h3>
                         <p>¿Necesitás ayuda? Contactanos al 0351-123-4567</p>
                     </div>
                 </div>

@@ -33,10 +33,8 @@ const Planes = () => {
             console.log('[Planes] Data recibida:', data);
 
             if (data && data.plans && Array.isArray(data.plans)) {
-                // Filtrar solo los planes activos para mostrar a los usuarios
-                const planesActivos = data.plans.filter(plan => plan.activo === true);
-                console.log('[Planes] ✅ Planes activos:', planesActivos.length);
-                setPlanes(planesActivos);
+                console.log('[Planes] Planes cargados:', data.plans.length);
+                setPlanes(data.plans);
             } else {
                 throw new Error('Formato de respuesta inválido');
             }
@@ -80,9 +78,9 @@ const Planes = () => {
                     <h1>Nuestros Planes</h1>
                 </div>
                 <div className="error-message">
-                    <p>⚠️ {error}</p>
+                    <p>{error}</p>
                     <button className="btn-retry" onClick={cargarPlanes}>
-                        🔄 Reintentar
+                        Reintentar
                     </button>
                 </div>
             </div>
@@ -96,7 +94,7 @@ const Planes = () => {
                     <h1>Nuestros Planes</h1>
                 </div>
                 <div className="no-planes-message">
-                    <p>📋 No hay planes disponibles en este momento.</p>
+                    <p>No hay planes disponibles en este momento.</p>
                     <p>Por favor, volvé más tarde o contactanos para más información.</p>
                 </div>
             </div>

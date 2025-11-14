@@ -21,24 +21,24 @@ const Header = ( ) => {
                     <h1 className="header-title" onClick={() => navigate("/")}>GymPro</h1>
                     <div className="header-links">
                         {isLoggedIn && !isAdmin && (
-                            <a href="/dashboard">Dashboard 📊</a>
+                            <a href="/dashboard">Dashboard</a>
                         )}
-                        <a href="/actividades">Actividades 🏋🏽‍♂️</a>
-                        <a href="/planes">Planes 📋</a>
-                        <a href="/sucursales">Sucursales 📍</a>
+                        <a href="/actividades">Actividades</a>
+                        <a href="/planes">Planes</a>
+                        <a href="/sucursales">Sucursales</a>
                         {isLoggedIn && !isAdmin && (
                             <>
-                                <a href="/mi-suscripcion">Mi Suscripción 💳</a>
-                                <a href="/pagos">Pagos 💰</a>
+                                <a href="/mi-suscripcion">Mi Suscripción</a>
+                                <a href="/pagos">Pagos</a>
                             </>
                         )}
                         {isAdmin && (
-                            <a href="/admin">Panel Admin 👨🏼‍🔧</a>
+                            <a href="/admin">Panel Admin</a>
                         )}
                         {isLoggedIn ? (
-                            <button onClick={logout}>Cerrar sesión ✖️</button>
+                            <button onClick={logout}>Cerrar sesión</button>
                         ) : (
-                            <a href="/login">Iniciar Sesión ⏫</a>
+                            <a href="/login">Iniciar Sesión</a>
                         )}
                     </div>
                 </nav>

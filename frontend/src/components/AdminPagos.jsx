@@ -182,34 +182,34 @@ const AdminPagos = () => {
             <div className="admin-pagos-header">
                 <h2>Gestión de Pagos</h2>
                 <button className="btn-refrescar" onClick={fetchPagos}>
-                    🔄 Actualizar
+                    Actualizar
                 </button>
             </div>
 
             <div className="estadisticas-grid">
                 <div className="stat-card-admin">
-                    <div className="stat-icon">💳</div>
+                    <div className="stat-icon"></div>
                     <div className="stat-info">
                         <span className="stat-value">{estadisticas.total}</span>
                         <span className="stat-label">Total Pagos</span>
                     </div>
                 </div>
                 <div className="stat-card-admin success">
-                    <div className="stat-icon">✓</div>
+                    <div className="stat-icon"></div>
                     <div className="stat-info">
                         <span className="stat-value">{estadisticas.completados}</span>
                         <span className="stat-label">Completados</span>
                     </div>
                 </div>
                 <div className="stat-card-admin warning">
-                    <div className="stat-icon">⏳</div>
+                    <div className="stat-icon"></div>
                     <div className="stat-info">
                         <span className="stat-value">{estadisticas.pendientes}</span>
                         <span className="stat-label">Pendientes</span>
                     </div>
                 </div>
                 <div className="stat-card-admin money">
-                    <div className="stat-icon">💰</div>
+                    <div className="stat-icon"></div>
                     <div className="stat-info">
                         <span className="stat-value">${estadisticas.montoTotal.toFixed(2)}</span>
                         <span className="stat-label">Ingresos</span>
@@ -280,7 +280,7 @@ const AdminPagos = () => {
                                         ${pago.amount?.toFixed(2)} {pago.currency}
                                     </td>
                                     <td>
-                                        {pago.payment_method === 'credit_card' ? '💳' : '💵'} {pago.payment_method}
+                                        {pago.payment_method}
                                     </td>
                                     <td>
                                         <span className={`badge-estado ${getEstadoBadgeClass(pago.status)}`}>
@@ -298,14 +298,14 @@ const AdminPagos = () => {
                                                     onClick={() => handleAprobarPago(pago.id)}
                                                     title="Aprobar pago"
                                                 >
-                                                    ✓ Aprobar
+                                                    Aprobar
                                                 </button>
                                                 <button
                                                     className="btn-rechazar"
                                                     onClick={() => handleRechazarPago(pago.id)}
                                                     title="Rechazar pago"
                                                 >
-                                                    ✗ Rechazar
+                                                    Rechazar
                                                 </button>
                                             </div>
                                         )}

@@ -190,25 +190,25 @@ const AdminPlanes = () => {
                     onClick={cargarPlanes}
                     style={{ marginLeft: '10px', background: '#2196F3' }}
                 >
-                    🔄 Recargar
+                    Recargar
                 </button>
             </div>
 
             {error && (
                 <div className="alert-warning">
-                    ⚠️ {error}
+                    {error}
                 </div>
             )}
 
             {!error && planes.length > 0 && (
                 <div className="alert-success">
-                    ✅ {planes.length} plan{planes.length !== 1 ? 'es' : ''} cargado{planes.length !== 1 ? 's' : ''}
+                    {planes.length} plan{planes.length !== 1 ? 'es' : ''} cargado{planes.length !== 1 ? 's' : ''}
                 </div>
             )}
 
             {!error && planes.length === 0 && !isLoading && (
                 <div className="alert-warning">
-                    ⚠️ No hay planes creados. Agrega un plan para comenzar.
+                    No hay planes creados. Agrega un plan para comenzar.
                 </div>
             )}
 
@@ -268,14 +268,14 @@ const AdminPlanes = () => {
                                             onClick={() => handleEditar(plan)}
                                             title="Editar"
                                         >
-                                            ✏️
+                                            Editar
                                         </button>
                                         <button
                                             className="btn-icon btn-eliminar"
                                             onClick={() => handleEliminar(plan.id)}
                                             title="Eliminar"
                                         >
-                                            🗑️
+                                            Eliminar
                                         </button>
                                     </td>
                                 </tr>

@@ -146,6 +146,32 @@ func (s *SubscriptionService) GetActiveSubscriptionByUserID(ctx context.Context,
 	return s.mapSubscriptionToResponse(subscription, planNombre), nil
 }
 
+// GetSubscriptionsByUserID - Obtiene todas las suscripciones de un usuario
+func (s *SubscriptionService) GetSubscriptionsByUserID(ctx context.Context, userID string) ([]*dtos.SubscriptionResponse, error) {
+	filters := map[string]interface{}{
+		"usuario_id": userID,
+	}
+
+	subscriptions, err := s.subscriptionRepo.FindAll(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	var responses []*dtos.SubscriptionResponse
+	for _, subscription := range subscriptions {
+		// Enriquecer con nombre del plan
+		plan, _ := s.planRepo.FindByID(ctx, subscription.PlanID)
+		planNombre := ""
+		if plan != nil {
+			planNombre = plan.Nombre
+		}
+
+		responses = append(responses, s.mapSubscriptionToResponse(subscription, planNombre))
+	}
+
+	return responses, nil
+}
+
 // UpdateSubscriptionStatus - Actualiza el estado de una suscripción
 func (s *SubscriptionService) UpdateSubscriptionStatus(ctx context.Context, id string, req dtos.UpdateSubscriptionStatusRequest) error {
 	objID, err := primitive.ObjectIDFromHex(id)
