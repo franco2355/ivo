@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PAYMENTS_API } from '../config/api';
+import { normalizePaymentStatus } from '../utils/paymentStatus';
 import '../styles/Pagos.css';
 
 const Pagos = () => {
@@ -25,7 +26,11 @@ const Pagos = () => {
 
             const data = await response.json();
             console.log("Pagos cargados:", data);
-            setPagos(data);
+            const pagosNormalizados = data.map((pago) => ({
+                ...pago,
+                status: normalizePaymentStatus(pago.status)
+            }));
+            setPagos(pagosNormalizados);
         } catch (error) {
             console.error("Error al cargar pagos:", error);
             // Si falla la API, mostrar array vacío
@@ -45,6 +50,8 @@ const Pagos = () => {
                 return 'estado-fallido';
             case 'refunded':
                 return 'estado-reembolsado';
+            case 'unknown':
+                return 'estado-pendiente';
             default:
                 return '';
         }
@@ -60,8 +67,10 @@ const Pagos = () => {
                 return 'Fallido';
             case 'refunded':
                 return 'Reembolsado';
+            case 'unknown':
+                return 'Desconocido';
             default:
-                return status;
+                return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Desconocido';
         }
     };
 
