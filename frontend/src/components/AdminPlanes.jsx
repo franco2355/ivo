@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../styles/AdminPlanes.css';
+import { useToastContext } from '../context/ToastContext';
+import { handleSessionExpired, isAuthError } from '../utils/auth';
+import { SUBSCRIPTIONS_API } from '../config/api';
 
-const API_URL = 'http://localhost:8081';
+const API_URL = SUBSCRIPTIONS_API.base;
 
 const AdminPlanes = () => {
+    const navigate = useNavigate();
+    const toast = useToastContext();
     const [planes, setPlanes] = useState([]);
     const [mostrarModal, setMostrarModal] = useState(false);
     const [planEditando, setPlanEditando] = useState(null);
@@ -70,7 +76,7 @@ const AdminPlanes = () => {
         try {
             const token = localStorage.getItem('access_token');
             if (!token) {
-                alert('Debes iniciar sesión como administrador');
+                toast.warning('Debes iniciar sesión como administrador');
                 return;
             }
 
@@ -86,18 +92,21 @@ const AdminPlanes = () => {
 
             console.log('[AdminPlanes] DELETE Response:', response.status, response.statusText);
 
-            if (!response.ok) {
+            if (isAuthError(response)) {
+                handleSessionExpired(toast, navigate);
+                return;
+            } else if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 console.error('[AdminPlanes] Error del servidor:', errorData);
                 throw new Error(errorData.error || errorData.message || `Error HTTP: ${response.status}`);
             }
 
             console.log('[AdminPlanes] ✅ Plan eliminado exitosamente');
-            alert('Plan eliminado exitosamente');
+            toast.success('Plan eliminado exitosamente');
             await cargarPlanes(); // Recargar la lista
         } catch (err) {
             console.error('[AdminPlanes] ❌ Error eliminando plan:', err);
-            alert(`Error al eliminar el plan: ${err.message}`);
+            toast.error(`Error al eliminar el plan: ${err.message}`);
         }
     };
 
@@ -105,7 +114,7 @@ const AdminPlanes = () => {
         try {
             const token = localStorage.getItem('access_token');
             if (!token) {
-                alert('Debes iniciar sesión como administrador');
+                toast.warning('Debes iniciar sesión como administrador');
                 return;
             }
 
@@ -120,7 +129,10 @@ const AdminPlanes = () => {
                 body: JSON.stringify({ activo: !activoActual })
             });
 
-            if (!response.ok) {
+            if (isAuthError(response)) {
+                handleSessionExpired(toast, navigate);
+                return;
+            } else if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.error || `Error HTTP: ${response.status}`);
             }
@@ -129,7 +141,7 @@ const AdminPlanes = () => {
             await cargarPlanes();
         } catch (err) {
             console.error('[AdminPlanes] ❌ Error cambiando estado:', err);
-            alert(`Error al cambiar el estado: ${err.message}`);
+            toast.error(`Error al cambiar el estado: ${err.message}`);
         }
     };
 
@@ -137,7 +149,7 @@ const AdminPlanes = () => {
         try {
             const token = localStorage.getItem('access_token');
             if (!token) {
-                alert('Debes iniciar sesión como administrador');
+                toast.warning('Debes iniciar sesión como administrador');
                 return;
             }
 
@@ -155,18 +167,21 @@ const AdminPlanes = () => {
                 body: JSON.stringify(planData)
             });
 
-            if (!response.ok) {
+            if (isAuthError(response)) {
+                handleSessionExpired(toast, navigate);
+                return;
+            } else if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.error || `Error HTTP: ${response.status}`);
             }
 
             console.log('[AdminPlanes] ✅ Plan guardado');
-            alert(`Plan ${isEdit ? 'actualizado' : 'creado'} exitosamente`);
+            toast.success(`Plan ${isEdit ? 'actualizado' : 'creado'} exitosamente`);
             setMostrarModal(false);
             await cargarPlanes();
         } catch (err) {
             console.error('[AdminPlanes] ❌ Error guardando plan:', err);
-            alert(`Error al ${isEdit ? 'actualizar' : 'crear'} el plan: ${err.message}`);
+            toast.error(`Error al ${isEdit ? 'actualizar' : 'crear'} el plan: ${err.message}`);
         }
     };
 
@@ -297,6 +312,7 @@ const AdminPlanes = () => {
                             planInicial={planEditando}
                             onGuardar={handleGuardarPlan}
                             onCancelar={() => setMostrarModal(false)}
+                            toast={toast}
                         />
                     </div>
                 </div>
@@ -306,7 +322,7 @@ const AdminPlanes = () => {
 };
 
 // Componente FormularioPlan
-const FormularioPlan = ({ planInicial, onGuardar, onCancelar }) => {
+const FormularioPlan = ({ planInicial, onGuardar, onCancelar, toast }) => {
     const isEdit = !!planInicial;
 
     const [formData, setFormData] = useState({
@@ -329,12 +345,12 @@ const FormularioPlan = ({ planInicial, onGuardar, onCancelar }) => {
 
         // Validaciones
         if (!formData.nombre || !formData.descripcion) {
-            alert('Por favor completa todos los campos requeridos');
+            toast.warning('Por favor completa todos los campos requeridos');
             return;
         }
 
         if (formData.precio_mensual <= 0) {
-            alert('El precio debe ser mayor a 0');
+            toast.warning('El precio debe ser mayor a 0');
             return;
         }
 

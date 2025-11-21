@@ -1,41 +1,61 @@
 # Sistema de Gestión de Gimnasio - Arquitectura de Microservicios
 
-Sistema de gestión de gimnasio implementado con **arquitectura de microservicios** en Go.
+Sistema de gestión de gimnasio implementado con **arquitectura de microservicios** en Go y frontend en React con Tailwind CSS.
 
 ## 🚀 Inicio Rápido
 
-### 1. Levantar Infraestructura
+### Opción 1: Docker (Recomendado - TODO el sistema)
 
 ```bash
-# Levantar bases de datos y servicios
-docker-compose -f docker-compose.new.yml up -d mysql mongo rabbitmq memcached
+# 1. Configurar variables de entorno
+cp .env.example .env
+# Editar .env si es necesario (por defecto funciona con root123)
+
+# 2. Levantar todo el sistema
+docker-compose up -d
+
+# 3. Verificar que todo esté corriendo
+docker-compose ps
 ```
 
-### 2. Ejecutar Microservicios
+**Servicios disponibles:**
+- Frontend: http://localhost:5173
+- Users API: http://localhost:8080
+- Subscriptions API: http://localhost:8081
+- Activities API: http://localhost:8082
+- Payments API: http://localhost:8083
+- Search API: http://localhost:8084
+- RabbitMQ Admin: http://localhost:15672 (guest/guest)
+- Solr Admin: http://localhost:8983
+
+### Opción 2: Desarrollo Local (Un microservicio)
 
 ```bash
-# users-api
-cd users-api
+# 1. Levantar solo la infraestructura (bases de datos, colas, etc.)
+docker-compose up -d mysql mongo rabbitmq memcached solr
+
+# 2. Configurar variables de entorno del microservicio
+cd backend/users-api
+cp .env.example .env
+# Editar .env con configuración local
+
+# 3. Ejecutar el microservicio
 go run cmd/api/main.go  # Puerto 8080
-
-# subscriptions-api
-cd subscriptions-api
-go run cmd/api/main.go  # Puerto 8081
-
-# activities-api
-cd activities-api
-go run cmd/api/main.go  # Puerto 8082
-
-# payments-api
-cd payments-api
-go run cmd/api/main.go  # Puerto 8083
-
-# search-api
-cd search-api
-go run cmd/api/main.go  # Puerto 8084
 ```
 
-### 3. Verificar Health Checks
+### Opción 3: Frontend en desarrollo
+
+```bash
+cd frontend
+
+# Instalar dependencias (incluye Tailwind CSS)
+npm install
+
+# Ejecutar en modo desarrollo
+npm run dev
+```
+
+### Verificar Health Checks
 
 ```bash
 curl http://localhost:8080/healthz  # users-api
@@ -71,21 +91,85 @@ Frontend (React)
 
 ---
 
+## 🔐 Configuración de Variables de Entorno
+
+El proyecto usa un sistema centralizado de variables de entorno para máxima seguridad.
+
+### Estructura de archivos .env
+
+```
+ivo/
+├── .env                    # Variables para Docker Compose (NO en git)
+├── .env.example            # Plantilla con valores de ejemplo (SÍ en git)
+│
+└── backend/
+    ├── users-api/
+    │   └── .env.example    # Para desarrollo local sin Docker
+    ├── subscriptions-api/
+    │   └── .env.example
+    └── ...
+```
+
+### ¿Cuándo se usa cada .env?
+
+**Con Docker (`docker-compose up`):**
+- Lee **SOLO** el archivo `.env` de la raíz
+- Las variables se pasan a los contenedores via `environment:` en docker-compose.yml
+- Base de datos: `DB_HOST=mysql` (nombre del contenedor)
+
+**Desarrollo local (`go run main.go`):**
+- Cada microservicio lee su propio `.env` local
+- Base de datos: `DB_HOST=localhost` y `DB_PORT=3307`
+- Útil para debugging y desarrollo rápido
+
+### Ejemplo: Configurar nuevo entorno
+
+```bash
+# 1. Copiar plantilla
+cp .env.example .env
+
+# 2. Editar credenciales (si es necesario)
+nano .env
+
+# 3. Levantar sistema
+docker-compose up -d
+```
+
+**Variables importantes:**
+- `MYSQL_ROOT_PASSWORD` y `DB_PASS`: Deben coincidir con la BD existente
+- `JWT_SECRET`: Cambiarlo en producción
+- `RABBITMQ_DEFAULT_PASS`: Credenciales de RabbitMQ
+
+---
+
 ## 📁 Estructura del Proyecto
 
 ```
-ucc-arquisoft2/
+ivo/
 │
-├── users-api/              # Autenticación y gestión de usuarios
-├── subscriptions-api/      # Planes y suscripciones (⭐ Ejemplo de referencia)
-├── activities-api/         # Actividades e inscripciones
-├── payments-api/           # Sistema de pagos con múltiples gateways
-├── search-api/             # Búsqueda y caché
-├── frontend/               # Aplicación React
+├── .env                         # Variables de entorno (Docker)
+├── .env.example                 # Plantilla de variables
+├── docker-compose.yml           # Infraestructura completa
 │
-├── docker-compose.new.yml  # Infraestructura completa
+├── backend/
+│   ├── users-api/              # Autenticación y gestión de usuarios
+│   ├── subscriptions-api/      # Planes y suscripciones (⭐ Ejemplo)
+│   ├── activities-api/         # Actividades e inscripciones
+│   ├── payments-api/           # Sistema de pagos con gateways
+│   └── search-api/             # Búsqueda y caché
 │
-└── documentacion/          # Documentación general del proyecto
+├── frontend/                   # Aplicación React + Tailwind CSS
+│   ├── src/
+│   │   ├── components/        # Componentes React
+│   │   ├── pages/             # Páginas principales
+│   │   ├── styles/            # CSS (+ Tailwind)
+│   │   ├── context/           # Context API
+│   │   └── hooks/             # Custom hooks
+│   ├── tailwind.config.js     # Configuración de Tailwind
+│   ├── postcss.config.cjs     # PostCSS para Tailwind
+│   └── package.json           # Dependencias (incluye Tailwind)
+│
+└── documentacion/              # Documentación del proyecto
     ├── ARQUITECTURA_MICROSERVICIOS.md
     ├── DIAGRAMA_ENTIDADES.md
     ├── GUIA_IMPLEMENTAR_MICROSERVICIO.md
@@ -206,9 +290,17 @@ Cada microservicio tiene su propio README con detalles específicos:
 - **Go 1.23** - Todos los microservicios
 - **Gin** - Framework web HTTP
 
+### Frontend
+
+- **React 19** - Biblioteca de UI
+- **React Router 7** - Navegación SPA
+- **Vite 6** - Build tool y dev server
+- **Tailwind CSS 3.4** - Framework CSS utility-first
+- **Vitest** - Testing framework
+
 ### Bases de Datos
 
-- **MySQL 8.0** - users-api, activities-api
+- **MySQL 9.3** - users-api, activities-api
 - **MongoDB 7.0** - subscriptions-api, payments-api
 
 ### Mensajería y Caché
@@ -221,6 +313,88 @@ Cada microservicio tiene su propio README con detalles específicos:
 
 - **Docker & Docker Compose**
 - **Apache Solr 9** (opcional para search-api)
+
+---
+
+## 🎨 Tailwind CSS - Guía de Instalación y Uso
+
+El frontend ya tiene Tailwind CSS configurado. Si necesitas instalarlo en un proyecto nuevo:
+
+### Instalación desde cero
+
+```bash
+cd frontend
+
+# 1. Instalar Tailwind CSS y dependencias
+npm install -D tailwindcss postcss autoprefixer
+
+# 2. Generar archivos de configuración
+npx tailwindcss init -p
+```
+
+### Configuración
+
+**tailwind.config.js:**
+```javascript
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+```
+
+**postcss.config.cjs:**
+```javascript
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+```
+
+**src/index.css:**
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+### Uso en componentes
+
+```jsx
+// Ejemplo de componente con Tailwind
+export default function Button({ children, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+    >
+      {children}
+    </button>
+  );
+}
+```
+
+### Scripts disponibles
+
+```bash
+# Desarrollo con hot-reload
+npm run dev
+
+# Build para producción (optimiza Tailwind)
+npm run build
+
+# Preview del build
+npm run preview
+```
+
+**Nota:** En producción, Tailwind automáticamente elimina clases no utilizadas (tree-shaking) para minimizar el CSS.
 
 ---
 
@@ -333,4 +507,58 @@ Proyecto académico - Universidad Católica de Córdoba
 
 ---
 
-**Última actualización**: 2025-01-15
+## 🔧 Comandos Útiles
+
+### Docker
+
+```bash
+# Ver logs de un servicio
+docker-compose logs -f users-api
+
+# Reiniciar un servicio
+docker-compose restart users-api
+
+# Detener todo
+docker-compose down
+
+# Detener y eliminar volúmenes (BORRA DATOS)
+docker-compose down -v
+
+# Reconstruir imágenes
+docker-compose up -d --build
+```
+
+### Frontend
+
+```bash
+# Instalar dependencias
+npm install
+
+# Desarrollo
+npm run dev
+
+# Tests
+npm run test
+npm run test:ui
+npm run test:coverage
+
+# Linting
+npm run lint
+
+# Build producción
+npm run build
+```
+
+### Base de datos
+
+```bash
+# Conectar a MySQL del contenedor
+mysql -h 127.0.0.1 -P 3307 -u root -proot123
+
+# Conectar a MongoDB del contenedor
+docker exec -it gym-mongo mongosh
+```
+
+---
+
+**Última actualización**: 2025-01-20

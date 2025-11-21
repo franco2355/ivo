@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PAYMENTS_API, SUBSCRIPTIONS_API } from '../config/api';
 import '../styles/Checkout.css';
+import { useToastContext } from '../context/ToastContext';
+import { handleSessionExpired, isAuthError } from '../utils/auth';
 
-const API_URL = 'http://localhost:8081';
+const API_URL = SUBSCRIPTIONS_API.base;
 
 const Checkout = () => {
     const { planId } = useParams();
@@ -15,10 +17,12 @@ const Checkout = () => {
         payment_method: 'mercadopago',
         auto_renovacion: false
     });
-    const [showSyncButton, setShowSyncButton] = useState(false);
+    const [showCheckout, setShowCheckout] = useState(false);
     const [currentPaymentId, setCurrentPaymentId] = useState(null);
+    const [pollingInterval, setPollingInterval] = useState(null);
 
     const userId = localStorage.getItem("idUsuario");
+    const toast = useToastContext();
 
     useEffect(() => {
         const fetchPlan = async () => {
@@ -37,7 +41,7 @@ const Checkout = () => {
                 console.log('[Checkout] Plan cargado:', planData);
 
                 if (!planData || !planData.activo) {
-                    alert("Este plan no está disponible");
+                    toast.error("Este plan no está disponible");
                     navigate('/planes');
                     return;
                 }
@@ -45,7 +49,7 @@ const Checkout = () => {
                 setPlan(planData);
             } catch (error) {
                 console.error("[Checkout] Error al cargar plan:", error);
-                alert("Error al cargar el plan. Por favor, intenta nuevamente.");
+                toast.error("Error al cargar el plan. Por favor, intenta nuevamente.");
                 navigate('/planes');
             } finally {
                 setLoading(false);
@@ -63,39 +67,61 @@ const Checkout = () => {
         }));
     };
 
-    const handleSyncPayment = async () => {
-        if (!currentPaymentId) return;
+    // Cleanup polling on unmount
+    useEffect(() => {
+        return () => {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+        };
+    }, [pollingInterval]);
 
-        console.log('[Checkout] 🔄 Sincronizando estado del pago...');
-        setProcessing(true);
+    // Auto-sync payment status con polling cada 3 segundos
+    const startPaymentPolling = (paymentId) => {
+        console.log('[Checkout] 🔄 Iniciando polling automático del pago...');
 
-        try {
-            // Esperar 2 segundos para que MP procese el pago
-            await new Promise(resolve => setTimeout(resolve, 2000));
+        let attempts = 0;
+        const maxAttempts = 40; // 40 intentos × 3s = 2 minutos máximo
 
-            // Sincronizar el estado con el backend
-            const syncResponse = await fetch(`http://localhost:8083/payments/${currentPaymentId}/sync`);
+        const interval = setInterval(async () => {
+            attempts++;
+            console.log(`[Checkout] 🔄 Verificando pago (intento ${attempts}/${maxAttempts})...`);
 
-            if (syncResponse.ok) {
-                const syncedPayment = await syncResponse.json();
-                console.log('[Checkout] ✅ Pago sincronizado:', syncedPayment);
+            try {
+                const syncResponse = await fetch(`http://localhost:8083/payments/${paymentId}/sync`);
 
-                if (syncedPayment.status === 'completed') {
-                    alert('¡Pago completado exitosamente! Tu suscripción está activa.');
-                    navigate('/mi-suscripcion');
-                } else if (syncedPayment.status === 'pending') {
-                    alert('Tu pago está siendo procesado. Te notificaremos cuando se complete.');
-                    navigate('/mi-suscripcion');
-                } else {
-                    alert('El pago no pudo completarse. Por favor, intenta nuevamente.');
+                if (syncResponse.ok) {
+                    const syncedPayment = await syncResponse.json();
+                    console.log('[Checkout] ✅ Estado del pago:', syncedPayment.status);
+
+                    if (syncedPayment.status === 'completed' || syncedPayment.status === 'approved') {
+                        clearInterval(interval);
+                        setPollingInterval(null);
+                        toast.success("¡Pago completado exitosamente! Tu suscripción está activa.");
+                        navigate('/mi-suscripcion');
+                    } else if (syncedPayment.status === 'rejected' || syncedPayment.status === 'cancelled') {
+                        clearInterval(interval);
+                        setPollingInterval(null);
+                        toast.error("El pago fue rechazado. Por favor, intenta nuevamente.");
+                        setShowCheckout(false);
+                        setProcessing(false);
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        setPollingInterval(null);
+                        toast.info("Tu pago está siendo procesado. Te notificaremos cuando se complete.");
+                        navigate('/mi-suscripcion');
+                    }
+                }
+            } catch (error) {
+                console.error('[Checkout] ❌ Error en polling:', error);
+                if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    setPollingInterval(null);
                 }
             }
-        } catch (error) {
-            console.error('[Checkout] ❌ Error sincronizando pago:', error);
-            alert('Error al verificar el pago. Por favor, intenta nuevamente.');
-        } finally {
-            setProcessing(false);
-        }
+        }, 3000); // Cada 3 segundos
+
+        setPollingInterval(interval);
     };
 
     const handleSubmit = async (e) => {
@@ -105,7 +131,7 @@ const Checkout = () => {
         try {
             const token = localStorage.getItem('access_token');
             if (!token) {
-                alert('Debes iniciar sesión para continuar');
+                toast.warning("Debes iniciar sesión para continuar");
                 navigate('/login');
                 return;
             }
@@ -132,7 +158,10 @@ const Checkout = () => {
                 body: JSON.stringify(subscriptionData)
             });
 
-            if (!subscriptionResponse.ok) {
+            if (isAuthError(subscriptionResponse)) {
+                handleSessionExpired(toast, navigate);
+                return;
+            } else if (!subscriptionResponse.ok) {
                 const errorData = await subscriptionResponse.json().catch(() => ({}));
                 throw new Error(errorData.error || 'Error al crear la suscripción');
             }
@@ -186,42 +215,26 @@ const Checkout = () => {
                 console.log('[Checkout] 🎯 Preference ID:', preferenceId);
                 console.log('[Checkout] 🌐 Payment URL:', paymentResult.metadata.payment_url);
 
-                // Guardar el payment_id para sincronizar después
+                // Guardar el payment_id para polling automático
                 const paymentId = paymentResult.id;
                 setCurrentPaymentId(paymentId);
 
-                // OPCIÓN A: Modal embebido (mejor UX - usuario se queda en el sitio)
-                if (window.MercadoPago && typeof window.MercadoPago === 'function') {
-                    console.log('[Checkout] ✅ Abriendo checkout embebido de Mercado Pago...');
-                    const mp = new window.MercadoPago('APP_USR-281618f8-bd5a-4eac-8ff7-15732fd9fc25', {
-                        locale: 'es-AR'
-                    });
+                console.log('[Checkout] ✅ Abriendo checkout de Mercado Pago...');
+                console.log('[Checkout] 🌐 Redirigiendo a:', paymentResult.metadata.payment_url);
 
-                    mp.checkout({
-                        preference: {
-                            id: preferenceId
-                        },
-                        autoOpen: true,
-                    });
+                // Iniciar polling automático
+                startPaymentPolling(paymentId);
 
-                    // Mostrar botón de verificación después de 5 segundos
-                    setTimeout(() => {
-                        setShowSyncButton(true);
-                        setProcessing(false);
-                    }, 5000);
-                } else {
-                    // OPCIÓN B: Redirección (fallback si no cargó el SDK)
-                    console.log('[Checkout] ⚠️ SDK no disponible. Redirigiendo a Mercado Pago...');
-                    window.location.href = paymentResult.metadata.payment_url;
-                }
+                // Redireccionar a Mercado Pago (modal o página externa según configuración del backend)
+                window.location.href = paymentResult.metadata.payment_url;
             } else {
                 console.error('[Checkout] ❌ No se recibió payment_url de Mercado Pago');
-                alert('Error: No se pudo generar el link de pago. Por favor, intenta nuevamente.');
+                toast.error("Error: No se pudo generar el link de pago. Por favor, intenta nuevamente.");
             }
 
         } catch (error) {
             console.error("[Checkout] ❌ Error:", error);
-            alert(`Error al procesar la suscripción: ${error.message}`);
+            toast.error(`Error al procesar la suscripción: ${error.message}`);
         } finally {
             setProcessing(false);
         }
@@ -263,39 +276,6 @@ const Checkout = () => {
                             )}
                         </div>
                     </div>
-
-                    {showSyncButton && (
-                        <div style={{
-                            padding: '20px',
-                            backgroundColor: '#fff3cd',
-                            border: '2px solid #ffc107',
-                            borderRadius: '8px',
-                            marginBottom: '20px',
-                            textAlign: 'center'
-                        }}>
-                            <h3 style={{ margin: '0 0 10px 0', color: '#856404' }}>¿Ya completaste el pago?</h3>
-                            <p style={{ margin: '0 0 15px 0', color: '#856404' }}>
-                                Hacé click en el botón para verificar el estado de tu pago
-                            </p>
-                            <button
-                                type="button"
-                                onClick={handleSyncPayment}
-                                disabled={processing}
-                                style={{
-                                    backgroundColor: '#28a745',
-                                    color: 'white',
-                                    padding: '12px 24px',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    fontSize: '16px',
-                                    cursor: processing ? 'not-allowed' : 'pointer',
-                                    opacity: processing ? 0.7 : 1
-                                }}
-                            >
-                                {processing ? 'Verificando...' : 'Verificar mi pago'}
-                            </button>
-                        </div>
-                    )}
 
                     <form className="payment-form" onSubmit={handleSubmit}>
                         <h2>Método de Pago</h2>

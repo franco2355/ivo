@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Planes.css';
+import { useToastContext } from '../context/ToastContext';
 
 const API_URL = 'http://localhost:8081';
 
@@ -10,6 +11,7 @@ const Planes = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const toast = useToastContext();
 
     useEffect(() => {
         console.log('[Planes] Componente montado, cargando planes...');
@@ -51,7 +53,7 @@ const Planes = () => {
         console.log('[Planes] Usuario seleccionó plan:', planId);
 
         if (!isLoggedIn) {
-            alert("Debes iniciar sesión para suscribirte a un plan");
+            toast.warning("Debes iniciar sesión para suscribirte a un plan");
             navigate('/login');
             return;
         }

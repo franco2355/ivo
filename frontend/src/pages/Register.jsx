@@ -2,6 +2,8 @@ import { useState } from "react";
 import '../styles/Register.css';
 import { useNavigate } from "react-router-dom";
 import { storeUserSession } from "./Login";
+import { useToastContext } from '../context/ToastContext';
+import { USERS_API } from '../config/api';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -15,6 +17,7 @@ const Register = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const navigate = useNavigate();
+    const toast = useToastContext();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -24,10 +27,37 @@ const Register = () => {
         }));
     };
 
+    const validatePassword = (password) => {
+        const errors = [];
+
+        if (password.length < 8) {
+            errors.push("al menos 8 caracteres");
+        }
+        if (!/[A-Z]/.test(password)) {
+            errors.push("una letra mayúscula");
+        }
+        if (!/[a-z]/.test(password)) {
+            errors.push("una letra minúscula");
+        }
+        if (!/[0-9]/.test(password)) {
+            errors.push("un número");
+        }
+
+        return errors;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError("");
+
+        // Validar contraseña
+        const passwordErrors = validatePassword(formData.password);
+        if (passwordErrors.length > 0) {
+            setError(`La contraseña debe tener ${passwordErrors.join(", ")}`);
+            setIsLoading(false);
+            return;
+        }
 
         if (formData.password !== formData.confirmPassword) {
             setError("Las contraseñas no coinciden");
@@ -36,7 +66,7 @@ const Register = () => {
         }
 
         try {
-            const response = await fetch("http://localhost:8080/register", {
+            const response = await fetch(USERS_API.register, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -51,15 +81,31 @@ const Register = () => {
             });
 
             if (response.ok) {
-                alert("Usuario registrado exitosamente");
-
                 const data = await response.json();
-                storeUserSession(data.access_token)
 
+                // Guardar nombre completo del usuario
+                localStorage.setItem("nombre", `${formData.nombre} ${formData.apellido}`);
+
+                storeUserSession(data.token);
+                toast.success("Usuario registrado exitosamente");
                 navigate("/");
             } else {
                 const errorData = await response.json();
-                setError(errorData.error || "Error al registrar usuario");
+                // Mejorar el mensaje de error del backend
+                let errorMessage = errorData.error || "Error al registrar usuario";
+
+                if (errorData.details) {
+                    // Extraer información útil de los detalles
+                    if (errorData.details.includes("username")) {
+                        errorMessage = "El nombre de usuario ya está en uso";
+                    } else if (errorData.details.includes("email")) {
+                        errorMessage = "El email ya está registrado";
+                    } else if (errorData.details.includes("Password")) {
+                        errorMessage = "La contraseña no cumple con los requisitos";
+                    }
+                }
+
+                setError(errorMessage);
             }
         } catch (error) {
             setError("Error de conexión");
@@ -120,9 +166,9 @@ const Register = () => {
                 </div>
                 <div className="input-group">
                     <input
-                        type="text"
+                        type="email"
                         name="email"
-                        placeholder="email"
+                        placeholder="Email"
                         value={formData.email}
                         onChange={handleChange}
                         disabled={isLoading}
@@ -139,7 +185,11 @@ const Register = () => {
                         onChange={handleChange}
                         disabled={isLoading}
                         required
+                        minLength={8}
                     />
+                    <small className="password-hint">
+                        Debe tener: 8+ caracteres, mayúscula, minúscula y número
+                    </small>
                 </div>
 
                 <div className="input-group">

@@ -5,6 +5,9 @@ import AgregarActividadModal from '../components/AgregarActividadModal';
 import AdminPlanes from '../components/AdminPlanes';
 import AdminPagos from '../components/AdminPagos';
 import '../styles/AdminPanel.css';
+import { useToastContext } from '../context/ToastContext';
+import { handleSessionExpired, isAuthError } from '../utils/auth';
+import { USERS_API } from '../config/api';
 
 const AdminPanel = () => {
     const [tabActiva, setTabActiva] = useState('actividades');
@@ -12,6 +15,7 @@ const AdminPanel = () => {
     const [actividadEditar, setActividadEditar] = useState(null);
     const [mostrarAgregarModal, setMostrarAgregarModal] = useState(false);
     const navigate = useNavigate();
+    const toast = useToastContext();
 
     useEffect(() => {
         const isAdmin = localStorage.getItem("isAdmin") === "true";
@@ -24,7 +28,7 @@ const AdminPanel = () => {
 
     const fetchActividades = async () => {
         try {
-            const response = await fetch('http://localhost:8080/actividades');
+            const response = await fetch(USERS_API.base + '/actividades');
             if (response.ok) {
                 const data = await response.json();
                 setActividades(data);
@@ -51,13 +55,13 @@ const AdminPanel = () => {
     const handleEliminar = async (actividad) => {
         if (!actividad.id_actividad) {
             console.error("Error: La actividad no tiene ID", actividad);
-            alert('Error: No se puede eliminar la actividad porque no tiene ID');
+            toast.error('Error: No se puede eliminar la actividad porque no tiene ID');
             return;
         }
 
         if (window.confirm('¿Estás seguro de que deseas eliminar esta actividad? Se eliminarán también todas las inscripciones asociadas.')) {
             try {
-                const response = await fetch(`http://localhost:8080/actividades/${actividad.id_actividad}`, {
+                const response = await fetch(`${USERS_API.base}/actividades/${actividad.id_actividad}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
@@ -65,16 +69,18 @@ const AdminPanel = () => {
                     }
                 });
 
-                if (response.ok) {
+                if (isAuthError(response)) {
+                    handleSessionExpired(toast, navigate);
+                } else if (response.ok) {
                     fetchActividades();
-                    alert('Actividad eliminada con éxito');
+                    toast.success('Actividad eliminada con éxito');
                 } else {
                     const errorData = await response.json();
-                    alert(errorData.error || 'Error al eliminar la actividad');
+                    toast.error(errorData.error || 'Error al eliminar la actividad');
                 }
             } catch (error) {
                 console.error("Error al eliminar:", error);
-                alert('Error al eliminar la actividad. Por favor, intenta de nuevo más tarde.');
+                toast.error('Error al eliminar la actividad. Por favor, intenta de nuevo más tarde.');
             }
         }
     };

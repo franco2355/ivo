@@ -1,179 +1,266 @@
 version: '3.8'
 
 services:
-  db:
+  # ==========================================
+  # DATABASES
+  # ==========================================
+
+  mysql:
     image: mysql:9.3
-    restart: always
+    container_name: gym-mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=gimnasio
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
-      - "3306:3306"
+      - "${MYSQL_EXTERNAL_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./BDD:/docker-entrypoint-initdb.d
-    networks:
-      - app-network
-
-  mongo:
-    image: mongo:7.0
-    restart: always
-    ports:
-      - "27017:27017"
-    environment:
-      - MONGO_INITDB_DATABASE=gimnasio
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - app-network
-
-  rabbitmq:
-    image: rabbitmq:3.13-management
-    restart: always
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - app-network
+      - ./BDD:/docker-entrypoint-initdb.d  # Scripts de inicialización
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-  users-api:
-    build: ./backend
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db
-    environment:
-      - DB_USER=root
-      - DB_PASS=root
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_SCHEMA=gimnasio
-      - APP_HOST=0.0.0.0
-      - APP_PORT=8080
-      - JWT_SECRET='d6d6c772219f3b65cc8254983632c930f6197c54b3a8de71e31689d839a386b4'
     networks:
-      - app-network
+      - gym-network
 
-  subscriptions-api:
-    build: ./subscriptions-api
-    ports:
-      - "8081:8081"
-    depends_on:
-      - db
-      - mongo
+  mongo:
+    image: mongo:7.0
+    container_name: gym-mongo
     environment:
-      - PORT=8081
-      - MONGO_URI=mongodb://mongo:27017
-      - MONGO_DATABASE=gimnasio
-      - USERS_API_URL=http://users-api:8080
-      - PAYMENTS_API_URL=http://payments-api:8083
-      - JWT_SECRET='d6d6c772219f3b65cc8254983632c930f6197c54b3a8de71e31689d839a386b4'
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+    ports:
+      - "${MONGO_EXTERNAL_PORT}:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-      - app-network
+      - gym-network
 
-  activities-api:
-    build: ./activities-api
-    ports:
-      - "8082:8082"
-    depends_on:
-      - db
-    environment:
-      - DB_USER=root
-      - DB_PASS=root
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_SCHEMA=gimnasio
-      - APP_HOST=0.0.0.0
-      - APP_PORT=8082
-    networks:
-      - app-network
+  # ==========================================
+  # MESSAGE QUEUE
+  # ==========================================
 
-  payments-api:
-    build: ./payments-api
-    ports:
-      - "8083:8083"
-    depends_on:
-      - db
-      - mongo
-      - rabbitmq
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: gym-rabbitmq
     environment:
-      - PORT=8083
-      - MONGO_URI=mongodb://mongo:27017
-      - MONGO_DATABASE=gimnasio
-      - MERCADOPAGO_ACCESS_TOKEN=APP_USR-988447898124356-103117-055b2effa25fcae685ce1e460f2d1d1f-2959351968
-      - MERCADOPAGO_PUBLIC_KEY=APP_USR-ece25914-5b84-4029-9146-5ace6356a8cf
-      - MERCADOPAGO_WEBHOOK_SECRET=
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-      - RABBITMQ_EXCHANGE=gym_events
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "${RABBITMQ_AMQP_PORT}:5672"    # AMQP port
+      - "${RABBITMQ_MANAGEMENT_PORT}:15672"  # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-      - app-network
+      - gym-network
+
+  # ==========================================
+  # CACHE
+  # ==========================================
+
+  memcached:
+    image: memcached:1.6-alpine
+    container_name: gym-memcached
+    command: ["-m", "64"]  # 64MB memory limit
+    ports:
+      - "${MEMCACHED_PORT}:11211"
+    networks:
+      - gym-network
+
+  # ==========================================
+  # SEARCH ENGINE
+  # ==========================================
 
   solr:
-    image: solr:9.4
+    image: solr:9
+    container_name: gym-solr
     ports:
-      - "8983:8983"
+      - "${SOLR_PORT}:8983"
     volumes:
       - solr_data:/var/solr
     command:
       - solr-precreate
-      - gym_activities
-    networks:
-      - app-network
+      - ${SOLR_CORE}  # Core name
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8983/solr/gym_activities/admin/ping"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8983/solr/${SOLR_CORE}/admin/ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - gym-network
+
+  # ==========================================
+  # MICROSERVICES
+  # ==========================================
+
+  users-api:
+    build:
+      context: ./backend/users-api
+      dockerfile: Dockerfile
+    container_name: gym-users-api
+    environment:
+      PORT: ${USERS_API_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_SCHEMA: ${DB_SCHEMA_USERS}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "${USERS_API_PORT}:${USERS_API_PORT}"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - gym-network
+    restart: unless-stopped
+
+  subscriptions-api:
+    build:
+      context: ./backend/subscriptions-api
+      dockerfile: Dockerfile
+    container_name: gym-subscriptions-api
+    environment:
+      PORT: ${SUBSCRIPTIONS_API_PORT}
+      MONGO_URI: ${MONGO_URI}
+      MONGO_DATABASE: ${MONGO_DATABASE_SUBSCRIPTIONS}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
+      USERS_API_URL: ${USERS_API_URL}
+      PAYMENTS_API_URL: ${PAYMENTS_API_URL}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "${SUBSCRIPTIONS_API_PORT}:${SUBSCRIPTIONS_API_PORT}"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - gym-network
+    restart: unless-stopped
+
+  activities-api:
+    build:
+      context: ./backend/activities-api
+      dockerfile: Dockerfile
+    container_name: gym-activities-api
+    environment:
+      PORT: ${ACTIVITIES_API_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_SCHEMA: ${DB_SCHEMA_ACTIVITIES}
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
+      USERS_API_URL: ${USERS_API_URL}
+      SUBSCRIPTIONS_API_URL: ${SUBSCRIPTIONS_API_URL}
+    ports:
+      - "${ACTIVITIES_API_PORT}:${ACTIVITIES_API_PORT}"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - gym-network
+    restart: unless-stopped
+
+  payments-api:
+    build:
+      context: ./backend/payments-api
+      dockerfile: Dockerfile
+    container_name: gym-payments-api
+    environment:
+      PORT: ${PAYMENTS_API_PORT}
+      MONGO_URI: ${MONGO_URI}
+      MONGO_DATABASE: ${MONGO_DATABASE_PAYMENTS}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
+    ports:
+      - "${PAYMENTS_API_PORT}:${PAYMENTS_API_PORT}"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - gym-network
+    restart: unless-stopped
 
   search-api:
-    build: ./search-api
-    ports:
-      - "8084:8084"
-    depends_on:
-      - db
-      - solr
-      - rabbitmq
+    build:
+      context: ./backend/search-api
+      dockerfile: Dockerfile
+    container_name: gym-search-api
     environment:
-      - DB_USER=root
-      - DB_PASS=root
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_SCHEMA=gimnasio
-      - APP_HOST=0.0.0.0
-      - APP_PORT=8084
-      - SOLR_URL=http://solr:8983/solr/gym_activities
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-      - RABBITMQ_EXCHANGE=gym_events
-      - RABBITMQ_QUEUE=search_queue
-    networks:
-      - app-network
-
-  frontend:
-    build: ./frontend
+      PORT: ${SEARCH_API_PORT}
+      SOLR_URL: ${SOLR_URL}
+      SOLR_CORE: ${SOLR_CORE}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
+      MEMCACHED_SERVERS: ${MEMCACHED_SERVERS}
+      CACHE_TTL: ${CACHE_TTL}
+      LOCAL_CACHE_TTL: ${LOCAL_CACHE_TTL}
+      ACTIVITIES_API_URL: ${ACTIVITIES_API_URL}
+      SUBSCRIPTIONS_API_URL: ${SUBSCRIPTIONS_API_URL}
     ports:
-      - "5173:5173"
+      - "${SEARCH_API_PORT}:${SEARCH_API_PORT}"
     depends_on:
-      - users-api
-      - subscriptions-api
-      - activities-api
-      - payments-api
-      - search-api
+      solr:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      memcached:
+        condition: service_started
     networks:
-      - app-network
+      - gym-network
+    restart: unless-stopped
+
+  # ==========================================
+  # FRONTEND (OPCIONAL)
+  # ==========================================
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: gym-frontend
+  #   ports:
+  #     - "5173:5173"
+  #   depends_on:
+  #     - users-api
+  #     - subscriptions-api
+  #     - activities-api
+  #     - search-api
+  #   networks:
+  #     - gym-network
+
+# ==========================================
+# NETWORKS
+# ==========================================
 
 networks:
-  app-network:
+  gym-network:
     driver: bridge
+
+# ==========================================
+# VOLUMES
+# ==========================================
 
 volumes:
   mysql_data:

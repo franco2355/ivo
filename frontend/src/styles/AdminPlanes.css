@@ -1,185 +1,122 @@
-.admin-planes-container {
-    padding: 2rem 0;
-}
+@import "tailwindcss/components";
 
-.admin-planes-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
+@layer components {
+  .admin-planes-container {
+    @apply py-8;
+  }
 
-.admin-planes-header h2 {
-    font-size: 1.8rem;
-    color: #333;
-}
+  .admin-planes-header {
+    @apply flex justify-between items-center mb-8;
+  }
 
-.btn-agregar-plan {
-    padding: 0.8rem 1.5rem;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.3s;
-}
+  .admin-planes-header h2 {
+    @apply text-[1.8rem] text-[#333];
+  }
 
-.btn-agregar-plan:hover {
-    background: #45a049;
-}
+  .btn-agregar-plan {
+    @apply px-6 py-3 bg-primary text-white border-none rounded-lg font-bold cursor-pointer transition-colors duration-300;
+  }
 
-.alert-info {
-    padding: 1rem;
-    background: #e3f2fd;
-    border-left: 4px solid #2196F3;
-    color: #1976d2;
-    border-radius: 4px;
-    margin-bottom: 1.5rem;
-}
+  .btn-agregar-plan:hover {
+    @apply bg-[#45a049];
+  }
 
-.planes-table-container {
-    background: white;
-    border-radius: 8px;
-    overflow-x: auto;
-}
+  .alert-info {
+    @apply p-4 bg-[#e3f2fd] border-l-4 border-secondary text-[#1976d2] rounded mb-6;
+  }
 
-.planes-table {
-    width: 100%;
+  .planes-table-container {
+    @apply bg-white rounded-lg overflow-x-auto;
+  }
+
+  .planes-table {
+    @apply w-full;
     border-collapse: collapse;
-}
+  }
 
-.planes-table th {
-    background: #f5f5f5;
-    padding: 1rem;
-    text-align: left;
-    font-weight: 600;
-    color: #333;
-    border-bottom: 2px solid #ddd;
-}
+  .planes-table th {
+    @apply bg-gray-light p-4 text-left font-semibold text-[#333] border-b-2 border-[#ddd];
+  }
 
-.planes-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #eee;
-}
+  .planes-table td {
+    @apply p-4 border-b border-[#eee];
+  }
 
-.plan-nombre-cell {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-}
+  .plan-nombre-cell {
+    @apply flex items-center gap-3;
+  }
 
-.plan-color {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-}
+  .plan-color {
+    @apply w-5 h-5 rounded;
+  }
 
-.badge-popular {
-    padding: 0.3rem 0.6rem;
-    background: #FF9800;
-    color: white;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    margin-left: 0.5rem;
-}
+  .badge-popular {
+    @apply px-2.5 py-1.5 bg-warning text-white rounded-xl text-xs ml-2;
+  }
 
-.precio-cell {
-    font-weight: bold;
-    color: #4CAF50;
-    font-size: 1.1rem;
-}
+  .precio-cell {
+    @apply font-bold text-primary text-[1.1rem];
+  }
 
-.badge-acceso {
-    padding: 0.4rem 0.8rem;
-    border-radius: 12px;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
+  .badge-acceso {
+    @apply px-3 py-2 rounded-xl text-sm font-medium;
+  }
 
-.badge-acceso.completo {
-    background: #4CAF50;
-    color: white;
-}
+  .badge-acceso.completo {
+    @apply bg-primary text-white;
+  }
 
-.badge-acceso.limitado {
-    background: #FF9800;
-    color: white;
-}
+  .badge-acceso.limitado {
+    @apply bg-warning text-white;
+  }
 
-.toggle-switch {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+  .toggle-switch {
+    @apply flex items-center gap-2;
+  }
 
-.toggle-slider-small {
-    position: relative;
-    width: 45px;
-    height: 24px;
-    background: #ccc;
-    border-radius: 24px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
+  .toggle-slider-small {
+    @apply relative w-11 h-6 bg-[#ccc] rounded-3xl cursor-pointer transition-colors duration-300;
+  }
 
-.toggle-switch input[type="checkbox"] {
-    display: none;
-}
+  .toggle-switch input[type="checkbox"] {
+    @apply hidden;
+  }
 
-.toggle-switch input[type="checkbox"]:checked + .toggle-slider-small {
-    background: #4CAF50;
-}
+  .toggle-switch input[type="checkbox"]:checked + .toggle-slider-small {
+    @apply bg-primary;
+  }
 
-.toggle-slider-small::after {
+  .toggle-slider-small::after {
+    @apply absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full;
     content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 20px;
-    height: 20px;
-    background: white;
-    border-radius: 50%;
     transition: transform 0.3s;
-}
+  }
 
-.toggle-switch input[type="checkbox"]:checked + .toggle-slider-small::after {
+  .toggle-switch input[type="checkbox"]:checked + .toggle-slider-small::after {
     transform: translateX(21px);
-}
+  }
 
-.toggle-label-small {
-    font-size: 0.9rem;
-    color: #666;
-}
+  .toggle-label-small {
+    @apply text-sm text-gray;
+  }
 
-.acciones-cell {
-    display: flex;
-    gap: 0.5rem;
-}
+  .acciones-cell {
+    @apply flex gap-2;
+  }
 
-.btn-icon {
-    background: none;
-    border: none;
-    font-size: 1.3rem;
-    cursor: pointer;
-    padding: 0.3rem;
-    transition: transform 0.3s;
-}
+  .btn-icon {
+    @apply bg-transparent border-none text-[1.3rem] cursor-pointer p-1.5 transition-transform duration-300;
+  }
 
-.btn-icon:hover {
+  .btn-icon:hover {
     transform: scale(1.2);
-}
+  }
 
-.modal-content-plan {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    max-width: 500px;
-    position: relative;
-}
+  .modal-content-plan {
+    @apply bg-white p-8 rounded-card max-w-[500px] relative;
+  }
 
-.modal-content-plan h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: #333;
+  .modal-content-plan h3 {
+    @apply text-2xl mb-4 text-[#333];
+  }
 }

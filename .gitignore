@@ -1,47 +1,126 @@
-# Archivos de entorno
+# ==========================================
+# ARCHIVOS DE CONFIGURACIÓN SENSIBLES
+# ==========================================
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
 
-# Binarios compilados
+# ==========================================
+# DEPENDENCIAS Y MÓDULOS
+# ==========================================
+# Node.js
+node_modules/
+package-lock.json.bak
+yarn.lock
+.pnp
+.pnp.js
+
+# Go
+vendor/
+go.sum.bak
+
+# ==========================================
+# BUILDS Y COMPILADOS
+# ==========================================
+# Frontend
+dist/
+build/
+.next/
+out/
+.cache/
+
+# Go binaries
 *.exe
+*.exe~
 *.dll
 *.so
 *.dylib
 *.test
 *.out
+/bin/
+/pkg/
 
-# IDEs
+# ==========================================
+# LOGS Y REPORTES
+# ==========================================
+*.log
+logs/
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test coverage
+coverage/
+*.coverage
+*.coverprofile
+.nyc_output/
+
+# ==========================================
+# IDEs Y EDITORES
+# ==========================================
 .vscode/
 .idea/
 *.swp
 *.swo
+*.swn
 *~
 .DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+.classpath
 
 # Claude Code
 .claude/
 
-# Go
-vendor/
-*.log
+# ==========================================
+# DOCKER Y CONTENEDORES
+# ==========================================
+docker-compose.override.yml
+.docker/
 
-# Dependencias
-node_modules/
-
-# Archivos temporales
+# ==========================================
+# ARCHIVOS TEMPORALES Y CACHE
+# ==========================================
 nul
 tmp/
 temp/
 *.tmp
+*.bak
+*.backup
+.sass-cache/
+.eslintcache
+.parcel-cache/
+.turbo/
 
-# Docker
-docker-compose.override.yml
+# OS
+Thumbs.db
+Desktop.ini
 
-# Documentación - excluir todos los .md excepto los especificados
-*.md
-*.MD
+# ==========================================
+# BASE DE DATOS Y VOLÚMENES
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+data/
+mysql_data/
+mongo_data/
+postgres_data/
 
-# Excepciones - archivos .md que SÍ se deben versionar
-!payments-api/CONTRATO_INTEGRACION_SUBSCRIPTIONS.md
-!payments-api/DIAGRAMA_ARQUITECTURA.md
+# ==========================================
+# DOCUMENTACIÓN (OPCIONAL)
+# ==========================================
+# Descomentar si no quieres versionar ciertos .md
+# *.md
+# *.MD
+# !README.md
+# !CONTRIBUTING.md

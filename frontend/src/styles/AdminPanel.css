@@ -1,182 +1,134 @@
-.admin-container {
+@import "tailwindcss/components";
+
+@layer components {
+  .admin-container {
+    @apply w-full box-border bg-gray-light;
     padding: 2rem 2rem 4rem 2rem;
-    width: 100%;
-    box-sizing: border-box;
     min-height: calc(100vh - 120px);
-    background-color: #f5f5f5;
-}
+  }
 
-.admin-container h2 {
-    color: #1a1a1a;
-    margin-bottom: 2rem;
-    font-size: 1.8rem;
-    font-weight: 600;
-}
+  .admin-container h2 {
+    @apply text-dark mb-8 text-[1.8rem] font-semibold;
+  }
 
-.admin-table-container {
-    background-color: white;
-    border-radius: 12px;
+  .admin-table-container {
+    @apply bg-white rounded-card overflow-x-auto w-full max-w-full m-0 mb-8;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    overflow-x: auto;
-    width: 100%;
-    max-width: 100%;
-    margin: 0 0 2rem 0;
-}
+  }
 
-.admin-table {
-    width: 100%;
+  .admin-table {
+    @apply w-full text-[0.95rem];
     border-collapse: separate;
     border-spacing: 0;
-    font-size: 0.95rem;
-}
+  }
 
-.admin-table th {
-    background-color: #1a1a1a;
-    color: white;
-    text-align: left;
+  .admin-table th {
+    @apply bg-dark text-white text-left font-medium sticky top-0 z-10;
     padding: 1.2rem 1.5rem;
-    font-weight: 500;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
+  }
 
-.admin-table th:first-child {
-    border-top-left-radius: 12px;
-}
+  .admin-table th:first-child {
+    @apply rounded-tl-card;
+  }
 
-.admin-table th:last-child {
-    border-top-right-radius: 12px;
-}
+  .admin-table th:last-child {
+    @apply rounded-tr-card;
+  }
 
-.admin-table td {
+  .admin-table td {
+    @apply border-b border-[#eaeaea] text-[#4a4a4a] leading-normal;
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid #eaeaea;
-    color: #4a4a4a;
-    line-height: 1.4;
-}
+  }
 
-.admin-table tr:last-child td {
-    border-bottom: none;
-}
+  .admin-table tr:last-child td {
+    @apply border-b-0;
+  }
 
-.admin-table tr:hover {
-    background-color: #f8f9fa;
-    transition: background-color 0.2s ease;
-}
+  .admin-table tr:hover {
+    @apply bg-[#f8f9fa] transition-colors duration-200;
+  }
 
-.acciones-column {
-    white-space: nowrap;
-    width: 120px;
-    text-align: right;
-}
+  .acciones-column {
+    @apply whitespace-nowrap w-[120px] text-right;
+  }
 
-.action-button {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    margin-left: 0.8rem;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
+  .action-button {
+    @apply bg-transparent border-none text-xl cursor-pointer p-2 ml-3 rounded-md transition-all duration-200;
+  }
 
-.action-button:hover {
+  .action-button:hover {
     transform: translateY(-2px);
-}
+  }
 
-.edit-button:hover {
+  .edit-button:hover {
+    @apply text-primary;
     background-color: rgba(76, 175, 80, 0.1);
-    color: #4CAF50;
-}
+  }
 
-.delete-button:hover {
+  .delete-button:hover {
+    @apply text-danger;
     background-color: rgba(244, 67, 54, 0.1);
-    color: #f44336;
-}
+  }
 
-.admin-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding: 0 1rem;
-}
+  .admin-header {
+    @apply flex justify-between items-center mb-8 px-4;
+  }
 
-.admin-header h2 {
-    margin: 0;
-}
+  .admin-header h2 {
+    @apply m-0;
+  }
 
-.btn-agregar {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 0.9rem 1.8rem;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    transition: all 0.2s ease;
-}
+  .btn-agregar {
+    @apply bg-primary text-white border-none px-7 py-4 rounded-lg text-base font-medium cursor-pointer flex items-center gap-3 transition-all duration-200;
+  }
 
-.btn-agregar:hover {
-    background-color: #45a049;
+  .btn-agregar:hover {
+    @apply bg-[#45a049];
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
-}
+  }
 
-.btn-agregar span {
-    font-size: 1.3rem;
-}
+  .btn-agregar span {
+    @apply text-[1.3rem];
+  }
 
-@media (max-width: 1024px) {
+  @media (max-width: 1024px) {
     .admin-container {
-        padding: 1.5rem 1.5rem 3rem 1.5rem;
-        width: 100%;
+      @apply w-full;
+      padding: 1.5rem 1.5rem 3rem 1.5rem;
     }
 
     .admin-table-container {
-        margin: 0;
-        width: 100%;
+      @apply m-0 w-full;
     }
-    
+
     .admin-table th,
     .admin-table td {
-        padding: 1rem;
+      @apply p-4;
     }
-}
+  }
 
-@media (max-width: 768px) {
+  @media (max-width: 768px) {
     .admin-container {
-        padding: 1rem 1rem 2.5rem 1rem;
-        width: 100%;
+      @apply w-full;
+      padding: 1rem 1rem 2.5rem 1rem;
     }
 
     .admin-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
-        text-align: center;
-        width: 100%;
-        padding: 0;
+      @apply flex-col gap-4 items-stretch text-center w-full p-0;
     }
 
     .btn-agregar {
-        justify-content: center;
-        width: 100%;
+      @apply justify-center w-full;
     }
-    
+
     .admin-table {
-        font-size: 0.85rem;
-        width: 100%;
+      @apply text-sm w-full;
     }
 
     .admin-table th,
     .admin-table td {
-        padding: 0.8rem;
+      @apply p-3;
     }
-} 
+  }
+}

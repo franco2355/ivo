@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useToastContext } from '../context/ToastContext';
+import { handleSessionExpired, isAuthError } from '../utils/auth';
+import { USERS_API } from '../config/api';
 import '../styles/EditarActividadModal.css';
 
 const EditarActividadModal = ({ actividad, onClose, onSave }) => {
+    const navigate = useNavigate();
+    const toast = useToastContext();
     const [formData, setFormData] = useState({
         id_actividad: '',
         titulo: '',
@@ -100,7 +106,7 @@ const EditarActividadModal = ({ actividad, onClose, onSave }) => {
                 cupo: parseInt(formData.cupo, 10)
             };
 
-            const response = await fetch(`http://localhost:8080/actividades/${formData.id_actividad}`, {
+            const response = await fetch(`${USERS_API.base}/actividades/${formData.id_actividad}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -109,7 +115,9 @@ const EditarActividadModal = ({ actividad, onClose, onSave }) => {
                 body: JSON.stringify(dataToSend)
             });
 
-            if (response.ok) {
+            if (isAuthError(response)) {
+                handleSessionExpired(toast, navigate);
+            } else if (response.ok) {
                 onSave();
                 onClose();
             } else {

@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { getMockSuscripcionByUserId } from '../data/mockData';
 import { PAYMENTS_API, USERS_API } from '../config/api';
 import { normalizePaymentStatus } from '../utils/paymentStatus';
+import { handleSessionExpired, isAuthError } from '../utils/auth';
+import { useToastContext } from '../context/ToastContext';
+import Spinner from '../components/Spinner';
 import '../styles/Dashboard.css';
 
 const Dashboard = () => {
@@ -11,6 +14,7 @@ const Dashboard = () => {
     const [pagosRecientes, setPagosRecientes] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const toast = useToastContext();
     const userId = localStorage.getItem("idUsuario");
     const username = localStorage.getItem("username") || "Usuario";
 
@@ -46,7 +50,10 @@ const Dashboard = () => {
 
                 console.log('[Dashboard] Inscripciones response:', inscResponse.status);
 
-                if (inscResponse.ok) {
+                if (isAuthError(inscResponse)) {
+                    handleSessionExpired(toast, navigate);
+                    return;
+                } else if (inscResponse.ok) {
                     const inscData = await inscResponse.json();
                     console.log('[Dashboard] Inscripciones recibidas:', inscData);
 
@@ -116,7 +123,7 @@ const Dashboard = () => {
     if (loading) {
         return (
             <div className="dashboard-container">
-                <div className="loading-message">Cargando dashboard...</div>
+                <Spinner size="large" message="Cargando dashboard..." />
             </div>
         );
     }

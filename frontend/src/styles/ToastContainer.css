@@ -1,0 +1,21 @@
+.toast-container {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.toast-wrapper {
+    position: fixed;
+    right: 20px;
+    pointer-events: auto;
+    transition: top 0.3s ease;
+}
+
+@media (max-width: 600px) {
+    .toast-wrapper {
+        right: 10px;
+        left: 10px;
+    }
+}

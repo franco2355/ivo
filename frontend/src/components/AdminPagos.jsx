@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { PAYMENTS_API, USERS_API } from '../config/api';
 import '../styles/AdminPagos.css';
+import { useToastContext } from '../context/ToastContext';
 
 const AdminPagos = () => {
     const [pagos, setPagos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filtroEstado, setFiltroEstado] = useState('all');
     const [usuarios, setUsuarios] = useState({});
+    const toast = useToastContext();
     const [estadisticas, setEstadisticas] = useState({
         total: 0,
         completados: 0,
@@ -101,11 +103,11 @@ const AdminPagos = () => {
                 throw new Error("Error al aprobar el pago");
             }
 
-            alert('Pago aprobado exitosamente');
+            toast.success('Pago aprobado exitosamente');
             fetchPagos(); // Refrescar la lista
         } catch (error) {
             console.error("Error al aprobar pago:", error);
-            alert(`Error al aprobar el pago: ${error.message}`);
+            toast.error(`Error al aprobar el pago: ${error.message}`);
         }
     };
 
@@ -127,11 +129,11 @@ const AdminPagos = () => {
                 throw new Error("Error al rechazar el pago");
             }
 
-            alert('Pago rechazado');
+            toast.info('Pago rechazado');
             fetchPagos(); // Refrescar la lista
         } catch (error) {
             console.error("Error al rechazar pago:", error);
-            alert(`Error al rechazar el pago: ${error.message}`);
+            toast.error(`Error al rechazar el pago: ${error.message}`);
         }
     };
 

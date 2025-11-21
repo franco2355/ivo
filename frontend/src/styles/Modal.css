@@ -1,121 +1,85 @@
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
+@import "tailwindcss/components";
 
-.modal-content {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 8px;
+@layer components {
+  .modal-overlay {
+    @apply fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex justify-center items-center z-[1000];
+  }
+
+  .modal-content {
+    @apply bg-white p-8 rounded-lg w-[90%] max-w-[500px] max-h-[90vh] overflow-y-auto;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
-}
+  }
 
-.modal-content h2 {
-    margin: 0 0 1.5rem 0;
-    color: #333;
-    font-size: 1.5rem;
-}
+  .modal-content h2 {
+    @apply m-0 mb-6 text-[#333] text-2xl;
+  }
 
-.form-group {
-    margin-bottom: 1rem;
-}
+  .form-group {
+    @apply mb-4;
+  }
 
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #555;
-    font-weight: 500;
-}
+  .form-group label {
+    @apply block mb-2 text-[#555] font-medium;
+  }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-    transition: border-color 0.2s ease;
-}
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    @apply w-full px-3 py-3 border border-[#ddd] rounded text-base transition-[border-color] duration-200;
+  }
 
-.form-group textarea {
-    min-height: 100px;
-    resize: vertical;
-}
+  .form-group textarea {
+    @apply min-h-[100px] resize-y;
+  }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: #4CAF50;
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    @apply outline-none border-primary;
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
-}
+  }
 
-.form-row {
-    display: flex;
-    gap: 1rem;
-}
+  .form-row {
+    @apply flex gap-4;
+  }
 
-.form-row .form-group {
-    flex: 1;
-}
+  .form-row .form-group {
+    @apply flex-1;
+  }
 
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 2rem;
-}
+  .modal-actions {
+    @apply flex justify-end gap-4 mt-8;
+  }
 
-.modal-actions button {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
+  .modal-actions button {
+    @apply px-6 py-3 border-none rounded text-base cursor-pointer transition-all duration-200;
+  }
 
-.cancel-button {
-    background-color: #f5f5f5;
-    color: #333;
-}
+  .cancel-button {
+    @apply bg-gray-light text-[#333];
+  }
 
-.cancel-button:hover {
-    background-color: #e0e0e0;
-}
+  .cancel-button:hover {
+    @apply bg-[#e0e0e0];
+  }
 
-.save-button {
-    background-color: #4CAF50;
-    color: white;
-}
+  .save-button {
+    @apply bg-primary text-white;
+  }
 
-.save-button:hover {
-    background-color: #45a049;
+  .save-button:hover {
+    @apply bg-[#45a049];
     transform: translateY(-2px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
+  }
 
-@media (max-width: 768px) {
+  @media (max-width: 768px) {
     .modal-content {
-        padding: 1.5rem;
-        width: 95%;
+      @apply p-6 w-[95%];
     }
 
     .form-row {
-        flex-direction: column;
-        gap: 0;
+      @apply flex-col gap-0;
     }
-} 
+  }
+}

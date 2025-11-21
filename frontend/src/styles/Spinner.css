@@ -1,0 +1,46 @@
+@import "tailwindcss/components";
+
+@layer components {
+    .spinner-container {
+        @apply flex flex-col items-center justify-center;
+        min-height: 200px;
+    }
+
+    .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-left-color: #4CAF50;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .spinner-small {
+        width: 24px;
+        height: 24px;
+        border-width: 3px;
+    }
+
+    .spinner-medium {
+        width: 48px;
+        height: 48px;
+        border-width: 4px;
+    }
+
+    .spinner-large {
+        width: 72px;
+        height: 72px;
+        border-width: 6px;
+    }
+
+    .spinner-message {
+        @apply mt-4 text-gray-600 text-base;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+}

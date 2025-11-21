@@ -1,139 +1,93 @@
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
+@import "tailwindcss/components";
 
-.modal-content {
-    background-color: #1a1a1a;
-    padding: 1.5rem;
-    border-radius: 8px;
-    width: 80%;
-    max-width: 500px;
-    max-height: 85vh;
-    overflow-y: auto;
-    position: relative;
+@layer components {
+  .modal-overlay {
+    @apply fixed top-0 left-0 right-0 bottom-0 bg-black/70 flex justify-center items-center z-[1000];
+  }
+
+  .modal-content {
+    @apply bg-dark p-6 rounded-lg w-4/5 max-w-[500px] max-h-[85vh] overflow-y-auto relative;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.modal-content h2 {
-    color: #ffffff;
-    margin-bottom: 1.5rem;
-    text-align: center;
-    font-size: 1.5rem;
-}
+  .modal-content h2 {
+    @apply text-white mb-6 text-center text-2xl;
+  }
 
-.form-group {
-    margin-bottom: 1rem;
-}
+  .form-group {
+    @apply mb-4;
+  }
 
-.form-group label {
-    display: block;
-    margin-bottom: 0.3rem;
-    color: #ffffff;
-    font-weight: 500;
-    font-size: 0.9rem;
-}
+  .form-group label {
+    @apply block mb-1.5 text-white font-medium text-sm;
+  }
 
-.form-group input,
-.form-group textarea,
-.form-group select {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #333;
-    border-radius: 4px;
-    background-color: #2a2a2a;
-    color: #ffffff;
-    font-size: 0.9rem;
-}
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    @apply w-full p-2 border border-[#333] rounded bg-[#2a2a2a] text-white text-sm;
+  }
 
-.form-group textarea {
-    min-height: 80px;
-    resize: vertical;
-}
+  .form-group textarea {
+    @apply min-h-[80px] resize-y;
+  }
 
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
-    outline: none;
-    border-color: #666;
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    @apply outline-none border-[#666];
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
-}
+  }
 
-.error-text {
-    color: #ff4444;
-    font-size: 0.8rem;
-    margin-top: 0.3rem;
-    display: block;
-}
+  .error-text {
+    @apply text-[#ff4444] text-xs mt-1.5 block;
+  }
 
-.error-message {
-    color: #ff4444;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
+  .error-message {
+    @apply text-[#ff4444] mb-4 p-2 rounded text-sm text-center;
     background-color: rgba(255, 68, 68, 0.1);
-    border-radius: 4px;
-    font-size: 0.9rem;
-    text-align: center;
-}
+  }
 
-.form-buttons {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 2rem;
-}
+  .form-buttons {
+    @apply flex gap-4 justify-end mt-8;
+  }
 
-.btn-guardar,
-.btn-cancelar {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    font-size: 1rem;
-    cursor: pointer;
+  .btn-guardar,
+  .btn-cancelar {
+    @apply px-6 py-3 border-none rounded text-base cursor-pointer;
     transition: background-color 0.2s, transform 0.1s;
-}
+  }
 
-.btn-guardar {
-    background-color: #4CAF50;
-    color: white;
-}
+  .btn-guardar {
+    @apply bg-primary text-white;
+  }
 
-.btn-guardar:hover {
-    background-color: #45a049;
+  .btn-guardar:hover {
+    @apply bg-[#45a049];
     transform: translateY(-1px);
-}
+  }
 
-.btn-cancelar {
-    background-color: #666;
-    color: white;
-}
+  .btn-cancelar {
+    @apply bg-[#666] text-white;
+  }
 
-.btn-cancelar:hover {
-    background-color: #555;
+  .btn-cancelar:hover {
+    @apply bg-[#555];
     transform: translateY(-1px);
-}
+  }
 
-@media (max-width: 768px) {
+  @media (max-width: 768px) {
     .modal-content {
-        width: 95%;
-        padding: 1rem;
-        margin: 1rem;
+      @apply w-[95%] p-4 m-4;
     }
 
     .form-buttons {
-        flex-direction: column;
+      @apply flex-col;
     }
 
     .btn-guardar,
     .btn-cancelar {
-        width: 100%;
+      @apply w-full;
     }
-} 
+  }
+}

@@ -1,299 +1,203 @@
-.admin-pagos-container {
-    padding: 2rem 0;
-}
+@import "tailwindcss/components";
 
-.admin-pagos-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
+@layer components {
+  .admin-pagos-container {
+    @apply py-8;
+  }
 
-.admin-pagos-header h2 {
-    font-size: 1.8rem;
-    color: #333;
-}
+  .admin-pagos-header {
+    @apply flex justify-between items-center mb-8;
+  }
 
-.btn-refrescar {
-    padding: 0.8rem 1.5rem;
-    background: #2196F3;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.3s;
-}
+  .admin-pagos-header h2 {
+    @apply text-[1.8rem] text-[#333];
+  }
 
-.btn-refrescar:hover {
-    background: #0b7dda;
-}
+  .btn-refrescar {
+    @apply px-6 py-3 bg-secondary text-white border-none rounded-lg font-bold cursor-pointer transition-colors duration-300;
+  }
 
-.estadisticas-grid {
-    display: grid;
+  .btn-refrescar:hover {
+    @apply bg-[#0b7dda];
+  }
+
+  .estadisticas-grid {
+    @apply grid gap-6 mb-8;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
+  }
 
-.stat-card-admin {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  .stat-card-admin {
+    @apply bg-white p-6 rounded-lg flex items-center gap-4;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.stat-card-admin.success {
-    border-left: 4px solid #4CAF50;
-}
+  .stat-card-admin.success {
+    @apply border-l-4 border-primary;
+  }
 
-.stat-card-admin.warning {
-    border-left: 4px solid #FF9800;
-}
+  .stat-card-admin.warning {
+    @apply border-l-4 border-warning;
+  }
 
-.stat-card-admin.money {
-    border-left: 4px solid #2196F3;
-}
+  .stat-card-admin.money {
+    @apply border-l-4 border-secondary;
+  }
 
-.stat-card-admin .stat-icon {
-    font-size: 2.5rem;
-}
+  .stat-card-admin .stat-icon {
+    @apply text-[2.5rem];
+  }
 
-.stat-card-admin .stat-info {
-    display: flex;
-    flex-direction: column;
-}
+  .stat-card-admin .stat-info {
+    @apply flex flex-col;
+  }
 
-.stat-card-admin .stat-value {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #333;
-}
+  .stat-card-admin .stat-value {
+    @apply text-[1.8rem] font-bold text-[#333];
+  }
 
-.stat-card-admin .stat-label {
-    font-size: 0.9rem;
-    color: #666;
-}
+  .stat-card-admin .stat-label {
+    @apply text-sm text-gray;
+  }
 
-.filtros-pagos {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-}
+  .filtros-pagos {
+    @apply flex gap-4 mb-6 flex-wrap;
+  }
 
-.filtros-pagos button {
-    padding: 0.7rem 1.2rem;
-    border: 2px solid #ddd;
-    background: white;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-weight: 500;
-}
+  .filtros-pagos button {
+    @apply px-5 py-3 border-2 border-[#ddd] bg-white rounded-md cursor-pointer transition-all duration-300 font-medium;
+  }
 
-.filtros-pagos button:hover {
-    border-color: #333;
-}
+  .filtros-pagos button:hover {
+    @apply border-[#333];
+  }
 
-.filtros-pagos button.filtro-activo {
-    background: #333;
-    color: white;
-    border-color: #333;
-}
+  .filtros-pagos button.filtro-activo {
+    @apply bg-[#333] text-white border-[#333];
+  }
 
-.pagos-table-container {
-    background: white;
-    border-radius: 8px;
-    overflow-x: auto;
-}
+  .pagos-table-container {
+    @apply bg-white rounded-lg overflow-x-auto;
+  }
 
-.pagos-table {
-    width: 100%;
+  .pagos-table {
+    @apply w-full;
     border-collapse: collapse;
-}
+  }
 
-.pagos-table th {
-    background: #f5f5f5;
-    padding: 1rem;
-    text-align: left;
-    font-weight: 600;
-    color: #333;
-    border-bottom: 2px solid #ddd;
-}
+  .pagos-table th {
+    @apply bg-gray-light p-4 text-left font-semibold text-[#333] border-b-2 border-[#ddd];
+  }
 
-.pagos-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #eee;
-}
+  .pagos-table td {
+    @apply p-4 border-b border-[#eee];
+  }
 
-.id-cell {
-    font-family: monospace;
-    font-size: 0.9rem;
-    color: #666;
-}
+  .id-cell {
+    @apply font-mono text-sm text-gray;
+  }
 
-.concepto-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-}
+  .concepto-cell {
+    @apply flex flex-col gap-1.5;
+  }
 
-.entity-type {
-    font-size: 0.85rem;
-    color: #666;
-    text-transform: capitalize;
-}
+  .entity-type {
+    @apply text-sm text-gray capitalize;
+  }
 
-.entity-name {
-    font-weight: bold;
-    color: #333;
-}
+  .entity-name {
+    @apply font-bold text-[#333];
+  }
 
-.monto-cell {
-    font-weight: bold;
-    color: #4CAF50;
-    font-size: 1.1rem;
-}
+  .monto-cell {
+    @apply font-bold text-primary text-[1.1rem];
+  }
 
-.badge-estado {
-    padding: 0.4rem 0.8rem;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    display: inline-block;
-}
+  .badge-estado {
+    @apply px-3 py-2 rounded-xl text-sm font-semibold inline-block;
+  }
 
-.estado-completado {
-    background: #e8f5e9;
-    color: #2e7d32;
-}
+  .estado-completado {
+    @apply bg-[#e8f5e9] text-[#2e7d32];
+  }
 
-.estado-pendiente {
-    background: #fff3e0;
-    color: #f57c00;
-}
+  .estado-pendiente {
+    @apply bg-[#fff3e0] text-[#f57c00];
+  }
 
-.estado-fallido {
-    background: #ffebee;
-    color: #c62828;
-}
+  .estado-fallido {
+    @apply bg-[#ffebee] text-[#c62828];
+  }
 
-.estado-reembolsado {
-    background: #e3f2fd;
-    color: #1565c0;
-}
+  .estado-reembolsado {
+    @apply bg-[#e3f2fd] text-[#1565c0];
+  }
 
-.fecha-cell {
-    color: #666;
-    font-size: 0.95rem;
-}
+  .fecha-cell {
+    @apply text-gray text-[0.95rem];
+  }
 
-.no-pagos-admin {
-    background: white;
-    padding: 3rem;
-    text-align: center;
-    border-radius: 8px;
-    color: #666;
-}
+  .no-pagos-admin {
+    @apply bg-white p-12 text-center rounded-lg text-gray;
+  }
 
-.admin-tabs {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-    border-bottom: 2px solid #ddd;
-}
+  .admin-tabs {
+    @apply flex gap-2 mb-8 border-b-2 border-[#ddd];
+  }
 
-.tab {
-    padding: 1rem 2rem;
-    background: none;
-    border: none;
-    border-bottom: 3px solid transparent;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 500;
-    color: #666;
-    transition: all 0.3s;
-}
+  .tab {
+    @apply px-8 py-4 bg-transparent border-none border-b-[3px] border-transparent cursor-pointer text-base font-medium text-gray transition-all duration-300;
+  }
 
-.tab:hover {
-    color: #333;
-    background: #f5f5f5;
-}
+  .tab:hover {
+    @apply text-[#333] bg-gray-light;
+  }
 
-.tab.tab-active {
-    color: #333;
-    border-bottom-color: #333;
-    font-weight: bold;
-}
+  .tab.tab-active {
+    @apply text-[#333] border-b-[#333] font-bold;
+  }
 
-.admin-content {
-    min-height: 400px;
-}
+  .admin-content {
+    @apply min-h-[400px];
+  }
 
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
+  .section-header {
+    @apply flex justify-between items-center mb-8;
+  }
 
-.section-header h3 {
-    font-size: 1.5rem;
-    color: #333;
-}
+  .section-header h3 {
+    @apply text-2xl text-[#333];
+  }
 
-/* Estilos para acciones de pagos */
-.acciones-cell {
-    text-align: center;
-}
+  /* Estilos para acciones de pagos */
+  .acciones-cell {
+    @apply text-center;
+  }
 
-.acciones-buttons {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-}
+  .acciones-buttons {
+    @apply flex gap-2 justify-center;
+  }
 
-.btn-aprobar {
-    padding: 0.5rem 1rem;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
+  .btn-aprobar {
+    @apply px-4 py-2 bg-primary text-white border-none rounded-md text-sm font-semibold cursor-pointer transition-all duration-300;
+  }
 
-.btn-aprobar:hover {
-    background: #45a049;
+  .btn-aprobar:hover {
+    @apply bg-[#45a049];
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
+  }
 
-.btn-rechazar {
-    padding: 0.5rem 1rem;
-    background: #f44336;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
+  .btn-rechazar {
+    @apply px-4 py-2 bg-danger text-white border-none rounded-md text-sm font-semibold cursor-pointer transition-all duration-300;
+  }
 
-.btn-rechazar:hover {
-    background: #da190b;
+  .btn-rechazar:hover {
+    @apply bg-[#da190b];
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
+  }
 
-.no-acciones {
-    color: #999;
-    font-style: italic;
+  .no-acciones {
+    @apply text-[#999] italic;
+  }
 }

@@ -1,0 +1,93 @@
+@import "tailwindcss/components";
+
+@layer components {
+    .confirm-dialog-overlay {
+        @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    .confirm-dialog-container {
+        @apply bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4;
+        animation: slideUp 0.3s ease-out;
+    }
+
+    .confirm-dialog-header {
+        @apply p-6 border-b border-gray-200;
+    }
+
+    .confirm-dialog-title {
+        @apply text-xl font-bold text-gray-800;
+    }
+
+    .confirm-dialog-body {
+        @apply p-6;
+    }
+
+    .confirm-dialog-message {
+        @apply text-gray-600 text-base;
+    }
+
+    .confirm-dialog-footer {
+        @apply p-6 border-t border-gray-200 flex gap-3 justify-end;
+    }
+
+    .confirm-dialog-button {
+        @apply px-6 py-2.5 rounded-lg font-semibold transition-all duration-200;
+    }
+
+    .confirm-dialog-button-cancel {
+        @apply bg-gray-200 text-gray-700;
+    }
+
+    .confirm-dialog-button-cancel:hover {
+        @apply bg-gray-300;
+    }
+
+    .confirm-dialog-button-confirm {
+        @apply text-white;
+    }
+
+    .confirm-dialog-button-danger {
+        @apply bg-red-600;
+    }
+
+    .confirm-dialog-button-danger:hover {
+        @apply bg-red-700;
+    }
+
+    .confirm-dialog-button-warning {
+        @apply bg-orange-600;
+    }
+
+    .confirm-dialog-button-warning:hover {
+        @apply bg-orange-700;
+    }
+
+    .confirm-dialog-button-info {
+        @apply bg-blue-600;
+    }
+
+    .confirm-dialog-button-info:hover {
+        @apply bg-blue-700;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}

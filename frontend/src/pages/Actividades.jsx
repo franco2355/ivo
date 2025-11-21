@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import EditarActividadModal from '../components/EditarActividadModal';
+import Spinner from '../components/Spinner';
 import "../styles/Actividades.css";
 import { useNavigate } from "react-router-dom";
+import { useToastContext } from '../context/ToastContext';
+import { handleSessionExpired, isAuthError } from '../utils/auth';
+import { ACTIVITIES_API, SEARCH_API } from '../config/api';
+import { useDebounce } from '../hooks/useDebounce';
 
 const Actividades = () => {
     const [actividades, setActividades] = useState([]);
@@ -9,6 +14,7 @@ const Actividades = () => {
     const [inscripciones, setInscripciones] = useState([]);
     const [actividadEditar, setActividadEditar] = useState(null);
     const [expandedActividadId, setExpandedActividadId] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [filtros, setFiltros] = useState({
         busqueda: "",
         categoria: "",
@@ -18,22 +24,30 @@ const Actividades = () => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     const isAdmin = localStorage.getItem("isAdmin") === "true";
     const navigate = useNavigate();
+    const toast = useToastContext();
+
+    // Debounce solo el campo de búsqueda para mejor performance
+    const debouncedBusqueda = useDebounce(filtros.busqueda, 500);
 
     useEffect(() => {
-        fetchInscripciones();
+        if (isLoggedIn) {
+            fetchInscripciones();
+        }
     }, []);
 
+    // Ejecutar búsqueda cuando cambien los filtros (con debounce en búsqueda)
     useEffect(() => {
         searchActividades();
-    }, [filtros]);
+    }, [debouncedBusqueda, filtros.categoria, filtros.dia, filtros.soloInscripto]);
 
     const searchActividades = async () => {
         try {
+            setLoading(true);
             // Construir query params para search-api
             const params = new URLSearchParams();
 
-            if (filtros.busqueda) {
-                params.append('q', filtros.busqueda);
+            if (debouncedBusqueda) {
+                params.append('q', debouncedBusqueda);
             }
 
             params.append('type', 'activity');
@@ -41,7 +55,7 @@ const Actividades = () => {
             params.append('page_size', '100');
 
             // Construir URL con filtros
-            let url = `http://localhost:8084/search?${params.toString()}`;
+            let url = `${SEARCH_API.search}?${params.toString()}`;
 
             console.log("Searching activities:", url);
             const response = await fetch(url);
@@ -78,7 +92,7 @@ const Actividades = () => {
 
                 // Mapear campos de search-api a formato esperado por el frontend
                 const mappedResults = results.map(doc => ({
-                    id_actividad: parseInt(doc.id),
+                    id_actividad: parseInt(doc.id.replace('activity_', '')),  // Extraer el número del ID
                     titulo: doc.titulo,
                     descripcion: doc.descripcion,
                     categoria: doc.categoria,
@@ -97,21 +111,25 @@ const Actividades = () => {
             }
         } catch (error) {
             console.error("Error al buscar actividades:", error);
+        } finally {
+            setLoading(false);
         }
     };
     
     const fetchInscripciones = async () => {
         try {
-            const response = await fetch("http://localhost:8080/inscripciones", {
+            const response = await fetch(ACTIVITIES_API.inscripciones, {
                 headers: {'Authorization': `Bearer ${localStorage.getItem('access_token')}`
             },
             });
             if (response.ok) {
                 const resp = await response.json();
                 const data = resp.filter(insc => insc.is_activa)
-                
+
                 console.log("Inscripciones cargadas:", data);
                 setInscripciones(data);
+            } else if (isAuthError(response)) {
+                handleSessionExpired(toast, navigate);
             }
         } catch (error) {
             console.error("Error al cargar inscripciones:", error);
@@ -133,57 +151,118 @@ const Actividades = () => {
         }
 
         try {
-            const response = await fetch("http://localhost:8080/inscripciones", {
+            const response = await fetch(ACTIVITIES_API.inscripciones, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
                 },
                 body: JSON.stringify({
-                    id: actividadId,
+                    actividad_id: actividadId,
                 }),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || "Error al inscribirse en la actividad");
+                // Manejar diferentes tipos de errores
+                let errorMessage = "Error al inscribirse en la actividad";
+
+                if (response.status === 400) {
+                    if (data.error && data.error.toLowerCase().includes("subscription")) {
+                        errorMessage = "No tienes un plan activo. Por favor, suscríbete a un plan para inscribirte en actividades.";
+                    } else if (data.error && data.error.toLowerCase().includes("plan")) {
+                        errorMessage = "No tienes un plan activo. Por favor, suscríbete a un plan para inscribirte en actividades.";
+                    } else if (data.error && data.error.toLowerCase().includes("cupo")) {
+                        errorMessage = "No hay cupos disponibles para esta actividad";
+                    } else if (data.error && data.error.toLowerCase().includes("ya inscrito")) {
+                        errorMessage = "Ya estás inscrito en esta actividad";
+                    } else if (data.details) {
+                        errorMessage = data.details;
+                    } else if (data.error) {
+                        errorMessage = data.error;
+                    }
+                } else if (response.status === 401) {
+                    handleSessionExpired(toast, navigate);
+                    return;
+                } else if (response.status === 403) {
+                    // Forbidden - problemas de suscripción o permisos
+                    const errorLower = data.error ? data.error.toLowerCase() : '';
+                    if (errorLower.includes("suscripción") || errorLower.includes("suscripcion")) {
+                        errorMessage = "No tienes un plan activo. Por favor, suscríbete a un plan para inscribirte en actividades.";
+                    } else if (errorLower.includes("premium")) {
+                        errorMessage = "Esta actividad requiere un plan premium. Mejora tu suscripción para acceder.";
+                    } else if (data.error) {
+                        errorMessage = data.error;
+                    } else {
+                        errorMessage = "No tienes permisos para realizar esta acción";
+                    }
+                } else if (response.status === 404) {
+                    // Not Found - actividad no existe
+                    errorMessage = "La actividad no existe o ha sido eliminada";
+                } else if (response.status === 409) {
+                    // Conflict - ya inscrito
+                    errorMessage = "Ya estás inscrito en esta actividad";
+                } else if (response.status === 500) {
+                    // Error del servidor
+                    console.error("Error 500 del servidor:", data);
+                    if (data.error && data.error.toLowerCase().includes("subscription")) {
+                        errorMessage = "No tienes un plan activo. Por favor, suscríbete a un plan para inscribirte en actividades.";
+                    } else if (data.error && data.error.toLowerCase().includes("plan")) {
+                        errorMessage = "No tienes un plan activo. Por favor, suscríbete a un plan para inscribirte en actividades.";
+                    } else if (data.details) {
+                        errorMessage = `Error del servidor: ${data.details}`;
+                    } else if (data.error) {
+                        errorMessage = data.error;
+                    } else {
+                        errorMessage = "Error del servidor. Por favor, intenta más tarde o contacta al administrador.";
+                    }
+                } else if (data.error) {
+                    errorMessage = data.error;
+                } else if (data.details) {
+                    errorMessage = data.details;
+                }
+
+                throw new Error(errorMessage);
             }
 
             // Actualizar la lista de inscripciones
             fetchInscripciones();
             // Actualizar la lista de actividades para reflejar el cambio en los cupos
             searchActividades();
-            alert("¡Inscripción exitosa!");
+            toast.success("¡Inscripción exitosa!");
         } catch (error) {
             console.error("Error al inscribirse:", error);
-            alert(error.message);
+            toast.error(error.message);
         }
     };
     
     const handleUnenrolling = async (id_actividad) => {
         try {
-            const response = await fetch("http://localhost:8080/inscripciones", {
+            const response = await fetch(ACTIVITIES_API.inscripciones, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                 },
                 body: JSON.stringify({
-                    id: parseInt(id_actividad)
+                    actividad_id: parseInt(id_actividad)
                 })
             });
 
             if (response.status == 204) {
-                alert(`Desinscripto exitosamente`);
+                toast.success("Desinscrito exitosamente");
                 fetchInscripciones();
+            } else if (isAuthError(response)) {
+                handleSessionExpired(toast, navigate);
+                return;
             } else {
-                alert(`Ups! algo salio mal, vuelve a intentarlo mas tarde`);
+                toast.error("Ups! algo salió mal, vuelve a intentarlo más tarde");
             }
 
             searchActividades();
         } catch (error) {
-            alert(`Ups! algo salio mal, vuelve a intentarlo mas tarde`);
+            toast.error("Ups! algo salió mal, vuelve a intentarlo más tarde");
             console.error("Error al desinscribir el usuario:", error);
         }
     };
@@ -204,14 +283,14 @@ const Actividades = () => {
     const handleEliminar = async (actividad) => {
         if (!actividad.id_actividad) {
             console.error("Error: La actividad no tiene ID", actividad);
-            alert('Error: No se puede eliminar la actividad porque no tiene ID');
+            toast.error('Error: No se puede eliminar la actividad porque no tiene ID');
             return;
         }
 
         if (window.confirm('¿Estás seguro de que deseas eliminar esta actividad?')) {
             try {
                 console.log("Intentando eliminar actividad con ID:", actividad.id_actividad);
-                const response = await fetch(`http://localhost:8080/actividades/${actividad.id_actividad}`, {
+                const response = await fetch(ACTIVITIES_API.actividadById(actividad.id_actividad), {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
@@ -221,14 +300,16 @@ const Actividades = () => {
 
                 if (response.ok) {
                     searchActividades();
-                    alert('Actividad eliminada con éxito');
+                    toast.success('Actividad eliminada con éxito');
+                } else if (isAuthError(response)) {
+                    handleSessionExpired(toast, navigate);
                 } else {
                     const errorData = await response.json().catch(() => ({}));
-                    alert(errorData.message || 'Error al eliminar la actividad');
+                    toast.error(errorData.message || 'Error al eliminar la actividad');
                 }
             } catch (error) {
                 console.error("Error al eliminar:", error);
-                alert('Error al eliminar la actividad');
+                toast.error('Error al eliminar la actividad');
             }
         }
     };
@@ -305,7 +386,9 @@ const Actividades = () => {
             </div>
 
             <div className="actividades-grid">
-                {actividadesFiltradas.length === 0 ? (
+                {loading ? (
+                    <Spinner size="large" message="Cargando actividades..." />
+                ) : actividadesFiltradas.length === 0 ? (
                     <div className="mensaje-no-actividades">
                         No se encontraron actividades.
                     </div>

@@ -1,289 +1,203 @@
-.mi-suscripcion-container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 2rem;
-}
+@import "tailwindcss/components";
 
-.suscripcion-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
+@layer components {
+  .mi-suscripcion-container {
+    @apply max-w-[1000px] mx-auto p-8;
+  }
 
-.suscripcion-header h1 {
-    font-size: 2.5rem;
-    color: #333;
-}
+  .suscripcion-header {
+    @apply text-center mb-8;
+  }
 
-.no-suscripcion {
-    text-align: center;
+  .suscripcion-header h1 {
+    @apply text-[2.5rem] text-[#333];
+  }
+
+  .no-suscripcion {
+    @apply text-center bg-white rounded-card;
     padding: 4rem 2rem;
-    background: white;
-    border-radius: 12px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.no-suscripcion-icon {
-    font-size: 5rem;
-    margin-bottom: 1rem;
-}
+  .no-suscripcion-icon {
+    @apply text-[5rem] mb-4;
+  }
 
-.no-suscripcion h2 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
+  .no-suscripcion h2 {
+    @apply text-4xl mb-4 text-[#333];
+  }
 
-.no-suscripcion p {
-    font-size: 1.2rem;
-    color: #666;
-    margin-bottom: 2rem;
-}
+  .no-suscripcion p {
+    @apply text-xl text-gray mb-8;
+  }
 
-.btn-ver-planes {
-    padding: 1rem 2rem;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.3s;
-}
+  .btn-ver-planes {
+    @apply px-8 py-4 bg-primary text-white border-none rounded-lg text-[1.1rem] font-bold cursor-pointer transition-colors duration-300;
+  }
 
-.btn-ver-planes:hover {
-    background: #45a049;
-}
+  .btn-ver-planes:hover {
+    @apply bg-[#45a049];
+  }
 
-.suscripcion-card {
-    background: white;
-    border-radius: 12px;
+  .suscripcion-card {
+    @apply bg-white rounded-card overflow-hidden;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
+  }
 
-.suscripcion-plan-header {
-    padding: 2rem;
-    border-top: 4px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    background: #f5f5f5;
-}
+  .suscripcion-plan-header {
+    @apply p-8 border-t-4 border-[#333] flex justify-between items-start bg-gray-light;
+  }
 
-.plan-info h2 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    color: #333;
-}
+  .plan-info h2 {
+    @apply text-4xl mb-2 text-[#333];
+  }
 
-.plan-descripcion {
-    color: #666;
-    font-size: 1.1rem;
-}
+  .plan-descripcion {
+    @apply text-gray text-[1.1rem];
+  }
 
-.estado-badge {
-    padding: 0.5rem 1.5rem;
-    border-radius: 20px;
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 0.9rem;
-}
+  .estado-badge {
+    @apply px-6 py-2 rounded-[20px] font-bold uppercase text-sm;
+  }
 
-.estado-activa {
-    background: #4CAF50;
-    color: white;
-}
+  .estado-activa {
+    @apply bg-primary text-white;
+  }
 
-.estado-vencida {
-    background: #f44336;
-    color: white;
-}
+  .estado-vencida {
+    @apply bg-danger text-white;
+  }
 
-.estado-cancelada {
-    background: #9e9e9e;
-    color: white;
-}
+  .estado-cancelada {
+    @apply bg-[#9e9e9e] text-white;
+  }
 
-.estado-pendiente {
-    background: #FF9800;
-    color: white;
-}
+  .estado-pendiente {
+    @apply bg-warning text-white;
+  }
 
-.suscripcion-detalles {
-    padding: 2rem;
-}
+  .suscripcion-detalles {
+    @apply p-8;
+  }
 
-.detalle-item {
-    padding: 1rem 0;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+  .detalle-item {
+    @apply py-4 border-b border-[#eee] flex justify-between items-center;
+  }
 
-.detalle-label {
-    font-weight: 500;
-    color: #666;
-}
+  .detalle-label {
+    @apply font-medium text-gray;
+  }
 
-.detalle-valor {
-    font-weight: bold;
-    color: #333;
-}
+  .detalle-valor {
+    @apply font-bold text-[#333];
+  }
 
-.detalle-valor.precio {
-    font-size: 1.5rem;
-    color: #4CAF50;
-}
+  .detalle-valor.precio {
+    @apply text-2xl text-primary;
+  }
 
-.dias-advertencia {
-    color: #ff9800;
-}
+  .dias-advertencia {
+    @apply text-[#ff9800];
+  }
 
-.renovacion-activa {
-    color: #4CAF50;
-}
+  .renovacion-activa {
+    @apply text-primary;
+  }
 
-.alerta-vencimiento {
-    margin: 1rem 2rem;
-    padding: 1rem;
-    background: #fff3cd;
-    border-left: 4px solid #ff9800;
-    color: #856404;
-    border-radius: 4px;
-}
+  .alerta-vencimiento {
+    @apply mx-8 my-4 p-4 bg-[#fff3cd] border-l-4 border-[#ff9800] text-[#856404] rounded;
+  }
 
-.suscripcion-beneficios {
-    padding: 2rem;
-    background: #f5f5f5;
-}
+  .suscripcion-beneficios {
+    @apply p-8 bg-gray-light;
+  }
 
-.suscripcion-beneficios h3 {
-    font-size: 1.3rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
+  .suscripcion-beneficios h3 {
+    @apply text-[1.3rem] mb-4 text-[#333];
+  }
 
-.suscripcion-beneficios ul {
-    list-style: none;
-    padding: 0;
-    display: grid;
+  .suscripcion-beneficios ul {
+    @apply list-none p-0 grid gap-2;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 0.5rem;
-}
+  }
 
-.suscripcion-beneficios li {
-    padding: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+  .suscripcion-beneficios li {
+    @apply p-2 flex items-center gap-2;
+  }
 
-.suscripcion-acciones {
-    padding: 2rem;
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-}
+  .suscripcion-acciones {
+    @apply p-8 flex gap-4 justify-center;
+  }
 
-.btn-renovar,
-.btn-cancelar,
-.btn-pagar,
-.btn-renovar-principal {
-    padding: 1rem 2rem;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s;
-}
+  .btn-renovar,
+  .btn-cancelar,
+  .btn-pagar,
+  .btn-renovar-principal {
+    @apply px-8 py-4 border-none rounded-lg text-base font-bold cursor-pointer transition-all duration-300;
+  }
 
-.btn-renovar {
-    background: #4CAF50;
-    color: white;
-}
+  .btn-renovar {
+    @apply bg-primary text-white;
+  }
 
-.btn-renovar:hover {
-    background: #45a049;
-}
+  .btn-renovar:hover {
+    @apply bg-[#45a049];
+  }
 
-.btn-cancelar {
-    background: #f44336;
-    color: white;
-}
+  .btn-cancelar {
+    @apply bg-danger text-white;
+  }
 
-.btn-cancelar:hover {
-    background: #da190b;
-}
+  .btn-cancelar:hover {
+    @apply bg-[#da190b];
+  }
 
-.btn-pagar {
-    background: #2196F3;
-    color: white;
-}
+  .btn-pagar {
+    @apply bg-secondary text-white;
+  }
 
-.btn-pagar:hover {
-    background: #0b7dda;
-}
+  .btn-pagar:hover {
+    @apply bg-[#0b7dda];
+  }
 
-.btn-renovar-principal {
-    background: #FF9800;
-    color: white;
-}
+  .btn-renovar-principal {
+    @apply bg-warning text-white;
+  }
 
-.btn-renovar-principal:hover {
-    background: #e68900;
-}
+  .btn-renovar-principal:hover {
+    @apply bg-[#e68900];
+  }
 
-.historial-renovaciones {
-    margin-top: 2rem;
-    padding: 2rem;
-    background: white;
-    border-radius: 12px;
+  .historial-renovaciones {
+    @apply mt-8 p-8 bg-white rounded-card;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.historial-renovaciones h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
+  .historial-renovaciones h3 {
+    @apply text-2xl mb-4 text-[#333];
+  }
 
-.renovaciones-lista {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
+  .renovaciones-lista {
+    @apply flex flex-col gap-4;
+  }
 
-.renovacion-item {
-    padding: 1rem;
-    background: #f5f5f5;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+  .renovacion-item {
+    @apply p-4 bg-gray-light rounded-lg flex justify-between items-center;
+  }
 
-.renovacion-fecha {
-    font-weight: 500;
-    color: #666;
-}
+  .renovacion-fecha {
+    @apply font-medium text-gray;
+  }
 
-.renovacion-monto {
-    font-weight: bold;
-    font-size: 1.2rem;
-    color: #4CAF50;
-}
+  .renovacion-monto {
+    @apply font-bold text-xl text-primary;
+  }
 
-.renovacion-pago {
-    font-size: 0.9rem;
-    color: #999;
-}
+  .renovacion-pago {
+    @apply text-sm text-[#999];
+  }
 
-.loading-message {
-    text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
-    color: #666;
+  .loading-message {
+    @apply text-center p-12 text-xl text-gray;
+  }
 }

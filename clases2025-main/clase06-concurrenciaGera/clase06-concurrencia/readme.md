@@ -1,1 +1,0 @@
-#### Concurrency patterns in Go

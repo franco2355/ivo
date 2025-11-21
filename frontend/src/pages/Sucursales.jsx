@@ -101,19 +101,19 @@ const Sucursales = () => {
 
                             <div className="sucursal-acciones">
                                 <button
-                                    className="btn-ver-mapa"
+                                    className="btn-accion"
                                     onClick={() => handleVerMapa(sucursal.direccion)}
                                 >
-                                    📍 Ver en Mapa
+                                    📍 Mapa
                                 </button>
                                 <button
-                                    className="btn-llamar"
+                                    className="btn-accion"
                                     onClick={() => handleLlamar(sucursal.telefono)}
                                 >
                                     📞 Llamar
                                 </button>
                                 <button
-                                    className="btn-email"
+                                    className="btn-accion"
                                     onClick={() => handleEmail(sucursal.email)}
                                 >
                                     📧 Email
@@ -187,13 +187,13 @@ const Sucursales = () => {
 
                             <div className="modal-acciones">
                                 <button
-                                    className="btn-ver-mapa"
+                                    className="btn-modal-accion"
                                     onClick={() => handleVerMapa(sucursalSeleccionada.direccion)}
                                 >
                                     📍 Cómo Llegar
                                 </button>
                                 <button
-                                    className="btn-contactar"
+                                    className="btn-modal-accion"
                                     onClick={() => handleLlamar(sucursalSeleccionada.telefono)}
                                 >
                                     📞 Contactar

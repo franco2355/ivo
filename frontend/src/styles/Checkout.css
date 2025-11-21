@@ -1,268 +1,186 @@
-.checkout-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-}
+@import "tailwindcss/components";
 
-.checkout-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
+@layer components {
+  .checkout-container {
+    @apply max-w-[1200px] mx-auto p-8;
+  }
 
-.checkout-header h1 {
-    font-size: 2.5rem;
-    color: #333;
-}
+  .checkout-header {
+    @apply text-center mb-8;
+  }
 
-.checkout-content {
-    display: grid;
+  .checkout-header h1 {
+    @apply text-[2.5rem] text-[#333];
+  }
+
+  .checkout-content {
+    @apply grid gap-8;
     grid-template-columns: 2fr 1fr;
-    gap: 2rem;
-}
+  }
 
-.checkout-form-section {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
+  .checkout-form-section {
+    @apply flex flex-col gap-8;
+  }
 
-.resumen-plan {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
+  .resumen-plan {
+    @apply bg-white rounded-card p-8;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.resumen-plan h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
+  .resumen-plan h2 {
+    @apply text-2xl mb-4 text-[#333];
+  }
 
-.plan-seleccionado {
-    padding: 1.5rem;
-    background: #f5f5f5;
+  .plan-seleccionado {
+    @apply p-6 bg-gray-light rounded-lg;
     border-left: 4px solid #333;
-    border-radius: 8px;
-}
+  }
 
-.plan-seleccionado h3 {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-    color: #333;
-}
+  .plan-seleccionado h3 {
+    @apply text-2xl mb-2 text-[#333];
+  }
 
-.plan-precio-resumen {
-    margin-top: 1rem;
-    display: flex;
-    align-items: baseline;
-    gap: 0.3rem;
-}
+  .plan-precio-resumen {
+    @apply mt-4 flex items-baseline gap-1.5;
+  }
 
-.plan-precio-resumen .precio {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #4CAF50;
-}
+  .plan-precio-resumen .precio {
+    @apply text-4xl font-bold text-primary;
+  }
 
-.plan-precio-resumen .periodo {
-    font-size: 1rem;
-    color: #666;
-}
+  .plan-precio-resumen .periodo {
+    @apply text-base text-gray;
+  }
 
-.payment-form {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
+  .payment-form {
+    @apply bg-white rounded-card p-8;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.payment-form h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-    color: #333;
-}
+  .payment-form h2 {
+    @apply text-2xl mb-6 text-[#333];
+  }
 
-.payment-methods {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
+  .payment-methods {
+    @apply flex flex-col gap-4 mb-8;
+  }
 
-.payment-method {
-    padding: 1rem;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+  .payment-method {
+    @apply p-4 border-2 border-[#ddd] rounded-lg cursor-pointer transition-all duration-300 flex items-center gap-2;
+  }
 
-.payment-method:hover {
-    border-color: #333;
-}
+  .payment-method:hover {
+    @apply border-[#333];
+  }
 
-.payment-method.selected {
-    border-color: #4CAF50;
-    background: #f1f8f4;
-}
+  .payment-method.selected {
+    @apply border-primary bg-[#f1f8f4];
+  }
 
-.payment-method input[type="radio"] {
-    width: 20px;
-    height: 20px;
-}
+  .payment-method input[type="radio"] {
+    @apply w-5 h-5;
+  }
 
-.card-details,
-.cash-info {
-    margin-bottom: 2rem;
-}
+  .card-details,
+  .cash-info {
+    @apply mb-8;
+  }
 
-.cash-info {
-    padding: 1rem;
-    background: #e3f2fd;
-    border-left: 4px solid #2196F3;
-    border-radius: 4px;
-}
+  .cash-info {
+    @apply p-4 bg-[#e3f2fd] border-l-4 border-secondary rounded;
+  }
 
-.form-group {
-    margin-bottom: 1.5rem;
-}
+  .form-group {
+    @apply mb-6;
+  }
 
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #333;
-}
+  .form-group label {
+    @apply block mb-2 font-medium text-[#333];
+  }
 
-.form-group input {
-    width: 100%;
-    padding: 0.8rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-}
+  .form-group input {
+    @apply w-full px-3 py-3 border border-[#ddd] rounded text-base;
+  }
 
-.form-row {
-    display: grid;
+  .form-row {
+    @apply grid gap-4;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
+  }
 
-.checkbox-group label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-}
+  .checkbox-group label {
+    @apply flex items-center gap-2 cursor-pointer;
+  }
 
-.checkbox-group input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-}
+  .checkbox-group input[type="checkbox"] {
+    @apply w-5 h-5;
+  }
 
-.total-section {
-    margin: 2rem 0;
-    padding: 1.5rem;
-    background: #f5f5f5;
-    border-radius: 8px;
-}
+  .total-section {
+    @apply my-8 p-6 bg-gray-light rounded-lg;
+  }
 
-.total-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
-}
+  .total-row {
+    @apply flex justify-between mb-2 text-[1.1rem];
+  }
 
-.total-row.total {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #333;
-    border-top: 2px solid #ddd;
-    padding-top: 1rem;
-    margin-top: 1rem;
-}
+  .total-row.total {
+    @apply text-2xl font-bold text-[#333] border-t-2 border-[#ddd] pt-4 mt-4;
+  }
 
-.form-actions {
-    display: flex;
-    gap: 1rem;
-}
+  .form-actions {
+    @apply flex gap-4;
+  }
 
-.btn-cancelar,
-.btn-pagar {
-    flex: 1;
-    padding: 1rem;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s;
-}
+  .btn-cancelar,
+  .btn-pagar {
+    @apply flex-1 p-4 border-none rounded-lg text-[1.1rem] font-bold cursor-pointer transition-all duration-300;
+  }
 
-.btn-cancelar {
-    background: #f5f5f5;
-    color: #333;
-}
+  .btn-cancelar {
+    @apply bg-gray-light text-[#333];
+  }
 
-.btn-cancelar:hover {
-    background: #e0e0e0;
-}
+  .btn-cancelar:hover {
+    @apply bg-[#e0e0e0];
+  }
 
-.btn-pagar {
-    background: #4CAF50;
-    color: white;
-}
+  .btn-pagar {
+    @apply bg-primary text-white;
+  }
 
-.btn-pagar:hover {
-    background: #45a049;
-}
+  .btn-pagar:hover {
+    @apply bg-[#45a049];
+  }
 
-.btn-pagar:disabled,
-.btn-cancelar:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
+  .btn-pagar:disabled,
+  .btn-cancelar:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
 
-.checkout-info-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
+  .checkout-info-section {
+    @apply flex flex-col gap-6;
+  }
 
-.info-box {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
+  .info-box {
+    @apply bg-white p-6 rounded-card;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.info-box h3 {
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
-    color: #333;
-}
+  .info-box h3 {
+    @apply text-xl mb-2 text-[#333];
+  }
 
-.info-box p {
-    color: #666;
-    line-height: 1.6;
-}
+  .info-box p {
+    @apply text-gray leading-relaxed;
+  }
 
-.alert-info {
-    padding: 1rem;
-    background: #e3f2fd;
-    border-left: 4px solid #2196F3;
-    color: #1976d2;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-}
+  .alert-info {
+    @apply p-4 bg-[#e3f2fd] border-l-4 border-secondary text-[#1976d2] rounded mb-4;
+  }
 
-@media (max-width: 968px) {
+  @media (max-width: 968px) {
     .checkout-content {
-        grid-template-columns: 1fr;
+      grid-template-columns: 1fr;
     }
+  }
 }

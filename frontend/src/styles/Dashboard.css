@@ -1,296 +1,197 @@
-.dashboard-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
-}
+@import "tailwindcss/components";
 
-.dashboard-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
+@layer components {
+  .dashboard-container {
+    @apply max-w-[1400px] mx-auto p-8;
+  }
 
-.dashboard-header h1 {
-    font-size: 2.5rem;
-    color: #333;
-    margin-bottom: 0.5rem;
-}
+  .dashboard-header {
+    @apply text-center mb-8;
+  }
 
-.dashboard-header p {
-    font-size: 1.2rem;
-    color: #666;
-}
+  .dashboard-header h1 {
+    @apply text-[2.5rem] text-[#333] mb-2;
+  }
 
-.dashboard-stats {
-    display: grid;
+  .dashboard-header p {
+    @apply text-xl text-gray;
+  }
+
+  .dashboard-stats {
+    @apply grid gap-6 mb-12;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-}
+  }
 
-.stat-card {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
+  .stat-card {
+    @apply bg-white p-8 rounded-card flex items-center gap-6 transition-transform duration-300;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    transition: transform 0.3s;
-}
+  }
 
-.stat-card:hover {
+  .stat-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
-}
+  }
 
-.stat-icon {
-    font-size: 3rem;
-}
+  .stat-icon {
+    @apply text-5xl;
+  }
 
-.stat-info {
-    display: flex;
-    flex-direction: column;
-}
+  .stat-info {
+    @apply flex flex-col;
+  }
 
-.stat-value {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #333;
-}
+  .stat-value {
+    @apply text-4xl font-bold text-[#333];
+  }
 
-.stat-value.stat-warning {
-    color: #ff9800;
-}
+  .stat-value.stat-warning {
+    @apply text-warning;
+  }
 
-.stat-label {
-    font-size: 0.9rem;
-    color: #666;
-}
+  .stat-label {
+    @apply text-sm text-gray;
+  }
 
-.dashboard-content {
-    display: grid;
+  .dashboard-content {
+    @apply grid gap-8 mb-12;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 2rem;
-    margin-bottom: 3rem;
-}
+  }
 
-.dashboard-section {
-    background: white;
-    border-radius: 12px;
+  .dashboard-section {
+    @apply bg-white rounded-card p-8;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 2rem;
-}
+  }
 
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
+  .section-header {
+    @apply flex justify-between items-center mb-6;
+  }
 
-.section-header h2 {
-    font-size: 1.5rem;
-    color: #333;
-}
+  .section-header h2 {
+    @apply text-2xl text-[#333];
+  }
 
-.btn-ver-mas {
-    padding: 0.5rem 1rem;
-    background: transparent;
-    border: none;
-    color: #2196F3;
-    font-weight: 500;
-    cursor: pointer;
-    transition: color 0.3s;
-}
+  .btn-ver-mas {
+    @apply px-4 py-2 bg-transparent border-none text-secondary font-medium cursor-pointer transition-colors duration-300;
+  }
 
-.btn-ver-mas:hover {
-    color: #0b7dda;
-}
+  .btn-ver-mas:hover {
+    @apply text-[#0b7dda];
+  }
 
-.suscripcion-widget {
-    padding: 1.5rem;
-    background: #f5f5f5;
-    border-radius: 8px;
+  .suscripcion-widget {
+    @apply p-6 bg-gray-light rounded-lg;
     border-left: 4px solid #333;
-}
+  }
 
-.suscripcion-widget h3 {
-    font-size: 1.3rem;
-    margin-bottom: 0.5rem;
-    color: #333;
-}
+  .suscripcion-widget h3 {
+    @apply text-[1.3rem] mb-2 text-[#333];
+  }
 
-.suscripcion-detalles-mini {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #ddd;
-}
+  .suscripcion-detalles-mini {
+    @apply flex justify-between mt-4 pt-4 border-t border-[#ddd];
+  }
 
-.estado-mini {
-    padding: 0.3rem 0.8rem;
-    border-radius: 12px;
-    font-weight: bold;
-    font-size: 0.9rem;
-    background: #ddd;
-    color: #666;
-}
+  .estado-mini {
+    @apply px-3 py-1.5 rounded-xl font-bold text-sm bg-[#ddd] text-gray;
+  }
 
-.estado-mini.activa {
-    background: #4CAF50;
-    color: white;
-}
+  .estado-mini.activa {
+    @apply bg-primary text-white;
+  }
 
-.alerta-mini {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: #fff3cd;
-    border-radius: 4px;
-    color: #856404;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+  .alerta-mini {
+    @apply mt-4 p-4 bg-[#fff3cd] rounded text-[#856404] flex justify-between items-center;
+  }
 
-.btn-renovar-mini {
-    padding: 0.5rem 1rem;
-    background: #FF9800;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
+  .btn-renovar-mini {
+    @apply px-4 py-2 bg-warning text-white border-none rounded cursor-pointer font-bold;
+  }
 
-.no-suscripcion-widget,
-.no-actividades-widget,
-.no-pagos-widget {
-    text-align: center;
-    padding: 2rem;
-    color: #666;
-}
+  .no-suscripcion-widget,
+  .no-actividades-widget,
+  .no-pagos-widget {
+    @apply text-center p-8 text-gray;
+  }
 
-.btn-suscribirse,
-.btn-inscribirse {
-    margin-top: 1rem;
-    padding: 0.8rem 1.5rem;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-}
+  .btn-suscribirse,
+  .btn-inscribirse {
+    @apply mt-4 px-6 py-3 bg-primary text-white border-none rounded-lg cursor-pointer font-bold;
+  }
 
-.actividades-lista-mini,
-.pagos-lista-mini {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
+  .actividades-lista-mini,
+  .pagos-lista-mini {
+    @apply flex flex-col gap-4;
+  }
 
-.actividad-mini,
-.pago-mini {
-    padding: 1rem;
-    background: #f5f5f5;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+  .actividad-mini,
+  .pago-mini {
+    @apply p-4 bg-gray-light rounded-lg flex justify-between items-center;
+  }
 
-.actividad-mini-info,
-.pago-mini-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
+  .actividad-mini-info,
+  .pago-mini-info {
+    @apply flex items-center gap-4;
+  }
 
-.actividad-icono,
-.pago-icono {
-    font-size: 1.5rem;
-}
+  .actividad-icono,
+  .pago-icono {
+    @apply text-2xl;
+  }
 
-.actividad-nombre,
-.pago-concepto {
-    display: block;
-    font-weight: bold;
-    color: #333;
-}
+  .actividad-nombre,
+  .pago-concepto {
+    @apply block font-bold text-[#333];
+  }
 
-.actividad-fecha,
-.pago-fecha {
-    display: block;
-    font-size: 0.9rem;
-    color: #666;
-}
+  .actividad-fecha,
+  .pago-fecha {
+    @apply block text-sm text-gray;
+  }
 
-.actividad-estado {
-    font-weight: bold;
-    color: #4CAF50;
-}
+  .actividad-estado {
+    @apply font-bold text-primary;
+  }
 
-.pago-mini-monto {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.3rem;
-}
+  .pago-mini-monto {
+    @apply flex flex-col items-end gap-1.5;
+  }
 
-.pago-mini-monto .monto {
-    font-weight: bold;
-    color: #4CAF50;
-    font-size: 1.2rem;
-}
+  .pago-mini-monto .monto {
+    @apply font-bold text-primary text-xl;
+  }
 
-.estado-pago {
-    font-size: 1.2rem;
-}
+  .estado-pago {
+    @apply text-xl;
+  }
 
-.dashboard-acciones-rapidas {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
+  .dashboard-acciones-rapidas {
+    @apply bg-white p-8 rounded-card;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.dashboard-acciones-rapidas h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-    color: #333;
-    text-align: center;
-}
+  .dashboard-acciones-rapidas h2 {
+    @apply text-2xl mb-6 text-[#333] text-center;
+  }
 
-.acciones-grid {
-    display: grid;
+  .acciones-grid {
+    @apply grid gap-6;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1.5rem;
-}
+  }
 
-.accion-card {
-    padding: 2rem 1rem;
-    background: #f5f5f5;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-}
+  .accion-card {
+    @apply p-8 bg-gray-light border-none rounded-card cursor-pointer transition-all duration-300 flex flex-col items-center gap-2;
+  }
 
-.accion-card:hover {
-    background: #333;
-    color: white;
+  .accion-card:hover {
+    @apply bg-[#333] text-white;
     transform: scale(1.05);
-}
+  }
 
-.accion-icono {
-    font-size: 2.5rem;
-}
+  .accion-icono {
+    @apply text-[2.5rem];
+  }
 
-.accion-texto {
-    font-weight: bold;
+  .accion-texto {
+    @apply font-bold;
+  }
 }

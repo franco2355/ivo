@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useToastContext } from '../context/ToastContext';
+import { handleSessionExpired, isAuthError } from '../utils/auth';
+import { USERS_API } from '../config/api';
 import '../styles/Modal.css';
 
 const AgregarActividadModal = ({ onClose, onSave }) => {
+    const navigate = useNavigate();
+    const toast = useToastContext();
     const [formData, setFormData] = useState({
         titulo: '',
         descripcion: '',
@@ -98,7 +104,7 @@ const AgregarActividadModal = ({ onClose, onSave }) => {
                 hora_fin: formData.hora_fin
             };
 
-            const response = await fetch('http://localhost:8080/actividades', {
+            const response = await fetch(`${USERS_API.base}/actividades`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -107,12 +113,8 @@ const AgregarActividadModal = ({ onClose, onSave }) => {
                 body: JSON.stringify(dataToSend)
             });
 
-            if (response.status === 401) {
-                setError('Su sesión ha expirado. Por favor, inicie sesión nuevamente.');
-                localStorage.removeItem('access_token');
-                setTimeout(() => {
-                    window.location.href = '/login';
-                }, 2000);
+            if (isAuthError(response)) {
+                handleSessionExpired(toast, navigate);
                 return;
             }
 

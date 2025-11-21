@@ -1,71 +1,58 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  color-scheme: light;
-  color: #213547;
-  background-color: #ffffff;
+@layer base {
+  :root {
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color-scheme: light;
+    color: #213547;
+    background-color: #ffffff;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  font-smoothing: antialiased;
-}
+  a {
+    @apply font-medium text-[#646cff] no-underline hover:text-[#535bf2];
+  }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
+  body {
+    @apply m-0 min-w-[320px] min-h-screen overflow-x-hidden flex flex-col;
+  }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-}
+  #root {
+    @apply flex flex-col min-h-screen;
+  }
 
-#root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
+  h1 {
+    @apply text-[3.2em] leading-tight;
+  }
 
-/* Aplicar padding-top solo cuando está dentro del Layout */
-.with-layout {
-  padding-top: 60px;
-}
+  button {
+    @apply rounded-lg border border-transparent px-5 py-2.5 text-base font-medium font-sans bg-[#f9f9f9] text-[#213547] cursor-pointer transition-[border-color] duration-250;
+  }
 
-.main-content {
-  flex: 1;
-}
+  button:hover {
+    @apply border-[#646cff];
+  }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  button:focus,
+  button:focus-visible {
+    @apply outline-4;
+  }
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #f9f9f9;
-  color: #213547;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto;
+@layer components {
+  /* Layout global */
+  .with-layout {
+    @apply pt-[60px];
+  }
+
+  .main-content {
+    @apply flex-1;
+  }
 }

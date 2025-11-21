@@ -1,221 +1,161 @@
-.pagos-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-}
+@import "tailwindcss/components";
 
-.pagos-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
+@layer components {
+  .pagos-container {
+    @apply max-w-[1200px] mx-auto p-8;
+  }
 
-.pagos-header h1 {
-    font-size: 2.5rem;
-    color: #333;
-    margin-bottom: 0.5rem;
-}
+  .pagos-header {
+    @apply text-center mb-8;
+  }
 
-.pagos-header p {
-    font-size: 1.2rem;
-    color: #666;
-}
+  .pagos-header h1 {
+    @apply text-[2.5rem] text-[#333] mb-2;
+  }
 
-.pagos-filtros {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-}
+  .pagos-header p {
+    @apply text-xl text-gray;
+  }
 
-.pagos-filtros button {
-    padding: 0.8rem 1.5rem;
-    border: 2px solid #ddd;
-    background: white;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-weight: 500;
-}
+  .pagos-filtros {
+    @apply flex gap-4 mb-8 flex-wrap;
+  }
 
-.pagos-filtros button:hover {
-    border-color: #333;
-}
+  .pagos-filtros button {
+    @apply px-6 py-3 border-2 border-[#ddd] bg-white rounded-lg cursor-pointer transition-all duration-300 font-medium;
+  }
 
-.pagos-filtros button.filtro-activo {
-    background: #333;
-    color: white;
-    border-color: #333;
-}
+  .pagos-filtros button:hover {
+    @apply border-[#333];
+  }
 
-.no-pagos {
-    text-align: center;
+  .pagos-filtros button.filtro-activo {
+    @apply bg-[#333] text-white border-[#333];
+  }
+
+  .no-pagos {
+    @apply text-center bg-white rounded-card;
     padding: 4rem 2rem;
-    background: white;
-    border-radius: 12px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+  }
 
-.no-pagos-icon {
-    font-size: 5rem;
-    margin-bottom: 1rem;
-}
+  .no-pagos-icon {
+    @apply text-[5rem] mb-4;
+  }
 
-.pagos-lista {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
+  .pagos-lista {
+    @apply flex flex-col gap-6;
+  }
 
-.pago-card {
-    background: white;
-    border-radius: 12px;
+  .pago-card {
+    @apply bg-white rounded-card overflow-hidden transition-transform duration-300;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    transition: transform 0.3s;
-}
+  }
 
-.pago-card:hover {
+  .pago-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
-}
+  }
 
-.pago-header {
-    padding: 1.5rem;
-    background: #f5f5f5;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+  .pago-header {
+    @apply p-6 bg-gray-light flex justify-between items-center;
+  }
 
-.pago-tipo {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
+  .pago-tipo {
+    @apply flex items-center gap-4;
+  }
 
-.tipo-icono {
-    font-size: 2rem;
-}
+  .tipo-icono {
+    @apply text-4xl;
+  }
 
-.tipo-info {
-    display: flex;
-    flex-direction: column;
-}
+  .tipo-info {
+    @apply flex flex-col;
+  }
 
-.tipo-label {
-    font-weight: 500;
-    color: #666;
-}
+  .tipo-label {
+    @apply font-medium text-gray;
+  }
 
-.tipo-nombre {
-    font-weight: bold;
-    font-size: 1.1rem;
-    color: #333;
-}
+  .tipo-nombre {
+    @apply font-bold text-[1.1rem] text-[#333];
+  }
 
-.pago-estado {
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 0.9rem;
-}
+  .pago-estado {
+    @apply px-4 py-2 rounded-[20px] font-bold text-sm;
+  }
 
-.estado-completado {
-    background: #4CAF50;
-    color: white;
-}
+  .estado-completado {
+    @apply bg-primary text-white;
+  }
 
-.estado-pendiente {
-    background: #FF9800;
-    color: white;
-}
+  .estado-pendiente {
+    @apply bg-warning text-white;
+  }
 
-.estado-fallido {
-    background: #f44336;
-    color: white;
-}
+  .estado-fallido {
+    @apply bg-danger text-white;
+  }
 
-.estado-reembolsado {
-    background: #9e9e9e;
-    color: white;
-}
+  .estado-reembolsado {
+    @apply bg-[#9e9e9e] text-white;
+  }
 
-.pago-detalles {
-    padding: 1.5rem;
-}
+  .pago-detalles {
+    @apply p-6;
+  }
 
-.detalle-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.8rem 0;
-    border-bottom: 1px solid #eee;
-}
+  .detalle-row {
+    @apply flex justify-between py-3 border-b border-[#eee];
+  }
 
-.detalle-label {
-    color: #666;
-    font-weight: 500;
-}
+  .detalle-label {
+    @apply text-gray font-medium;
+  }
 
-.detalle-valor {
-    font-weight: bold;
-    color: #333;
-}
+  .detalle-valor {
+    @apply font-bold text-[#333];
+  }
 
-.detalle-valor.monto {
-    color: #4CAF50;
-    font-size: 1.2rem;
-}
+  .detalle-valor.monto {
+    @apply text-primary text-xl;
+  }
 
-.pago-metadata {
+  .pago-metadata {
+    @apply flex flex-wrap gap-4;
     padding: 0 1.5rem 1.5rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
+  }
 
-.metadata-titulo {
-    font-weight: 500;
-    color: #666;
-    width: 100%;
-}
+  .metadata-titulo {
+    @apply font-medium text-gray w-full;
+  }
 
-.metadata-item {
-    padding: 0.5rem 1rem;
-    background: #f5f5f5;
-    border-radius: 4px;
-    font-size: 0.9rem;
-}
+  .metadata-item {
+    @apply px-4 py-2 bg-gray-light rounded text-sm;
+  }
 
-.pago-acciones {
-    padding: 1.5rem;
-    display: flex;
-    gap: 1rem;
-}
+  .pago-acciones {
+    @apply p-6 flex gap-4;
+  }
 
-.btn-descargar-recibo,
-.btn-completar-pago {
-    padding: 0.8rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s;
-}
+  .btn-descargar-recibo,
+  .btn-completar-pago {
+    @apply px-6 py-3 border-none rounded-lg font-bold cursor-pointer transition-all duration-300;
+  }
 
-.btn-descargar-recibo {
-    background: #2196F3;
-    color: white;
-}
+  .btn-descargar-recibo {
+    @apply bg-secondary text-white;
+  }
 
-.btn-descargar-recibo:hover {
-    background: #0b7dda;
-}
+  .btn-descargar-recibo:hover {
+    @apply bg-[#0b7dda];
+  }
 
-.btn-completar-pago {
-    background: #4CAF50;
-    color: white;
-}
+  .btn-completar-pago {
+    @apply bg-primary text-white;
+  }
 
-.btn-completar-pago:hover {
-    background: #45a049;
+  .btn-completar-pago:hover {
+    @apply bg-[#45a049];
+  }
 }

@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SUBSCRIPTIONS_API } from '../config/api';
 import '../styles/MiSuscripcion.css';
+import { useToastContext } from '../context/ToastContext';
+import { handleSessionExpired, isAuthError } from '../utils/auth';
 
 const MiSuscripcion = () => {
     const [suscripciones, setSuscripciones] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const userId = localStorage.getItem("idUsuario");
+    const toast = useToastContext();
 
     useEffect(() => {
         const fetchSuscripciones = async () => {
@@ -23,7 +26,10 @@ const MiSuscripcion = () => {
 
                 console.log('[MiSuscripcion] Response:', response.status);
 
-                if (response.ok) {
+                if (isAuthError(response)) {
+                    handleSessionExpired(toast, navigate);
+                    return;
+                } else if (response.ok) {
                     const data = await response.json();
                     console.log('[MiSuscripcion] Suscripciones recibidas:', data);
                     setSuscripciones(data);
@@ -56,24 +62,30 @@ const MiSuscripcion = () => {
                 }
             });
 
-            if (response.ok) {
-                alert("Suscripción cancelada exitosamente");
+            if (isAuthError(response)) {
+                handleSessionExpired(toast, navigate);
+                return;
+            } else if (response.ok) {
+                toast.success("Suscripción cancelada exitosamente");
                 // Recargar suscripciones
                 const newResponse = await fetch(SUBSCRIPTIONS_API.subscriptionsByUser(userId), {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-                if (newResponse.ok) {
+                if (isAuthError(newResponse)) {
+                    handleSessionExpired(toast, navigate);
+                    return;
+                } else if (newResponse.ok) {
                     const data = await newResponse.json();
                     setSuscripciones(data);
                 }
             } else {
-                alert("Error al cancelar la suscripción");
+                toast.error("Error al cancelar la suscripción");
             }
         } catch (error) {
             console.error("Error al cancelar suscripción:", error);
-            alert("Error al cancelar la suscripción");
+            toast.error("Error al cancelar la suscripción");
         }
     };
 

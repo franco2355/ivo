@@ -1,6 +1,7 @@
 import { useState } from "react";
 import '../styles/Login.css';
 import { useNavigate } from "react-router-dom";
+import { USERS_API } from '../config/api';
 
 const getTokenPayload = (token) => {
     if (!token) return null; 
@@ -14,12 +15,14 @@ const storeUserSession = (accessToken) => {
     const payload = getTokenPayload(accessToken)
     if (!payload) return;
     const admin = payload.is_admin;
-    const idUsuario = payload.id_usuario
+    const idUsuario = payload.id_usuario;
+    const username = payload.username;
 
     localStorage.setItem("access_token", accessToken);
     localStorage.setItem("idUsuario", parseInt(idUsuario));
     localStorage.setItem("isAdmin", admin.toString());
     localStorage.setItem("isLoggedIn", "true");
+    localStorage.setItem("nombre", username);
 };
 
 const Login = () => {
@@ -35,13 +38,13 @@ const Login = () => {
         setError("");
 
         try {
-            const response = await fetch('http://localhost:8080/login', {
+            const response = await fetch(USERS_API.login, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    username: username.trim(),
+                    username_or_email: username.trim(),
                     password: password
                 })
             });
@@ -49,18 +52,26 @@ const Login = () => {
             if (response.ok) {
                 const data = await response.json();
 
-                if (!data.access_token) {
+                if (!data.token) {
                     setError("No se recibió ningún token del servidor");
                     return;
                 }
 
-                storeUserSession(data.access_token)
-                
+                // Guardar datos adicionales del usuario
+                if (data.user && data.user.nombre) {
+                    localStorage.setItem("nombre", `${data.user.nombre} ${data.user.apellido || ''}`);
+                }
+
+                storeUserSession(data.token);
+
                 navigate("/");
             } else {
                 const errorData = await response.json();
-                setError(errorData.error || "Error de autenticación");
-                alert("Error al loguearse");
+                if (response.status === 401) {
+                    setError("Usuario o contraseña incorrectos");
+                } else {
+                    setError(errorData.error || "Error de autenticación");
+                }
             }
 
         } catch (error) {
@@ -88,7 +99,7 @@ const Login = () => {
                 <div className="input-group">
                     <input
                         type="text"
-                        placeholder="Usuario"
+                        placeholder="Email o Usuario"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         disabled={isLoading}
@@ -104,6 +115,7 @@ const Login = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         disabled={isLoading}
                         required
+                        minLength={8}
                     />
                 </div>
 
