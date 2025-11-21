@@ -47,22 +47,37 @@ func (c *UsersController) Register(ctx *gin.Context) {
 	// Llamar al service
 	user, token, err := c.service.Register(ctx.Request.Context(), userReg)
 	if err != nil {
-		// Determinar código de estado según el error
+		// Determinar código de estado y mensaje según el error
 		statusCode := http.StatusInternalServerError
-		if err.Error() == "username or email already exists" {
-			statusCode = http.StatusConflict
-		} else if err.Error() == "nombre is required" ||
-			err.Error() == "apellido is required" ||
-			err.Error() == "username is required" ||
-			err.Error() == "email is required" ||
-			err.Error() == "password is required" ||
-			contains(err.Error(), "must") || contains(err.Error(), "invalid") {
+		errorMessage := "Error al registrar usuario"
+		errorCode := err.Error()
+
+		// Errores de validación (400)
+		if contains(errorCode, "required") ||
+			contains(errorCode, "must") ||
+			contains(errorCode, "invalid") ||
+			contains(errorCode, "can only contain") {
 			statusCode = http.StatusBadRequest
+			errorMessage = translateValidationError(errorCode)
+		} else if contains(errorCode, "already_exists") {
+			// Errores de duplicados (409)
+			statusCode = http.StatusConflict
+			if errorCode == "username_already_exists" {
+				errorMessage = "El nombre de usuario ya está en uso"
+			} else if errorCode == "email_already_exists" {
+				errorMessage = "El email ya está registrado"
+			} else {
+				errorMessage = "El usuario o email ya existe"
+			}
+		} else if contains(errorCode, "creating user") {
+			// Error de base de datos (500)
+			statusCode = http.StatusInternalServerError
+			errorMessage = "Error del servidor. Por favor, intenta más tarde"
 		}
 
 		ctx.JSON(statusCode, gin.H{
-			"error":   "Failed to register user",
-			"details": err.Error(),
+			"error":   errorMessage,
+			"details": errorCode,
 		})
 		return
 	}
@@ -174,7 +189,7 @@ func (c *UsersController) List(ctx *gin.Context) {
 	})
 }
 
-// Helper function
+// Helper functions
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && (s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || containsHelper(s, substr)))
 }
@@ -186,4 +201,29 @@ func containsHelper(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+// translateValidationError traduce errores de validación al español
+func translateValidationError(errorCode string) string {
+	errorTranslations := map[string]string{
+		"nombre is required":                                             "El nombre es obligatorio",
+		"apellido is required":                                           "El apellido es obligatorio",
+		"username is required":                                           "El nombre de usuario es obligatorio",
+		"email is required":                                              "El email es obligatorio",
+		"password is required":                                           "La contraseña es obligatoria",
+		"nombre must be at most 30 characters":                           "El nombre debe tener máximo 30 caracteres",
+		"apellido must be at most 30 characters":                         "El apellido debe tener máximo 30 caracteres",
+		"username must be between 3 and 30 characters":                   "El nombre de usuario debe tener entre 3 y 30 caracteres",
+		"username can only contain letters, numbers, hyphens and underscores": "El nombre de usuario solo puede contener letras, números, guiones y guiones bajos",
+		"invalid email format":                                           "Formato de email inválido",
+		"password must be at least 8 characters":                         "La contraseña debe tener al menos 8 caracteres",
+		"password must contain at least one uppercase letter":            "La contraseña debe contener al menos una letra mayúscula",
+		"password must contain at least one lowercase letter":            "La contraseña debe contener al menos una letra minúscula",
+		"password must contain at least one number":                      "La contraseña debe contener al menos un número",
+	}
+
+	if translation, ok := errorTranslations[errorCode]; ok {
+		return translation
+	}
+	return errorCode
 }

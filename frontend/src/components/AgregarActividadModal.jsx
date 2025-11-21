@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToastContext } from '../context/ToastContext';
 import { handleSessionExpired, isAuthError } from '../utils/auth';
-import { USERS_API } from '../config/api';
+import { ACTIVITIES_API } from '../config/api';
 import '../styles/Modal.css';
 
 const AgregarActividadModal = ({ onClose, onSave }) => {
@@ -13,8 +13,8 @@ const AgregarActividadModal = ({ onClose, onSave }) => {
         descripcion: '',
         cupo: '',
         dia: '',
-        hora_inicio: '',
-        hora_fin: '',
+        horario_inicio: '',
+        horario_final: '',
         foto_url: '',
         instructor: '',
         categoria: ''
@@ -43,14 +43,14 @@ const AgregarActividadModal = ({ onClose, onSave }) => {
             errors.dia = 'El día es requerido';
         }
 
-        if (!formData.hora_inicio) {
-            errors.hora_inicio = 'La hora de inicio es requerida';
+        if (!formData.horario_inicio) {
+            errors.horario_inicio = 'La hora de inicio es requerida';
         }
 
-        if (!formData.hora_fin) {
-            errors.hora_fin = 'La hora de fin es requerida';
-        } else if (formData.hora_fin <= formData.hora_inicio) {
-            errors.hora_fin = 'La hora de fin debe ser posterior a la hora de inicio';
+        if (!formData.horario_final) {
+            errors.horario_final = 'La hora de fin es requerida';
+        } else if (formData.horario_final <= formData.horario_inicio) {
+            errors.horario_final = 'La hora de fin debe ser posterior a la hora de inicio';
         }
 
         if (!formData.instructor.trim()) {
@@ -100,11 +100,10 @@ const AgregarActividadModal = ({ onClose, onSave }) => {
                 ...formData,
                 cupo: parseInt(formData.cupo, 10),
                 dia: formData.dia.normalize("NFD").replace(/[\u0300-\u036f]/g, ""), // Eliminar acentos
-                hora_inicio: formData.hora_inicio,
-                hora_fin: formData.hora_fin
+                foto_url: formData.foto_url || 'https://via.placeholder.com/400x300?text=Sin+Imagen' // Imagen por defecto si está vacío
             };
 
-            const response = await fetch(`${USERS_API.base}/actividades`, {
+            const response = await fetch(ACTIVITIES_API.actividades, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -197,29 +196,29 @@ const AgregarActividadModal = ({ onClose, onSave }) => {
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="hora_inicio">Hora de inicio:</label>
+                        <label htmlFor="horario_inicio">Hora de inicio:</label>
                         <input
                             type="time"
-                            id="hora_inicio"
-                            name="hora_inicio"
-                            value={formData.hora_inicio}
+                            id="horario_inicio"
+                            name="horario_inicio"
+                            value={formData.horario_inicio}
                             onChange={handleChange}
                             required
                         />
-                        {validationErrors.hora_inicio && <span className="error-text">{validationErrors.hora_inicio}</span>}
+                        {validationErrors.horario_inicio && <span className="error-text">{validationErrors.horario_inicio}</span>}
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="hora_fin">Hora de fin:</label>
+                        <label htmlFor="horario_final">Hora de fin:</label>
                         <input
                             type="time"
-                            id="hora_fin"
-                            name="hora_fin"
-                            value={formData.hora_fin}
+                            id="horario_final"
+                            name="horario_final"
+                            value={formData.horario_final}
                             onChange={handleChange}
                             required
                         />
-                        {validationErrors.hora_fin && <span className="error-text">{validationErrors.hora_fin}</span>}
+                        {validationErrors.horario_final && <span className="error-text">{validationErrors.horario_final}</span>}
                     </div>
 
                     <div className="form-group">

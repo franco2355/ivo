@@ -99,8 +99,40 @@ VALUES
 ON DUPLICATE KEY UPDATE titulo=titulo;
 
 -- =====================================================
+-- VISTA: actividades_lugares
+-- Calcula los lugares disponibles para cada actividad
+-- Formula: cupo - cantidad de inscripciones activas
+-- =====================================================
+CREATE OR REPLACE VIEW actividades_lugares AS
+SELECT
+    a.id_actividad,
+    a.titulo,
+    a.descripcion,
+    a.cupo,
+    a.dia,
+    a.horario_inicio,
+    a.horario_final,
+    a.foto_url,
+    a.instructor,
+    a.categoria,
+    a.sucursal_id,
+    a.activa,
+    a.created_at,
+    a.updated_at,
+    (a.cupo - COALESCE(
+        (SELECT COUNT(*)
+         FROM inscripciones i
+         WHERE i.actividad_id = a.id_actividad
+           AND i.is_activa = TRUE
+           AND i.deleted_at IS NULL
+        ), 0)
+    ) AS lugares
+FROM actividades a;
+
+-- =====================================================
 -- MENSAJE DE CONFIRMACIÓN
 -- =====================================================
 SELECT '✅ Base de datos gym_activities inicializada correctamente' AS Status;
 SELECT CONCAT('✅ Sucursales creadas: ', COUNT(*)) AS Sucursales FROM sucursales;
 SELECT CONCAT('✅ Actividades creadas: ', COUNT(*)) AS Actividades FROM actividades;
+SELECT '✅ Vista actividades_lugares creada correctamente' AS Vista;

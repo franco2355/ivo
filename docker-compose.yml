@@ -208,7 +208,7 @@ services:
     container_name: gym-search-api
     environment:
       PORT: ${SEARCH_API_PORT}
-      SOLR_URL: ${SOLR_URL}
+      SOLR_URL: ${SOLR_URL}/${SOLR_CORE}
       SOLR_CORE: ${SOLR_CORE}
       RABBITMQ_URL: ${RABBITMQ_URL}
       RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
@@ -218,9 +218,16 @@ services:
       LOCAL_CACHE_TTL: ${LOCAL_CACHE_TTL}
       ACTIVITIES_API_URL: ${ACTIVITIES_API_URL}
       SUBSCRIPTIONS_API_URL: ${SUBSCRIPTIONS_API_URL}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_SCHEMA: ${DB_SCHEMA_ACTIVITIES}
     ports:
       - "${SEARCH_API_PORT}:${SEARCH_API_PORT}"
     depends_on:
+      mysql:
+        condition: service_healthy
       solr:
         condition: service_healthy
       rabbitmq:
@@ -235,20 +242,20 @@ services:
   # FRONTEND (OPCIONAL)
   # ==========================================
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: gym-frontend
-  #   ports:
-  #     - "5173:5173"
-  #   depends_on:
-  #     - users-api
-  #     - subscriptions-api
-  #     - activities-api
-  #     - search-api
-  #   networks:
-  #     - gym-network
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gym-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - users-api
+      - subscriptions-api
+      - activities-api
+      - search-api
+    networks:
+      - gym-network
 
 # ==========================================
 # NETWORKS

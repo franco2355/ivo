@@ -84,13 +84,21 @@ func (r *MySQLUsersRepository) Create(ctx context.Context, user domain.User) (do
 
 	// Insertar en DB
 	if err := r.db.WithContext(ctx).Create(&userDAO).Error; err != nil {
-		// Manejar errores de duplicados (username o email ya existe)
-		if errors.Is(err, gorm.ErrDuplicatedKey) ||
-			(err.Error() != "" && (contains(err.Error(), "username") ||
-				contains(err.Error(), "email") ||
-				contains(err.Error(), "Duplicate entry"))) {
-			return domain.User{}, errors.New("username or email already exists")
+		// Manejar errores de duplicados con mensajes específicos
+		errMsg := err.Error()
+
+		if errors.Is(err, gorm.ErrDuplicatedKey) || contains(errMsg, "Duplicate entry") {
+			// Detectar qué campo está duplicado
+			if contains(errMsg, "username") || contains(errMsg, "usuarios.username") {
+				return domain.User{}, errors.New("username_already_exists")
+			}
+			if contains(errMsg, "email") || contains(errMsg, "usuarios.email") {
+				return domain.User{}, errors.New("email_already_exists")
+			}
+			// Si no se puede determinar el campo específico
+			return domain.User{}, errors.New("username_or_email_already_exists")
 		}
+
 		return domain.User{}, fmt.Errorf("error creating user: %w", err)
 	}
 

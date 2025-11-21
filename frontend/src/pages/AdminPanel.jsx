@@ -7,7 +7,7 @@ import AdminPagos from '../components/AdminPagos';
 import '../styles/AdminPanel.css';
 import { useToastContext } from '../context/ToastContext';
 import { handleSessionExpired, isAuthError } from '../utils/auth';
-import { USERS_API } from '../config/api';
+import { ACTIVITIES_API } from '../config/api';
 
 const AdminPanel = () => {
     const [tabActiva, setTabActiva] = useState('actividades');
@@ -28,7 +28,7 @@ const AdminPanel = () => {
 
     const fetchActividades = async () => {
         try {
-            const response = await fetch(USERS_API.base + '/actividades');
+            const response = await fetch(ACTIVITIES_API.actividades);
             if (response.ok) {
                 const data = await response.json();
                 setActividades(data);
@@ -61,7 +61,7 @@ const AdminPanel = () => {
 
         if (window.confirm('¿Estás seguro de que deseas eliminar esta actividad? Se eliminarán también todas las inscripciones asociadas.')) {
             try {
-                const response = await fetch(`${USERS_API.base}/actividades/${actividad.id_actividad}`, {
+                const response = await fetch(ACTIVITIES_API.actividadById(actividad.id_actividad), {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`,

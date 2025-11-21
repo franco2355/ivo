@@ -40,11 +40,24 @@
     @apply block mt-2 text-sm text-gray-400 italic;
   }
 
+  .password-hint.error {
+    @apply text-[#ff5252] font-medium;
+  }
+
+  .field-error {
+    @apply block mt-1.5 text-[13px] text-[#ff5252] font-medium;
+  }
+
   .register-form input {
     @apply w-full border border-[#333] rounded-md text-[17px] text-white box-border mb-0.5;
     padding: 14px 12px;
     background: #232323;
     transition: border 0.2s, box-shadow 0.2s;
+  }
+
+  .register-form input.input-error {
+    @apply border-[#ff5252];
+    box-shadow: 0 0 0 3px rgba(255, 82, 82, 0.15);
   }
 
   .register-form input:focus {

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Planes.css';
 import { useToastContext } from '../context/ToastContext';
-
-const API_URL = 'http://localhost:8081';
+import { SUBSCRIPTIONS_API } from '../config/api';
 
 const Planes = () => {
     const [planes, setPlanes] = useState([]);
@@ -20,11 +19,11 @@ const Planes = () => {
 
     const cargarPlanes = async () => {
         try {
-            console.log('[Planes] Cargando planes desde API...');
+            console.log('[Planes] Cargando planes desde Subscriptions API...');
             setLoading(true);
             setError(null);
 
-            const response = await fetch(`${API_URL}/plans`);
+            const response = await fetch(SUBSCRIPTIONS_API.plans);
             console.log('[Planes] Response:', response.status);
 
             if (!response.ok) {
@@ -34,9 +33,14 @@ const Planes = () => {
             const data = await response.json();
             console.log('[Planes] Data recibida:', data);
 
-            if (data && data.plans && Array.isArray(data.plans)) {
+            // Subscriptions API devuelve { plans: [...], total, page, ... }
+            if (data && Array.isArray(data.plans)) {
                 console.log('[Planes] Planes cargados:', data.plans.length);
                 setPlanes(data.plans);
+            } else if (data.plans === null || data.total === 0) {
+                // No hay planes, pero no es un error
+                console.warn('[Planes] No hay planes disponibles');
+                setPlanes([]);
             } else {
                 throw new Error('Formato de respuesta inválido');
             }

@@ -16,14 +16,100 @@ const Register = () => {
     });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [touched, setTouched] = useState({});
     const navigate = useNavigate();
     const toast = useToastContext();
+
+    const validateField = (name, value) => {
+        let error = "";
+
+        switch (name) {
+            case "nombre":
+            case "apellido":
+                if (!value.trim()) {
+                    error = `El ${name} es obligatorio`;
+                } else if (value.length > 30) {
+                    error = `El ${name} debe tener máximo 30 caracteres`;
+                }
+                break;
+
+            case "username":
+                if (!value.trim()) {
+                    error = "El nombre de usuario es obligatorio";
+                } else if (value.length < 3 || value.length > 30) {
+                    error = "Debe tener entre 3 y 30 caracteres";
+                } else if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+                    error = "Solo letras, números, guiones y guiones bajos";
+                }
+                break;
+
+            case "email":
+                if (!value.trim()) {
+                    error = "El email es obligatorio";
+                } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)) {
+                    error = "Formato de email inválido";
+                }
+                break;
+
+            case "password":
+                const passwordErrors = validatePassword(value);
+                if (passwordErrors.length > 0) {
+                    error = `Debe tener ${passwordErrors.join(", ")}`;
+                }
+                break;
+
+            case "confirmPassword":
+                if (value && value !== formData.password) {
+                    error = "Las contraseñas no coinciden";
+                }
+                break;
+
+            default:
+                break;
+        }
+
+        return error;
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prevState => ({
             ...prevState,
             [name]: value
+        }));
+
+        // Validar campo si ya fue tocado
+        if (touched[name]) {
+            const error = validateField(name, value);
+            setFieldErrors(prev => ({
+                ...prev,
+                [name]: error
+            }));
+        }
+
+        // Validar confirmPassword cuando cambia password
+        if (name === "password" && touched.confirmPassword) {
+            const confirmError = formData.confirmPassword && formData.confirmPassword !== value ?
+                "Las contraseñas no coinciden" : "";
+            setFieldErrors(prev => ({
+                ...prev,
+                confirmPassword: confirmError
+            }));
+        }
+    };
+
+    const handleBlur = (e) => {
+        const { name, value } = e.target;
+        setTouched(prev => ({
+            ...prev,
+            [name]: true
+        }));
+
+        const error = validateField(name, value);
+        setFieldErrors(prev => ({
+            ...prev,
+            [name]: error
         }));
     };
 
@@ -51,16 +137,27 @@ const Register = () => {
         setIsLoading(true);
         setError("");
 
-        // Validar contraseña
-        const passwordErrors = validatePassword(formData.password);
-        if (passwordErrors.length > 0) {
-            setError(`La contraseña debe tener ${passwordErrors.join(", ")}`);
-            setIsLoading(false);
-            return;
-        }
+        // Validar todos los campos
+        const errors = {};
+        Object.keys(formData).forEach(key => {
+            const error = validateField(key, formData[key]);
+            if (error) {
+                errors[key] = error;
+            }
+        });
 
-        if (formData.password !== formData.confirmPassword) {
-            setError("Las contraseñas no coinciden");
+        // Si hay errores, marcar todos los campos como tocados y mostrar errores
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            setTouched({
+                nombre: true,
+                apellido: true,
+                username: true,
+                email: true,
+                password: true,
+                confirmPassword: true
+            });
+            setError("Por favor, corrige los errores en el formulario");
             setIsLoading(false);
             return;
         }
@@ -91,17 +188,21 @@ const Register = () => {
                 navigate("/");
             } else {
                 const errorData = await response.json();
-                // Mejorar el mensaje de error del backend
+                // El backend ahora devuelve mensajes en español
                 let errorMessage = errorData.error || "Error al registrar usuario";
 
+                // Si el error es específico de un campo, marcarlo
                 if (errorData.details) {
-                    // Extraer información útil de los detalles
-                    if (errorData.details.includes("username")) {
-                        errorMessage = "El nombre de usuario ya está en uso";
-                    } else if (errorData.details.includes("email")) {
-                        errorMessage = "El email ya está registrado";
-                    } else if (errorData.details.includes("Password")) {
-                        errorMessage = "La contraseña no cumple con los requisitos";
+                    if (errorData.details.includes("username_already_exists")) {
+                        setFieldErrors(prev => ({
+                            ...prev,
+                            username: "Este nombre de usuario ya está en uso"
+                        }));
+                    } else if (errorData.details.includes("email_already_exists")) {
+                        setFieldErrors(prev => ({
+                            ...prev,
+                            email: "Este email ya está registrado"
+                        }));
                     }
                 }
 
@@ -136,9 +237,14 @@ const Register = () => {
                         placeholder="Nombre"
                         value={formData.nombre}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         disabled={isLoading}
                         required
+                        className={fieldErrors.nombre && touched.nombre ? 'input-error' : ''}
                     />
+                    {fieldErrors.nombre && touched.nombre && (
+                        <small className="field-error">{fieldErrors.nombre}</small>
+                    )}
                 </div>
 
                 <div className="input-group">
@@ -148,9 +254,14 @@ const Register = () => {
                         placeholder="Apellido"
                         value={formData.apellido}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         disabled={isLoading}
                         required
+                        className={fieldErrors.apellido && touched.apellido ? 'input-error' : ''}
                     />
+                    {fieldErrors.apellido && touched.apellido && (
+                        <small className="field-error">{fieldErrors.apellido}</small>
+                    )}
                 </div>
 
                 <div className="input-group">
@@ -160,10 +271,16 @@ const Register = () => {
                         placeholder="Usuario"
                         value={formData.username}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         disabled={isLoading}
                         required
+                        className={fieldErrors.username && touched.username ? 'input-error' : ''}
                     />
+                    {fieldErrors.username && touched.username && (
+                        <small className="field-error">{fieldErrors.username}</small>
+                    )}
                 </div>
+
                 <div className="input-group">
                     <input
                         type="email"
@@ -171,9 +288,14 @@ const Register = () => {
                         placeholder="Email"
                         value={formData.email}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         disabled={isLoading}
                         required
+                        className={fieldErrors.email && touched.email ? 'input-error' : ''}
                     />
+                    {fieldErrors.email && touched.email && (
+                        <small className="field-error">{fieldErrors.email}</small>
+                    )}
                 </div>
 
                 <div className="input-group">
@@ -183,12 +305,14 @@ const Register = () => {
                         placeholder="Contraseña"
                         value={formData.password}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         disabled={isLoading}
                         required
                         minLength={8}
+                        className={fieldErrors.password && touched.password ? 'input-error' : ''}
                     />
-                    <small className="password-hint">
-                        Debe tener: 8+ caracteres, mayúscula, minúscula y número
+                    <small className={fieldErrors.password && touched.password ? "password-hint error" : "password-hint"}>
+                        {fieldErrors.password && touched.password ? fieldErrors.password : "Debe tener: 8+ caracteres, mayúscula, minúscula y número"}
                     </small>
                 </div>
 
@@ -199,9 +323,14 @@ const Register = () => {
                         placeholder="Confirmar Contraseña"
                         value={formData.confirmPassword}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         disabled={isLoading}
                         required
+                        className={fieldErrors.confirmPassword && touched.confirmPassword ? 'input-error' : ''}
                     />
+                    {fieldErrors.confirmPassword && touched.confirmPassword && (
+                        <small className="field-error">{fieldErrors.confirmPassword}</small>
+                    )}
                 </div>
 
                 <button type="submit" disabled={isLoading}>

@@ -48,7 +48,7 @@ func (r *MySQLSearchRepository) SearchActivities(req dtos.SearchRequest) ([]dtos
 			a.sucursal_id,
 			COUNT(*) OVER() as total_count
 		FROM actividades a
-		LEFT JOIN sucursales s ON a.sucursal_id = s.id
+		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal
 	`
 
 	var whereClauses []string
@@ -120,6 +120,7 @@ func (r *MySQLSearchRepository) SearchActivities(req dtos.SearchRequest) ([]dtos
 	for rows.Next() {
 		var doc dtos.SearchDocument
 		var horarioInicio, horarioFinal string
+		var sucursalID sql.NullString
 
 		err := rows.Scan(
 			&doc.ID,
@@ -132,7 +133,7 @@ func (r *MySQLSearchRepository) SearchActivities(req dtos.SearchRequest) ([]dtos
 			&horarioFinal,
 			&doc.CupoDisponible,
 			&doc.SucursalNombre,
-			&doc.SucursalID,
+			&sucursalID,
 			&totalCount,
 		)
 		if err != nil {
@@ -142,6 +143,9 @@ func (r *MySQLSearchRepository) SearchActivities(req dtos.SearchRequest) ([]dtos
 		doc.Type = "activity"
 		doc.HorarioInicio = horarioInicio
 		doc.HorarioFinal = horarioFinal
+		if sucursalID.Valid {
+			doc.SucursalID = sucursalID.String
+		}
 
 		results = append(results, doc)
 	}
@@ -169,7 +173,7 @@ func (r *MySQLSearchRepository) GetAllActivities() ([]dtos.SearchDocument, error
 			COALESCE(s.nombre, '') as sucursal_nombre,
 			a.sucursal_id
 		FROM actividades a
-		LEFT JOIN sucursales s ON a.sucursal_id = s.id
+		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal
 	`
 
 	rows, err := r.db.Query(query)
@@ -183,6 +187,7 @@ func (r *MySQLSearchRepository) GetAllActivities() ([]dtos.SearchDocument, error
 	for rows.Next() {
 		var doc dtos.SearchDocument
 		var horarioInicio, horarioFinal string
+		var sucursalID sql.NullString
 
 		err := rows.Scan(
 			&doc.ID,
@@ -195,7 +200,7 @@ func (r *MySQLSearchRepository) GetAllActivities() ([]dtos.SearchDocument, error
 			&horarioFinal,
 			&doc.CupoDisponible,
 			&doc.SucursalNombre,
-			&doc.SucursalID,
+			&sucursalID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning activity: %w", err)
@@ -204,6 +209,9 @@ func (r *MySQLSearchRepository) GetAllActivities() ([]dtos.SearchDocument, error
 		doc.Type = "activity"
 		doc.HorarioInicio = horarioInicio
 		doc.HorarioFinal = horarioFinal
+		if sucursalID.Valid {
+			doc.SucursalID = sucursalID.String
+		}
 
 		results = append(results, doc)
 	}
