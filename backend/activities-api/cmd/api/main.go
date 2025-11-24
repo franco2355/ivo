@@ -14,13 +14,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Variables globales para health check
+var (
+	rabbitPublisher  *clients.RabbitMQEventPublisher
+	actividadesRepo  *repository.MySQLActividadesRepository
+)
+
 func main() {
 	// Cargar configuración
 	cfg := config.Load()
 
 	// ========== CAPA DE DATOS (REPOSITORY) ==========
 	// Crear repositorio de actividades (comparte conexión DB)
-	actividadesRepo := repository.NewMySQLActividadesRepository(cfg.MySQL)
+	actividadesRepo = repository.NewMySQLActividadesRepository(cfg.MySQL)
 	if actividadesRepo == nil {
 		log.Fatal("Failed to initialize actividades repository")
 	}
@@ -34,7 +40,8 @@ func main() {
 	// ========== RABBITMQ EVENT PUBLISHER ==========
 	// Inicializar RabbitMQ con fallback a NullEventPublisher
 	var eventPublisher services.EventPublisher
-	rabbitPublisher, err := clients.NewRabbitMQEventPublisher(cfg.RabbitMQURL, cfg.RabbitMQExchange)
+	var err error
+	rabbitPublisher, err = clients.NewRabbitMQEventPublisher(cfg.RabbitMQURL, cfg.RabbitMQExchange)
 	if err != nil {
 		log.Printf("⚠️ Warning: No se pudo conectar a RabbitMQ: %v", err)
 		log.Println("⚠️ Usando NullEventPublisher como fallback")
@@ -120,9 +127,36 @@ func main() {
 }
 
 func healthCheckHandler(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{
+	health := gin.H{
 		"status":  "ok",
 		"service": "activities-api",
 		"version": "1.0.0",
-	})
+		"checks":  gin.H{},
+	}
+
+	// Check RabbitMQ connectivity
+	if rabbitPublisher != nil && rabbitPublisher.Conn != nil && !rabbitPublisher.Conn.IsClosed() {
+		health["checks"].(gin.H)["rabbitmq"] = "connected"
+	} else {
+		health["checks"].(gin.H)["rabbitmq"] = "disconnected"
+		health["status"] = "degraded"
+	}
+
+	// Check MySQL connectivity
+	if actividadesRepo != nil && actividadesRepo.GetDB() != nil {
+		sqlDB, err := actividadesRepo.GetDB().DB()
+		if err == nil && sqlDB.Ping() == nil {
+			health["checks"].(gin.H)["mysql"] = "connected"
+		} else {
+			health["checks"].(gin.H)["mysql"] = "disconnected"
+			health["status"] = "degraded"
+		}
+	}
+
+	statusCode := http.StatusOK
+	if health["status"] == "degraded" {
+		statusCode = http.StatusServiceUnavailable
+	}
+
+	ctx.JSON(statusCode, health)
 }

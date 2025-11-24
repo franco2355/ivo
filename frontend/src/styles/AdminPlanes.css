@@ -119,4 +119,147 @@
   .modal-content-plan h3 {
     @apply text-2xl mb-4 text-[#333];
   }
+
+  .formulario-plan {
+    @apply flex flex-col gap-4;
+  }
+
+  .form-group {
+    @apply flex flex-col gap-2;
+  }
+
+  .form-group label {
+    @apply font-medium text-gray;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    @apply p-2.5 border border-gray-light rounded-lg;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    @apply outline-none border-primary;
+  }
+
+  .form-row {
+    @apply grid grid-cols-2 gap-4;
+  }
+
+  .beneficios-input {
+    @apply flex gap-2;
+  }
+
+  .beneficios-input input {
+    @apply flex-1 p-2.5 border border-gray-light rounded-lg;
+  }
+
+  .beneficios-input button {
+    @apply px-4 bg-primary text-white border-none rounded-lg cursor-pointer font-bold text-xl transition-colors duration-300;
+  }
+
+  .beneficios-input button:hover {
+    @apply bg-[#45a049];
+  }
+
+  .beneficios-lista {
+    @apply list-none p-0 m-0 flex flex-col gap-2 mt-2;
+  }
+
+  .beneficios-lista li {
+    @apply flex justify-between items-center p-2 bg-gray-light rounded;
+  }
+
+  .beneficios-lista li button {
+    @apply bg-transparent border-none text-red-500 cursor-pointer font-bold text-xl ml-2;
+  }
+
+  .beneficios-lista li button:hover {
+    @apply text-red-700;
+  }
+
+  .form-group-checkbox {
+    @apply flex items-center gap-2;
+  }
+
+  .form-group-checkbox input[type="checkbox"] {
+    @apply w-5 h-5 cursor-pointer;
+  }
+
+  .form-actions {
+    @apply flex gap-3 justify-end mt-6;
+  }
+
+  .btn-cancelar,
+  .btn-guardar {
+    @apply px-6 py-3 border-none rounded-lg cursor-pointer font-bold transition-colors duration-300;
+  }
+
+  .btn-cancelar {
+    @apply bg-gray-light text-gray;
+  }
+
+  .btn-cancelar:hover {
+    @apply bg-[#ddd];
+  }
+
+  .btn-guardar {
+    @apply bg-primary text-white;
+  }
+
+  .btn-guardar:hover {
+    @apply bg-[#45a049];
+  }
+
+  .btn-editar {
+    @apply px-3 py-1.5 bg-secondary text-white rounded cursor-pointer;
+  }
+
+  .btn-editar:hover {
+    @apply bg-[#1976d2];
+  }
+
+  .btn-eliminar {
+    @apply px-3 py-1.5 bg-red-500 text-white rounded cursor-pointer;
+  }
+
+  .btn-eliminar:hover {
+    @apply bg-red-700;
+  }
+
+  .loading-overlay {
+    @apply flex flex-col items-center justify-center py-12;
+  }
+
+  .spinner {
+    @apply w-12 h-12 border-4 border-gray-light border-t-primary rounded-full;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .alert-warning {
+    @apply p-4 bg-orange-100 border-l-4 border-warning text-orange-800 rounded mb-6;
+  }
+
+  .alert-success {
+    @apply p-4 bg-green-100 border-l-4 border-primary text-green-800 rounded mb-6;
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+  }
+
+  .modal-close {
+    @apply absolute top-4 right-4 bg-transparent border-none text-2xl cursor-pointer text-gray;
+  }
+
+  .modal-close:hover {
+    @apply text-black;
+  }
 }

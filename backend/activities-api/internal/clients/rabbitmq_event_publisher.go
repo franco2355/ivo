@@ -11,7 +11,7 @@ import (
 
 // RabbitMQEventPublisher - Implementación de EventPublisher con RabbitMQ
 type RabbitMQEventPublisher struct {
-	conn     *amqp.Connection
+	Conn     *amqp.Connection // Exportado para health checks
 	channel  *amqp.Channel
 	exchange string
 }
@@ -48,7 +48,7 @@ func NewRabbitMQEventPublisher(url, exchange string) (*RabbitMQEventPublisher, e
 	log.Printf("✅ Conectado a RabbitMQ (Exchange: %s)\n", exchange)
 
 	return &RabbitMQEventPublisher{
-		conn:     conn,
+		Conn:     conn,
 		channel:  channel,
 		exchange: exchange,
 	}, nil
@@ -143,8 +143,8 @@ func (r *RabbitMQEventPublisher) Close() error {
 	if r.channel != nil {
 		r.channel.Close()
 	}
-	if r.conn != nil {
-		return r.conn.Close()
+	if r.Conn != nil {
+		return r.Conn.Close()
 	}
 	return nil
 }

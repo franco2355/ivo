@@ -34,7 +34,7 @@ type StripeConfig struct {
 // RabbitMQConfig - Configuración de RabbitMQ para eventos
 type RabbitMQConfig struct {
 	URL      string // amqp://user:password@host:port/
-	Exchange string // Nombre del exchange (ej: "gym.events")
+	Exchange string // Nombre del exchange (ej: "gym_events")
 }
 
 // LoadConfig - Carga la configuración desde variables de entorno
@@ -65,7 +65,7 @@ func LoadConfig() *Config {
 		// RabbitMQ
 		RabbitMQ: RabbitMQConfig{
 			URL:      getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
-			Exchange: getEnv("RABBITMQ_EXCHANGE", "gym.events"),
+			Exchange: getEnv("RABBITMQ_EXCHANGE", "gym_events"),
 		},
 	}
 }

@@ -22,7 +22,7 @@ graph TB
 
     subgraph "Servicios Externos"
         MERCADOPAGO[MercadoPago API<br/>Gateway de Pagos]
-        RABBITMQ[RabbitMQ<br/>Exchange: gym.events]
+        RABBITMQ[RabbitMQ<br/>Exchange: gym_events]
     end
 
     CLIENT -->|HTTP REST| SUBS
@@ -148,8 +148,8 @@ graph TD
         PUB[RabbitMQ Publisher]
     end
 
-    subgraph "RabbitMQ Exchange: gym.events"
-        EXCHANGE[Topic Exchange<br/>gym.events]
+    subgraph "RabbitMQ Exchange: gym_events"
+        EXCHANGE[Topic Exchange<br/>gym_events]
     end
 
     subgraph "Routing Keys"
@@ -325,7 +325,7 @@ MONGO_DATABASE=payments_db
 
 # RabbitMQ
 RABBITMQ_URL=amqp://guest:guest@localhost:5672/
-RABBITMQ_EXCHANGE=gym.events
+RABBITMQ_EXCHANGE=gym_events
 
 # MercadoPago
 MERCADOPAGO_ACCESS_TOKEN=APP_USR-xxxxxxxx

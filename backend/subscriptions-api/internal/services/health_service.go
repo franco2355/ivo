@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/yourusername/gym-management/subscriptions-api/internal/clients"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -85,16 +84,10 @@ func (s *HealthService) checkMongoDB(ctx context.Context) string {
 // checkRabbitMQ - Verifica estado de RabbitMQ
 func (s *HealthService) checkRabbitMQ() string {
 	if s.eventPublisher == nil {
-		return "unavailable"
+		return "disabled"
 	}
 
-	// Verificar si es NullEventPublisher
-	switch s.eventPublisher.(type) {
-	case *clients.NullEventPublisher:
-		return "disabled"
-	default:
-		// Si es RabbitMQEventPublisher, asumimos que está conectado
-		// (la conexión falla en el startup si no está disponible)
-		return "healthy"
-	}
+	// Si el publisher existe, asumimos que está conectado
+	// (la conexión falla en el startup si no está disponible)
+	return "healthy"
 }

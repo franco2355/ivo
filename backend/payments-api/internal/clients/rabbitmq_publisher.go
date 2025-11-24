@@ -12,7 +12,7 @@ import (
 
 // RabbitMQPublisher - Cliente para publicar eventos de pagos
 type RabbitMQPublisher struct {
-	conn     *amqp091.Connection
+	Conn     *amqp091.Connection // Exported for health checks
 	channel  *amqp091.Channel
 	exchange string
 }
@@ -51,7 +51,7 @@ func NewRabbitMQPublisher(url, exchange string) (*RabbitMQPublisher, error) {
 
 	// 3. Declarar exchange (Topic Exchange para routing flexible)
 	err = channel.ExchangeDeclare(
-		exchange, // name: "gym.events"
+		exchange, // name: "gym_events"
 		"topic",  // type: permite routing con patterns (payment.*, subscription.*)
 		true,     // durable: sobrevive a reinicios
 		false,    // auto-deleted
@@ -68,7 +68,7 @@ func NewRabbitMQPublisher(url, exchange string) (*RabbitMQPublisher, error) {
 	log.Printf("✅ Conectado a RabbitMQ (Exchange: %s)", exchange)
 
 	return &RabbitMQPublisher{
-		conn:     conn,
+		Conn:     conn,
 		channel:  channel,
 		exchange: exchange,
 	}, nil
@@ -120,8 +120,8 @@ func (r *RabbitMQPublisher) Close() error {
 	if r.channel != nil {
 		r.channel.Close()
 	}
-	if r.conn != nil {
-		return r.conn.Close()
+	if r.Conn != nil {
+		return r.Conn.Close()
 	}
 	return nil
 }

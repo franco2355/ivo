@@ -137,8 +137,34 @@ func (c *SearchController) GetStats(ctx *gin.Context) {
 
 // HealthCheck verifica el estado del servicio
 func (c *SearchController) HealthCheck(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "healthy",
+	health := gin.H{
+		"status":  "ok",
 		"service": "search-api",
-	})
+		"checks":  gin.H{},
+	}
+
+	// Check Solr via SearchService
+	if c.searchService != nil {
+		stats := c.searchService.GetStats()
+		if stats != nil {
+			health["checks"].(gin.H)["solr"] = "connected"
+		} else {
+			health["checks"].(gin.H)["solr"] = "unavailable"
+		}
+	}
+
+	// Check Memcached via CacheService
+	if c.cacheService != nil {
+		// Try to set and get a test value
+		testKey := "health_check_test"
+		testValue := []byte("ok")
+		c.cacheService.Set(testKey, testValue)
+		if _, found := c.cacheService.Get(testKey); found {
+			health["checks"].(gin.H)["cache"] = "connected"
+		} else {
+			health["checks"].(gin.H)["cache"] = "degraded"
+		}
+	}
+
+	ctx.JSON(http.StatusOK, health)
 }

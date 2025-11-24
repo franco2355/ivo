@@ -239,3 +239,135 @@ func (s *SubscriptionService) mapSubscriptionToResponse(subscription *entities.S
 		UpdatedAt:             subscription.UpdatedAt,
 	}
 }
+
+// ============================================================================
+// MÉTODOS PARA PROCESAR EVENTOS DE PAGOS (Invocados por PaymentEventHandler)
+// ============================================================================
+
+// ActivateSubscriptionByPayment activa una suscripción cuando se completa un pago
+// Llamado desde PaymentEventHandler al recibir evento payment.completed
+func (s *SubscriptionService) ActivateSubscriptionByPayment(ctx context.Context, subscriptionID string, paymentID string) error {
+	// Validar ID
+	objID, err := primitive.ObjectIDFromHex(subscriptionID)
+	if err != nil {
+		return fmt.Errorf("ID de suscripción inválido: %w", err)
+	}
+
+	// Obtener suscripción
+	subscription, err := s.subscriptionRepo.FindByID(ctx, objID)
+	if err != nil {
+		return fmt.Errorf("suscripción no encontrada: %w", err)
+	}
+
+	// Validar que esté en estado pendiente_pago
+	if subscription.Estado != "pendiente_pago" {
+		return fmt.Errorf("suscripción no está en estado pendiente_pago (actual: %s)", subscription.Estado)
+	}
+
+	// Actualizar estado a "activa" y registrar pago
+	now := time.Now()
+	subscription.Estado = "activa"
+	subscription.PagoID = paymentID
+	subscription.FechaInicio = now // Actualizar fecha inicio al momento de activación
+	subscription.UpdatedAt = now
+
+	// Recalcular fecha de vencimiento desde ahora
+	plan, err := s.planRepo.FindByID(ctx, subscription.PlanID)
+	if err == nil && plan != nil {
+		subscription.FechaVencimiento = now.AddDate(0, 0, plan.DuracionDias)
+	}
+
+	// Guardar cambios
+	if err := s.subscriptionRepo.Update(ctx, objID, subscription); err != nil {
+		return fmt.Errorf("error actualizando suscripción: %w", err)
+	}
+
+	// Publicar evento de activación
+	eventData := map[string]interface{}{
+		"usuario_id": subscription.UsuarioID,
+		"plan_id":    subscription.PlanID.Hex(),
+		"payment_id": paymentID,
+		"estado":     "activa",
+	}
+	s.eventPublisher.PublishSubscriptionEvent("activated", subscriptionID, eventData)
+
+	return nil
+}
+
+// RegisterPaymentFailure registra un fallo de pago para una suscripción
+// Llamado desde PaymentEventHandler al recibir evento payment.failed
+func (s *SubscriptionService) RegisterPaymentFailure(ctx context.Context, subscriptionID string, paymentID string) error {
+	// Validar ID
+	objID, err := primitive.ObjectIDFromHex(subscriptionID)
+	if err != nil {
+		return fmt.Errorf("ID de suscripción inválido: %w", err)
+	}
+
+	// Obtener suscripción
+	subscription, err := s.subscriptionRepo.FindByID(ctx, objID)
+	if err != nil {
+		return fmt.Errorf("suscripción no encontrada: %w", err)
+	}
+
+	// Registrar el fallo en metadata (opcional)
+	if subscription.Metadata.Notas == "" {
+		subscription.Metadata.Notas = fmt.Sprintf("Pago fallido: %s", paymentID)
+	} else {
+		subscription.Metadata.Notas += fmt.Sprintf("\nPago fallido: %s", paymentID)
+	}
+
+	subscription.UpdatedAt = time.Now()
+
+	// Guardar cambios
+	if err := s.subscriptionRepo.Update(ctx, objID, subscription); err != nil {
+		return fmt.Errorf("error registrando fallo de pago: %w", err)
+	}
+
+	// Publicar evento de fallo
+	eventData := map[string]interface{}{
+		"usuario_id": subscription.UsuarioID,
+		"payment_id": paymentID,
+		"estado":     subscription.Estado,
+	}
+	s.eventPublisher.PublishSubscriptionEvent("payment_failed", subscriptionID, eventData)
+
+	return nil
+}
+
+// CancelSubscriptionByRefund cancela una suscripción cuando se reembolsa el pago
+// Llamado desde PaymentEventHandler al recibir evento payment.refunded
+func (s *SubscriptionService) CancelSubscriptionByRefund(ctx context.Context, subscriptionID string, paymentID string) error {
+	// Validar ID
+	objID, err := primitive.ObjectIDFromHex(subscriptionID)
+	if err != nil {
+		return fmt.Errorf("ID de suscripción inválido: %w", err)
+	}
+
+	// Obtener suscripción
+	subscription, err := s.subscriptionRepo.FindByID(ctx, objID)
+	if err != nil {
+		return fmt.Errorf("suscripción no encontrada: %w", err)
+	}
+
+	// Cancelar la suscripción
+	now := time.Now()
+	subscription.Estado = "cancelada"
+	subscription.Metadata.Notas += fmt.Sprintf("\nReembolso procesado: %s (Fecha: %s)", paymentID, now.Format("2006-01-02"))
+	subscription.UpdatedAt = now
+
+	// Guardar cambios
+	if err := s.subscriptionRepo.Update(ctx, objID, subscription); err != nil {
+		return fmt.Errorf("error cancelando suscripción por reembolso: %w", err)
+	}
+
+	// Publicar evento de cancelación por reembolso
+	eventData := map[string]interface{}{
+		"usuario_id": subscription.UsuarioID,
+		"payment_id": paymentID,
+		"estado":     "cancelada",
+		"motivo":     "refund",
+	}
+	s.eventPublisher.PublishSubscriptionEvent("cancelled_by_refund", subscriptionID, eventData)
+
+	return nil
+}

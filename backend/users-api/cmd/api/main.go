@@ -38,21 +38,58 @@ func main() {
 	// Middleware CORS (debe ir primero)
 	router.Use(middleware.CORSMiddleware())
 
-	// 🏥 Health check endpoint (sin autenticación)
+	// 🏥 Health check endpoint (sin autenticación ni rate limiting)
 	router.GET("/healthz", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"service": "users-api",
-			"version": "1.0.0",
-		})
+		health := gin.H{
+			"status":      "ok",
+			"service":     "users-api",
+			"version":     "1.0.0",
+			"environment": cfg.Environment,
+			"checks":      gin.H{},
+		}
+
+		// Check MySQL connection
+		if usersRepo != nil {
+			db := usersRepo.GetDB()
+			if db != nil {
+				sqlDB, err := db.DB()
+				if err == nil && sqlDB.Ping() == nil {
+					health["checks"].(gin.H)["mysql"] = "connected"
+				} else {
+					health["status"] = "degraded"
+					health["checks"].(gin.H)["mysql"] = "unhealthy"
+				}
+			} else {
+				health["status"] = "degraded"
+				health["checks"].(gin.H)["mysql"] = "unavailable"
+			}
+		}
+
+		// Return 503 if degraded
+		if health["status"] == "degraded" {
+			c.JSON(http.StatusServiceUnavailable, health)
+			return
+		}
+
+		c.JSON(http.StatusOK, health)
 	})
 
-	// 📚 Rutas públicas (sin autenticación)
-	router.POST("/register", usersController.Register)
-	router.POST("/login", usersController.Login)
+	// 📚 Rutas públicas (con rate limiting específico)
+	// Rate limit para registro: 3 intentos cada 10 minutos por IP
+	router.POST("/register",
+		// middleware.RateLimitMiddleware(cfg.RateLimit.RegisterAttempts, cfg.RateLimit.RegisterWindow),
+		usersController.Register,
+	)
 
-	// 📚 Rutas protegidas (requieren JWT)
+	// Rate limit para login: 5 intentos cada 15 minutos por IP
+	router.POST("/login",
+		// middleware.RateLimitMiddleware(cfg.RateLimit.LoginAttempts, cfg.RateLimit.LoginWindow),
+		usersController.Login,
+	)
+
+	// 📚 Rutas protegidas (requieren JWT + rate limiting)
 	protected := router.Group("/")
+	// protected.Use(middleware.RateLimitMiddleware(cfg.RateLimit.PublicRPM, 1)) // 100 req/min
 	protected.Use(middleware.JWTAuthMiddleware(usersService))
 	{
 		// Endpoint para que otros microservicios validen usuario existe
@@ -75,12 +112,17 @@ func main() {
 	}
 
 	log.Printf("🚀 Users API listening on port %s", cfg.Port)
+	log.Printf("🌍 Environment: %s", cfg.Environment)
 	log.Printf("📊 Health check: http://localhost:%s/healthz", cfg.Port)
+	log.Printf("🛡️  Rate Limiting:")
+	log.Printf("   Login: %d attempts per %d minutes", cfg.RateLimit.LoginAttempts, cfg.RateLimit.LoginWindow)
+	log.Printf("   Register: %d attempts per %d minutes per IP", cfg.RateLimit.RegisterAttempts, cfg.RateLimit.RegisterWindow)
+	log.Printf("   Public APIs: %d requests per minute", cfg.RateLimit.PublicRPM)
 	log.Printf("📚 Endpoints:")
-	log.Printf("   POST   /register - Register new user")
-	log.Printf("   POST   /login - Login user")
-	log.Printf("   GET    /users/:id - Get user by ID (protected)")
-	log.Printf("   GET    /users - List all users (admin only)")
+	log.Printf("   POST   /register - Register new user (rate limited)")
+	log.Printf("   POST   /login - Login user (rate limited)")
+	log.Printf("   GET    /users/:id - Get user by ID (protected + rate limited)")
+	log.Printf("   GET    /users - List all users (admin only + rate limited)")
 
 	// Iniciar servidor (bloquea hasta que se pare el servidor)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

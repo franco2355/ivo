@@ -35,7 +35,7 @@
            │                               │
            │         ┌──────────────┐      │
            └────────►│  RabbitMQ    │◄─────┘
-                     │ (gym.events) │
+                     │ (gym_events) │
                      └──────────────┘
 
 Flujo:
@@ -241,7 +241,7 @@ Content-Type: application/json
 
 ## 🔔 Eventos RabbitMQ {#eventos-rabbitmq}
 
-### Exchange: `gym.events` (ya configurado en tu código)
+### Exchange: `gym_events` (ya configurado en tu código)
 
 ### Eventos que PAYMENTS-API publica:
 
@@ -495,7 +495,7 @@ type PaymentEvent struct {
 
 **PAYMENTS-API está listo y esperando:**
 - Puerto: `8083`
-- RabbitMQ: Publicando eventos en exchange `gym.events`
+- RabbitMQ: Publicando eventos en exchange `gym_events`
 - Endpoints documentados arriba funcionando
 
 **Siguiente paso:** El equipo de SUBSCRIPTIONS-API debe implementar los endpoints y consumidores descritos.

@@ -589,14 +589,55 @@ func (s *PaymentService) CreatePayment(ctx context.Context, req dtos.CreatePayme
 	), nil
 }
 
-// UpdatePaymentStatus - Actualiza el estado de un pago manualmente
+// UpdatePaymentStatus - Actualiza el estado de un pago manualmente Y PUBLICA EVENTOS
 func (s *PaymentService) UpdatePaymentStatus(ctx context.Context, paymentID string, req dtos.UpdatePaymentStatusRequest) error {
 	objID, err := primitive.ObjectIDFromHex(paymentID)
 	if err != nil {
 		return fmt.Errorf("ID de pago inválido")
 	}
 
-	return s.paymentRepo.UpdateStatus(ctx, objID, req.Status, req.TransactionID)
+	// 1. Obtener pago actual para comparar estados y publicar eventos
+	payment, err := s.paymentRepo.FindByID(ctx, objID)
+	if err != nil {
+		return fmt.Errorf("pago no encontrado: %w", err)
+	}
+
+	oldStatus := payment.Status
+
+	// 2. Actualizar en BD
+	if err := s.paymentRepo.UpdateStatus(ctx, objID, req.Status, req.TransactionID); err != nil {
+		return fmt.Errorf("error actualizando estado: %w", err)
+	}
+
+	// 3. Actualizar payment en memoria
+	payment.Status = req.Status
+	payment.TransactionID = req.TransactionID
+	payment.UpdatedAt = time.Now()
+
+	if req.Status == gateways.StatusCompleted {
+		now := time.Now()
+		payment.ProcessedAt = &now
+	}
+
+	// 4. PUBLICAR EVENTO SOLO SI CAMBIÓ EL ESTADO
+	if oldStatus != req.Status && s.eventPublisher != nil {
+		switch req.Status {
+		case gateways.StatusCompleted:
+			if err := s.eventPublisher.PublishPaymentCompleted(ctx, payment); err != nil {
+				fmt.Printf("⚠️ Error publicando evento payment.completed: %v\n", err)
+			}
+		case gateways.StatusFailed:
+			if err := s.eventPublisher.PublishPaymentFailed(ctx, payment); err != nil {
+				fmt.Printf("⚠️ Error publicando evento payment.failed: %v\n", err)
+			}
+		case gateways.StatusRefunded:
+			if err := s.eventPublisher.PublishPaymentRefunded(ctx, payment, payment.Amount); err != nil {
+				fmt.Printf("⚠️ Error publicando evento payment.refunded: %v\n", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 // ProcessPayment - Simula el procesamiento de un pago (para testing)

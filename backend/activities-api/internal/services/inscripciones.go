@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -190,10 +191,15 @@ func (s *InscripcionesServiceImpl) Create(ctx context.Context, usuarioID, activi
 		return domain.InscripcionResponse{}, fmt.Errorf("error en validación de actividad")
 	}
 
-	// Validación HTTP - Validar suscripción activa (HTTP call a subscriptions-api)
+	// Validación HTTP - Validar suscripción activa (HTTP call to subscriptions-api)
 	activeSub, err := s.getActiveSubscription(ctx, usuarioID, authToken)
 	if err != nil {
 		return domain.InscripcionResponse{}, fmt.Errorf("no tiene suscripción activa: %w", err)
+	}
+
+	// Validar restricciones del plan - Verificar si la actividad está permitida
+	if err := s.validatePlanRestrictions(activeSub, actividadValidada); err != nil {
+		return domain.InscripcionResponse{}, err
 	}
 
 	// Crear inscripción
@@ -246,10 +252,19 @@ func (s *InscripcionesServiceImpl) Deactivate(ctx context.Context, usuarioID, ac
 
 // Subscription representa una suscripción activa del usuario
 type Subscription struct {
-	ID     string `json:"id"`
-	UserID uint   `json:"usuario_id"`
-	PlanID string `json:"plan_id"`
-	Status string `json:"estado"`
+	ID       string `json:"id"`
+	UserID   string `json:"usuario_id"` // Cambiado de uint a string para coincidir con la respuesta de subscriptions-api
+	PlanID   string `json:"plan_id"`
+	Status   string `json:"estado"`
+	PlanInfo Plan   `json:"plan_info,omitempty"` // Info del plan expandida
+}
+
+// Plan representa la información del plan de suscripción
+type Plan struct {
+	ID                    string   `json:"id"`
+	Nombre                string   `json:"nombre"`
+	TipoAcceso            string   `json:"tipo_acceso"` // "limitado" | "completo"
+	ActividadesPermitidas []string `json:"actividades_permitidas"`
 }
 
 // getActiveSubscription valida que el usuario tenga una suscripción activa
@@ -259,8 +274,8 @@ func (s *InscripcionesServiceImpl) getActiveSubscription(ctx context.Context, us
 		Timeout: 5 * time.Second,
 	}
 
-	// Construir URL (usar localhost en desarrollo, cambiar en producción)
-	url := fmt.Sprintf("http://localhost:8081/subscriptions/active/%d", userID)
+	// Construir URL usando el service name de Docker
+	url := fmt.Sprintf("http://subscriptions-api:8081/subscriptions/active/%d", userID)
 
 	// Crear request con contexto
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -271,33 +286,134 @@ func (s *InscripcionesServiceImpl) getActiveSubscription(ctx context.Context, us
 	// Agregar header de autorización
 	if authToken != "" {
 		req.Header.Set("Authorization", authToken)
+		fmt.Printf("🔐 [getActiveSubscription] Usando token de autorización para usuario %d\n", userID)
+	} else {
+		fmt.Printf("⚠️  [getActiveSubscription] NO se proporcionó token de autorización para usuario %d\n", userID)
 	}
 
 	// Ejecutar request
+	fmt.Printf("🌐 [getActiveSubscription] Llamando a: %s\n", url)
 	resp, err := client.Do(req)
 	if err != nil {
+		fmt.Printf("❌ [getActiveSubscription] Error ejecutando request: %v\n", err)
 		return Subscription{}, fmt.Errorf("error llamando a subscriptions-api: %w", err)
 	}
 	defer resp.Body.Close()
 
+	fmt.Printf("📊 [getActiveSubscription] Status Code recibido: %d\n", resp.StatusCode)
+
 	// Manejar diferentes códigos de estado
+	if resp.StatusCode == 401 {
+		fmt.Printf("❌ [getActiveSubscription] Error 401 - No autorizado\n")
+		return Subscription{}, fmt.Errorf("no autorizado para consultar suscripción (falta token de autenticación)")
+	}
 	if resp.StatusCode == 404 {
+		fmt.Printf("❌ [getActiveSubscription] Error 404 - Suscripción no encontrada\n")
 		return Subscription{}, fmt.Errorf("no se encontró suscripción activa")
 	}
 	if resp.StatusCode != 200 {
+		// Leer el body para obtener más detalles del error
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		fmt.Printf("❌ [getActiveSubscription] Error HTTP %d desde subscriptions-api: %s\n", resp.StatusCode, string(bodyBytes))
 		return Subscription{}, fmt.Errorf("error obteniendo suscripción activa (status: %d)", resp.StatusCode)
 	}
 
 	// Decodificar respuesta
 	var subscription Subscription
 	if err := json.NewDecoder(resp.Body).Decode(&subscription); err != nil {
+		fmt.Printf("❌ [getActiveSubscription] Error decodificando JSON: %v\n", err)
 		return Subscription{}, fmt.Errorf("error decodificando suscripción: %w", err)
 	}
 
+	fmt.Printf("📦 [getActiveSubscription] Suscripción decodificada - ID: %s, UserID: %s, PlanID: %s, Status: %s\n",
+		subscription.ID, subscription.UserID, subscription.PlanID, subscription.Status)
+
 	// Validar que la suscripción esté activa
 	if subscription.Status != "activa" {
+		fmt.Printf("❌ [getActiveSubscription] Suscripción no activa - Estado: %s\n", subscription.Status)
 		return Subscription{}, fmt.Errorf("la suscripción del usuario no está activa (estado: %s)", subscription.Status)
 	}
 
+	// Obtener información del plan
+	fmt.Printf("📋 [getActiveSubscription] Obteniendo info del plan: %s\n", subscription.PlanID)
+	planInfo, err := s.getPlanInfo(ctx, subscription.PlanID, authToken)
+	if err != nil {
+		// Log el error pero no fallamos - el plan puede no estar disponible temporalmente
+		fmt.Printf("⚠️  [getActiveSubscription] No se pudo obtener info del plan %s: %v\n", subscription.PlanID, err)
+	} else {
+		subscription.PlanInfo = planInfo
+		fmt.Printf("✅ [getActiveSubscription] Plan cargado: %s (tipo_acceso: %s, actividades: %v)\n", planInfo.Nombre, planInfo.TipoAcceso, planInfo.ActividadesPermitidas)
+	}
+
+	fmt.Printf("✅ [getActiveSubscription] Suscripción obtenida exitosamente para usuario %d (Estado: %s)\n", userID, subscription.Status)
 	return subscription, nil
+}
+
+// getPlanInfo obtiene la información del plan desde subscriptions-api
+func (s *InscripcionesServiceImpl) getPlanInfo(ctx context.Context, planID string, authToken string) (Plan, error) {
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	url := fmt.Sprintf("http://subscriptions-api:8081/plans/%s", planID)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return Plan{}, fmt.Errorf("error creando request: %w", err)
+	}
+
+	if authToken != "" {
+		req.Header.Set("Authorization", authToken)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return Plan{}, fmt.Errorf("error llamando a subscriptions-api: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return Plan{}, fmt.Errorf("error obteniendo plan (status: %d)", resp.StatusCode)
+	}
+
+	var plan Plan
+	if err := json.NewDecoder(resp.Body).Decode(&plan); err != nil {
+		return Plan{}, fmt.Errorf("error decodificando plan: %w", err)
+	}
+
+	return plan, nil
+}
+
+// validatePlanRestrictions valida que la actividad esté permitida por el plan del usuario
+func (s *InscripcionesServiceImpl) validatePlanRestrictions(subscription Subscription, actividad *domain.Actividad) error {
+	fmt.Printf("🔍 [validatePlanRestrictions] Validando restricciones para actividad '%s' (categoría: %s)\n", actividad.Titulo, actividad.Categoria)
+	fmt.Printf("🔍 [validatePlanRestrictions] Plan: %s, TipoAcceso: %s, ActividadesPermitidas: %v\n", subscription.PlanInfo.Nombre, subscription.PlanInfo.TipoAcceso, subscription.PlanInfo.ActividadesPermitidas)
+
+	// Si el plan tiene tipo_acceso "completo", permitir cualquier actividad
+	if subscription.PlanInfo.TipoAcceso == "completo" {
+		fmt.Printf("✅ [validatePlanRestrictions] Plan completo - actividad permitida\n")
+		return nil
+	}
+
+	// Si el plan tiene tipo_acceso "limitado", validar actividades permitidas
+	if subscription.PlanInfo.TipoAcceso == "limitado" {
+		// Verificar si la categoría de la actividad está en las actividades permitidas
+		actividadPermitida := false
+		for _, categoriaPermitida := range subscription.PlanInfo.ActividadesPermitidas {
+			if categoriaPermitida == actividad.Categoria {
+				actividadPermitida = true
+				break
+			}
+		}
+
+		if !actividadPermitida {
+			return fmt.Errorf(
+				"tu plan '%s' no incluye la categoría '%s'. Actualiza tu plan para acceder a esta actividad",
+				subscription.PlanInfo.Nombre,
+				actividad.Categoria,
+			)
+		}
+	}
+
+	return nil
 }

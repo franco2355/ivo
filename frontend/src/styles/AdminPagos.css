@@ -116,6 +116,18 @@
     @apply px-3 py-2 rounded-xl text-sm font-semibold inline-block;
   }
 
+  .badge-gateway {
+    @apply px-3 py-1 rounded-lg text-xs font-semibold inline-block;
+  }
+
+  .gateway-cash {
+    @apply bg-[#e8f5e9] text-[#2e7d32];
+  }
+
+  .gateway-mp {
+    @apply bg-[#e3f2fd] text-[#1565c0];
+  }
+
   .estado-completado {
     @apply bg-[#e8f5e9] text-[#2e7d32];
   }

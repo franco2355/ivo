@@ -144,7 +144,7 @@ func (r *RabbitMQConsumer) handleMessage(msg amqp.Delivery) {
 		log.Printf("✅ Documento indexado: %s_%s\n", event.Type, event.ID)
 
 	case "delete":
-		docID := event.Type + "_" + event.ID
+		docID := event.ID  // Usar solo el ID numérico para consistencia
 		err = r.searchService.DeleteDocument(docID)
 		if err != nil {
 			log.Printf("❌ Error eliminando documento: %v\n", err)

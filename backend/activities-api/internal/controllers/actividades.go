@@ -23,17 +23,57 @@ func NewActividadesController(service services.ActividadesService) *ActividadesC
 	}
 }
 
-// List obtiene todas las actividades
-// GET /actividades
+// List obtiene todas las actividades con paginación
+// GET /actividades?page=1&limit=10
 // Migrado de backend/controllers/actividad/actividad_controller.go:29
 func (c *ActividadesController) List(ctx *gin.Context) {
+	// Parámetros de paginación (valores por defecto)
+	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "20"))
+
+	// Validar parámetros
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
 	actividades, err := c.service.List(ctx.Request.Context())
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error al buscar actividades"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, actividades)
+	// Calcular paginación
+	total := len(actividades)
+	offset := (page - 1) * limit
+	end := offset + limit
+
+	if offset >= total {
+		ctx.JSON(http.StatusOK, gin.H{
+			"data":        []domain.ActividadResponse{},
+			"page":        page,
+			"limit":       limit,
+			"total":       total,
+			"total_pages": (total + limit - 1) / limit,
+		})
+		return
+	}
+
+	if end > total {
+		end = total
+	}
+
+	paginatedActividades := actividades[offset:end]
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":        paginatedActividades,
+		"page":        page,
+		"limit":       limit,
+		"total":       total,
+		"total_pages": (total + limit - 1) / limit,
+	})
 }
 
 // Search busca actividades por parámetros

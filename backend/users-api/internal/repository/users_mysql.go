@@ -26,6 +26,7 @@ type UsersRepository interface {
 	List(ctx context.Context) ([]domain.User, error)
 	Update(ctx context.Context, id uint, user domain.User) (domain.User, error)
 	Delete(ctx context.Context, id uint) error
+	GetDB() *gorm.DB // For health checks
 }
 
 // MySQLUsersRepository implementa UsersRepository usando MySQL/GORM
@@ -215,6 +216,11 @@ func (r *MySQLUsersRepository) Delete(ctx context.Context, id uint) error {
 	}
 
 	return nil
+}
+
+// GetDB returns the underlying GORM DB instance for health checks
+func (r *MySQLUsersRepository) GetDB() *gorm.DB {
+	return r.db
 }
 
 // Helper function

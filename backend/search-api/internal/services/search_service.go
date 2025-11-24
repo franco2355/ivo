@@ -268,7 +268,7 @@ func (s *SearchService) IndexFromEvent(event dtos.RabbitMQEvent) error {
 		return err
 	}
 
-	doc.ID = event.Type + "_" + event.ID
+	doc.ID = event.ID  // Usar solo el ID numérico (sin prefijo) para consistencia con MySQL
 	doc.Type = event.Type
 
 	return s.IndexDocument(doc)

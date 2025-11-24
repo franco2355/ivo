@@ -87,6 +87,7 @@ func NewMySQLActividadesRepository(cfg config.MySQLConfig) *MySQLActividadesRepo
 		                          AND i.is_activa = true
 		                          AND i.deleted_at IS NULL), 0) AS lugares
 		FROM actividades a
+		WHERE a.deleted_at IS NULL
 	`
 	if err := db.Exec(createViewSQL).Error; err != nil {
 		log.Printf("Warning: Could not create view actividades_lugares: %v", err)
@@ -198,7 +199,7 @@ func (r *MySQLActividadesRepository) Update(ctx context.Context, id uint, activi
 
 // Delete elimina una actividad
 func (r *MySQLActividadesRepository) Delete(ctx context.Context, id uint) error {
-	result := r.db.WithContext(ctx).Delete(&dao.Actividad{}, id)
+	result := r.db.WithContext(ctx).Where("id_actividad = ?", id).Delete(&dao.Actividad{})
 	if result.Error != nil {
 		return fmt.Errorf("error deleting actividad: %w", result.Error)
 	}

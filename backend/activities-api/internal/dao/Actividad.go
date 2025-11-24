@@ -11,19 +11,20 @@ import (
 // Actividad representa el modelo de base de datos con tags de GORM
 // Migrado de backend/model/actividad.go
 type Actividad struct {
-	ID            uint      `gorm:"column:id_actividad;primaryKey;autoIncrement"`
-	Titulo        string    `gorm:"type:varchar(50);not null"`
-	Descripcion   string    `gorm:"type:varchar(255)"`
-	Cupo          uint      `gorm:"type:int;not null"`
-	Dia           string    `gorm:"type:enum('Lunes','Martes','Miercoles','Jueves','Viernes','Sabado','Domingo');not null"`
-	HorarioInicio time.Time `gorm:"column:horario_inicio;type:time;not null"`
-	HorarioFinal  time.Time `gorm:"column:horario_final;type:time;not null"`
-	FotoUrl       string    `gorm:"column:foto_url;type:varchar(511);not null"`
-	Instructor    string    `gorm:"type:varchar(50);not null"`
-	Categoria     string    `gorm:"type:varchar(40);not null"`
-	SucursalID    *uint     `gorm:"column:sucursal_id;index"` // TODO: Agregar FK cuando se cree Sucursal
-	CreatedAt     time.Time `gorm:"autoCreateTime"`
-	UpdatedAt     time.Time `gorm:"autoUpdateTime"`
+	ID            uint           `gorm:"column:id_actividad;primaryKey;autoIncrement"`
+	Titulo        string         `gorm:"type:varchar(50);not null"`
+	Descripcion   string         `gorm:"type:varchar(255)"`
+	Cupo          uint           `gorm:"type:int;not null"`
+	Dia           string         `gorm:"type:enum('Lunes','Martes','Miercoles','Jueves','Viernes','Sabado','Domingo');not null"`
+	HorarioInicio time.Time      `gorm:"column:horario_inicio;type:time;not null"`
+	HorarioFinal  time.Time      `gorm:"column:horario_final;type:time;not null"`
+	FotoUrl       string         `gorm:"column:foto_url;type:varchar(511);not null"`
+	Instructor    string         `gorm:"type:varchar(50);not null"`
+	Categoria     string         `gorm:"type:varchar(40);not null"`
+	SucursalID    *uint          `gorm:"column:sucursal_id;index"` // TODO: Agregar FK cuando se cree Sucursal
+	CreatedAt     time.Time      `gorm:"autoCreateTime"`
+	UpdatedAt     time.Time      `gorm:"autoUpdateTime"`
+	DeletedAt     gorm.DeletedAt `gorm:"index"` // Soft delete support
 
 	// Relación con Inscripciones
 	Inscripciones []Inscripcion `gorm:"foreignKey:ActividadID;constraint:OnDelete:CASCADE"`
@@ -55,6 +56,11 @@ func (ac *Actividad) BeforeUpdate(tx *gorm.DB) (err error) {
 
 // ToDomain convierte de DAO (MySQL) a Domain (negocio)
 func (a Actividad) ToDomain() domain.Actividad {
+	var deletedAt *time.Time
+	if a.DeletedAt.Valid {
+		deletedAt = &a.DeletedAt.Time
+	}
+
 	return domain.Actividad{
 		ID:            a.ID,
 		Titulo:        a.Titulo,
@@ -69,6 +75,7 @@ func (a Actividad) ToDomain() domain.Actividad {
 		SucursalID:    a.SucursalID,
 		CreatedAt:     a.CreatedAt,
 		UpdatedAt:     a.UpdatedAt,
+		DeletedAt:     deletedAt,
 	}
 }
 

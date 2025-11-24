@@ -165,14 +165,28 @@ func (c *UsersController) GetByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, user)
 }
 
-// List maneja GET /users - Lista todos los usuarios
+// List maneja GET /users - Lista todos los usuarios con paginación
 // @Summary Lista todos los usuarios
 // @Tags users
 // @Produce json
-// @Success 200 {array} domain.UserResponse
+// @Param page query int false "Número de página (default: 1)"
+// @Param limit query int false "Registros por página (default: 20, max: 100)"
+// @Success 200 {object} map[string]interface{} "data, page, limit, total, total_pages"
 // @Failure 500 {object} map[string]interface{} "error, details"
 // @Router /users [get]
 func (c *UsersController) List(ctx *gin.Context) {
+	// Parámetros de paginación
+	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "20"))
+
+	// Validar parámetros
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
 	// Llamar al service
 	users, err := c.service.List(ctx.Request.Context())
 	if err != nil {
@@ -183,9 +197,34 @@ func (c *UsersController) List(ctx *gin.Context) {
 		return
 	}
 
+	// Calcular paginación
+	total := len(users)
+	offset := (page - 1) * limit
+	end := offset + limit
+
+	if offset >= total {
+		ctx.JSON(http.StatusOK, gin.H{
+			"data":        []domain.UserResponse{},
+			"page":        page,
+			"limit":       limit,
+			"total":       total,
+			"total_pages": (total + limit - 1) / limit,
+		})
+		return
+	}
+
+	if end > total {
+		end = total
+	}
+
+	paginatedUsers := users[offset:end]
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"users": users,
-		"count": len(users),
+		"data":        paginatedUsers,
+		"page":        page,
+		"limit":       limit,
+		"total":       total,
+		"total_pages": (total + limit - 1) / limit,
 	})
 }
 

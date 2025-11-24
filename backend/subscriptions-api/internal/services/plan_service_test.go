@@ -179,7 +179,7 @@ func TestPlanService_ListPlans(t *testing.T) {
 		}
 
 		mockRepo := &mocks.MockPlanRepository{
-			FindAllFunc: func(ctx context.Context, filters map[string]interface{}) ([]*entities.Plan, error) {
+			FindAllPaginatedFunc: func(ctx context.Context, filters map[string]interface{}, page, pageSize int64, sortBy string, sortDesc bool) ([]*entities.Plan, error) {
 				return mockPlans, nil
 			},
 			CountFunc: func(ctx context.Context, filters map[string]interface{}) (int64, error) {
@@ -188,8 +188,9 @@ func TestPlanService_ListPlans(t *testing.T) {
 		}
 		service := NewPlanService(mockRepo)
 
+		activo := true
 		query := dtos.ListPlansQuery{
-			Activo:   true,
+			Activo:   &activo,
 			Page:     1,
 			PageSize: 10,
 		}
@@ -207,7 +208,7 @@ func TestPlanService_ListPlans(t *testing.T) {
 		if len(result.Plans) != len(mockPlans) {
 			t.Errorf("Se esperaban %d planes, pero se obtuvieron %d", len(mockPlans), len(result.Plans))
 		}
-		if result.Total != int64(len(mockPlans)) {
+		if result.Total != len(mockPlans) {
 			t.Errorf("Total esperado %d, obtenido %d", len(mockPlans), result.Total)
 		}
 	})

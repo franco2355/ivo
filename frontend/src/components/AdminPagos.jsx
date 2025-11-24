@@ -86,13 +86,19 @@ const AdminPagos = () => {
         }
     };
 
-    const handleAprobarPago = async (pagoId) => {
-        if (!window.confirm('¿Estás seguro de que deseas aprobar este pago?')) {
+    const handleAprobarPago = async (pago) => {
+        // Validación: Solo permitir aprobar pagos en efectivo
+        if (pago.payment_gateway !== 'cash') {
+            toast.error('Solo se pueden aprobar manualmente los pagos en efectivo. Los pagos de MercadoPago se aprueban automáticamente.');
+            return;
+        }
+
+        if (!window.confirm('¿Estás seguro de que deseas aprobar este pago en efectivo?')) {
             return;
         }
 
         try {
-            const response = await fetch(PAYMENTS_API.processPayment(pagoId), {
+            const response = await fetch(PAYMENTS_API.processPayment(pago.id), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -103,7 +109,7 @@ const AdminPagos = () => {
                 throw new Error("Error al aprobar el pago");
             }
 
-            toast.success('Pago aprobado exitosamente');
+            toast.success('Pago en efectivo aprobado exitosamente');
             fetchPagos(); // Refrescar la lista
         } catch (error) {
             console.error("Error al aprobar pago:", error);
@@ -111,13 +117,19 @@ const AdminPagos = () => {
         }
     };
 
-    const handleRechazarPago = async (pagoId) => {
-        if (!window.confirm('¿Estás seguro de que deseas rechazar este pago?')) {
+    const handleRechazarPago = async (pago) => {
+        // Validación: Solo permitir rechazar pagos en efectivo
+        if (pago.payment_gateway !== 'cash') {
+            toast.error('Solo se pueden rechazar manualmente los pagos en efectivo. Los pagos de MercadoPago se gestionan automáticamente.');
+            return;
+        }
+
+        if (!window.confirm('¿Estás seguro de que deseas rechazar este pago en efectivo?')) {
             return;
         }
 
         try {
-            const response = await fetch(PAYMENTS_API.updateStatus(pagoId), {
+            const response = await fetch(PAYMENTS_API.updateStatus(pago.id), {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -129,7 +141,7 @@ const AdminPagos = () => {
                 throw new Error("Error al rechazar el pago");
             }
 
-            toast.info('Pago rechazado');
+            toast.info('Pago en efectivo rechazado');
             fetchPagos(); // Refrescar la lista
         } catch (error) {
             console.error("Error al rechazar pago:", error);
@@ -259,7 +271,7 @@ const AdminPagos = () => {
                                 <th>Usuario</th>
                                 <th>Concepto</th>
                                 <th>Monto</th>
-                                <th>Método</th>
+                                <th>Gateway</th>
                                 <th>Estado</th>
                                 <th>Fecha</th>
                                 <th>Acciones</th>
@@ -282,7 +294,9 @@ const AdminPagos = () => {
                                         ${pago.amount?.toFixed(2)} {pago.currency}
                                     </td>
                                     <td>
-                                        {pago.payment_method}
+                                        <span className={`badge-gateway ${pago.payment_gateway === 'cash' ? 'gateway-cash' : 'gateway-mp'}`}>
+                                            {pago.payment_gateway === 'cash' ? '💵 Efectivo' : '💳 MercadoPago'}
+                                        </span>
                                     </td>
                                     <td>
                                         <span className={`badge-estado ${getEstadoBadgeClass(pago.status)}`}>
@@ -293,23 +307,28 @@ const AdminPagos = () => {
                                         {new Date(pago.created_at).toLocaleDateString('es-AR')}
                                     </td>
                                     <td className="acciones-cell">
-                                        {pago.status === 'pending' && (
+                                        {pago.status === 'pending' && pago.payment_gateway === 'cash' && (
                                             <div className="acciones-buttons">
                                                 <button
                                                     className="btn-aprobar"
-                                                    onClick={() => handleAprobarPago(pago.id)}
-                                                    title="Aprobar pago"
+                                                    onClick={() => handleAprobarPago(pago)}
+                                                    title="Aprobar pago en efectivo"
                                                 >
-                                                    Aprobar
+                                                    ✓ Aprobar
                                                 </button>
                                                 <button
                                                     className="btn-rechazar"
-                                                    onClick={() => handleRechazarPago(pago.id)}
-                                                    title="Rechazar pago"
+                                                    onClick={() => handleRechazarPago(pago)}
+                                                    title="Rechazar pago en efectivo"
                                                 >
-                                                    Rechazar
+                                                    ✗ Rechazar
                                                 </button>
                                             </div>
+                                        )}
+                                        {pago.status === 'pending' && pago.payment_gateway !== 'cash' && (
+                                            <span className="no-acciones" title="Este pago se procesa automáticamente">
+                                                🔄 Automático
+                                            </span>
                                         )}
                                         {pago.status !== 'pending' && (
                                             <span className="no-acciones">-</span>

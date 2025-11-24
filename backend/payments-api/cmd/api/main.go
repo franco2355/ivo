@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"log"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yourusername/payments-api/internal/clients"
@@ -44,11 +47,13 @@ func main() {
 	// ========== 4.5. RABBITMQ EVENT PUBLISHER (OPCIONAL) ==========
 	// Si está configurado, publicará eventos cuando cambien estados de pagos
 	var eventPublisher services.EventPublisher
+	var rabbitMQClient *clients.RabbitMQPublisher
 	if cfg.RabbitMQ.URL != "" {
-		rabbitMQClient, err := clients.NewRabbitMQPublisher(cfg.RabbitMQ.URL, cfg.RabbitMQ.Exchange)
+		rabbitMQClient, err = clients.NewRabbitMQPublisher(cfg.RabbitMQ.URL, cfg.RabbitMQ.Exchange)
 		if err != nil {
 			log.Printf("⚠️  RabbitMQ no disponible (continuando sin eventos): %v", err)
 			eventPublisher = clients.NewNoOpEventPublisher()
+			rabbitMQClient = nil
 		} else {
 			defer rabbitMQClient.Close()
 			eventPublisher = clients.NewPaymentEventPublisher(rabbitMQClient)
@@ -77,7 +82,7 @@ func main() {
 	router.Use(middleware.CORS())
 
 	// ========== 8. REGISTRAR RUTAS ==========
-	registerRoutes(router, paymentController, webhookController, paymentService)
+	registerRoutes(router, paymentController, webhookController, paymentService, mongoDB, rabbitMQClient)
 
 	// ========== 9. INICIAR SERVIDOR ==========
 	log.Println("")
@@ -113,9 +118,47 @@ func registerRoutes(
 	paymentController *controllers.PaymentController,
 	webhookController *controllers.WebhookController,
 	paymentService *services.PaymentService,
+	mongoDB *database.MongoDB,
+	rabbitMQClient *clients.RabbitMQPublisher,
 ) {
 	// ========== HEALTH CHECK ==========
-	router.GET("/healthz", paymentController.HealthCheck)
+	router.GET("/healthz", func(ctx *gin.Context) {
+		health := gin.H{
+			"status":  "ok",
+			"service": "payments-api",
+			"checks":  gin.H{},
+		}
+
+		// Check MongoDB
+		if mongoDB != nil && mongoDB.Client != nil {
+			ctxTimeout, cancel := context.WithTimeout(ctx.Request.Context(), 2*time.Second)
+			defer cancel()
+			if err := mongoDB.Client.Ping(ctxTimeout, nil); err == nil {
+				health["checks"].(gin.H)["mongodb"] = "connected"
+			} else {
+				health["status"] = "degraded"
+				health["checks"].(gin.H)["mongodb"] = "unhealthy"
+			}
+		} else {
+			health["status"] = "degraded"
+			health["checks"].(gin.H)["mongodb"] = "unavailable"
+		}
+
+		// Check RabbitMQ
+		if rabbitMQClient != nil && rabbitMQClient.Conn != nil && !rabbitMQClient.Conn.IsClosed() {
+			health["checks"].(gin.H)["rabbitmq"] = "connected"
+		} else {
+			health["checks"].(gin.H)["rabbitmq"] = "disconnected"
+		}
+
+		// Return 503 if degraded
+		if health["status"] == "degraded" {
+			ctx.JSON(http.StatusServiceUnavailable, health)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, health)
+	})
 
 	// ========== RUTAS BÁSICAS (compatibilidad) ==========
 	paymentRoutes := router.Group("/payments")

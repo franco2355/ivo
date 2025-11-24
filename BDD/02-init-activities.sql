@@ -45,11 +45,13 @@ CREATE TABLE IF NOT EXISTS actividades (
     activa BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL COMMENT 'Soft delete timestamp',
     FOREIGN KEY (sucursal_id) REFERENCES sucursales(id_sucursal) ON DELETE SET NULL,
     INDEX idx_categoria (categoria),
     INDEX idx_dia (dia),
     INDEX idx_sucursal (sucursal_id),
-    INDEX idx_activa (activa)
+    INDEX idx_activa (activa),
+    INDEX idx_deleted_at (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
@@ -127,7 +129,8 @@ SELECT
            AND i.deleted_at IS NULL
         ), 0)
     ) AS lugares
-FROM actividades a;
+FROM actividades a
+WHERE a.deleted_at IS NULL;
 
 -- =====================================================
 -- MENSAJE DE CONFIRMACIÓN

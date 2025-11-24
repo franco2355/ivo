@@ -32,14 +32,18 @@ CREATE TABLE IF NOT EXISTS usuarios (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- DATOS INICIALES: Usuario Admin
--- Password: admin123 (SHA-256)
+-- DATOS INICIALES: Usuarios
+-- Password: admin123 (SHA-256) para admin
+-- Password: password123 (SHA-256) para testuser
 -- =====================================================
-INSERT INTO usuarios (nombre, apellido, username, email, password, tipo)
+INSERT INTO usuarios (id_usuario, nombre, apellido, username, email, password, tipo, is_admin)
 VALUES
-    ('Admin', 'Sistema', 'admin', 'admin@gym.com',
+    (1, 'Admin', 'Sistema', 'admin', 'admin@gym.com',
      '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9',
-     'admin')
+     'admin', 1),
+    (5, 'Test', 'User', 'testuser', 'testuser@test.com',
+     'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f',
+     'cliente', 0)
 ON DUPLICATE KEY UPDATE username=username;
 
 -- =====================================================

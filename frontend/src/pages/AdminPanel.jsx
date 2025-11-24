@@ -31,7 +31,9 @@ const AdminPanel = () => {
             const response = await fetch(ACTIVITIES_API.actividades);
             if (response.ok) {
                 const data = await response.json();
-                setActividades(data);
+                // Filtrar actividades que tengan id_actividad válido
+                const actividadesValidas = data.filter(act => act.id_actividad);
+                setActividades(actividadesValidas);
             }
         } catch (error) {
             console.error("Error al cargar actividades:", error);

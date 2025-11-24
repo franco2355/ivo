@@ -15,6 +15,7 @@ const Actividades = () => {
     const [actividadEditar, setActividadEditar] = useState(null);
     const [expandedActividadId, setExpandedActividadId] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [suscripcionActiva, setSuscripcionActiva] = useState(null); // Nueva: info del plan del usuario
     const [filtros, setFiltros] = useState({
         busqueda: "",
         categoria: "",
@@ -23,6 +24,7 @@ const Actividades = () => {
     });
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     const isAdmin = localStorage.getItem("isAdmin") === "true";
+    const userId = localStorage.getItem("idUsuario");
     const navigate = useNavigate();
     const toast = useToastContext();
 
@@ -30,8 +32,9 @@ const Actividades = () => {
     const debouncedBusqueda = useDebounce(filtros.busqueda, 500);
 
     useEffect(() => {
-        if (isLoggedIn) {
+        if (isLoggedIn && !isAdmin) {
             fetchInscripciones();
+            fetchSuscripcionActiva();
         }
     }, []);
 
@@ -43,29 +46,25 @@ const Actividades = () => {
     const searchActividades = async () => {
         try {
             setLoading(true);
-            // Construir query params para search-api
-            const params = new URLSearchParams();
 
-            if (debouncedBusqueda) {
-                params.append('q', debouncedBusqueda);
-            }
-
-            params.append('type', 'activity');
-            params.append('page', '1');
-            params.append('page_size', '100');
-
-            // Construir URL con filtros
-            let url = `${SEARCH_API.search}?${params.toString()}`;
-
-            console.log("Searching activities:", url);
-            const response = await fetch(url);
+            // Usar Activities API directamente
+            const response = await fetch(ACTIVITIES_API.actividades);
 
             if (response.ok) {
                 const data = await response.json();
-                console.log("Search results:", data);
+                console.log("Activities loaded:", data);
 
-                // Aplicar filtros adicionales del lado del cliente (categoría, día, solo inscripto)
-                let results = data.results || [];
+                let results = data || [];
+
+                // Filtrar por búsqueda (título, descripción, instructor)
+                if (debouncedBusqueda) {
+                    const searchLower = debouncedBusqueda.toLowerCase();
+                    results = results.filter(actividad =>
+                        (actividad.titulo && actividad.titulo.toLowerCase().includes(searchLower)) ||
+                        (actividad.descripcion && actividad.descripcion.toLowerCase().includes(searchLower)) ||
+                        (actividad.instructor && actividad.instructor.toLowerCase().includes(searchLower))
+                    );
+                }
 
                 // Filtrar por categoría
                 if (filtros.categoria) {
@@ -90,20 +89,20 @@ const Actividades = () => {
                     );
                 }
 
-                // Mapear campos de search-api a formato esperado por el frontend
-                const mappedResults = results.map(doc => ({
-                    id_actividad: parseInt(doc.id.replace('activity_', '')),  // Extraer el número del ID
-                    titulo: doc.titulo,
-                    descripcion: doc.descripcion,
-                    categoria: doc.categoria,
-                    instructor: doc.instructor,
-                    dia: doc.dia,
-                    hora_inicio: doc.horario_inicio,
-                    hora_fin: doc.horario_final,
-                    cupo: doc.cupo_disponible,
-                    lugares: doc.cupo_disponible,
-                    sucursal_nombre: doc.sucursal_nombre,
-                    id_sucursal: doc.sucursal_id
+                // Mapear campos de activities-api a formato esperado por el frontend
+                const mappedResults = results.map(actividad => ({
+                    id_actividad: actividad.id,
+                    titulo: actividad.titulo,
+                    descripcion: actividad.descripcion,
+                    categoria: actividad.categoria,
+                    instructor: actividad.instructor,
+                    dia: actividad.dia,
+                    hora_inicio: actividad.horario_inicio,
+                    hora_fin: actividad.horario_final,
+                    cupo: actividad.cupo,
+                    lugares: actividad.lugares,
+                    foto_url: actividad.foto_url,
+                    sucursal_id: actividad.sucursal_id
                 }));
 
                 setActividadesFiltradas(mappedResults);
@@ -134,6 +133,62 @@ const Actividades = () => {
         } catch (error) {
             console.error("Error al cargar inscripciones:", error);
         }
+    };
+
+    const fetchSuscripcionActiva = async () => {
+        try {
+            const response = await fetch(`http://localhost:8081/subscriptions/active/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                }
+            });
+
+            if (response.ok) {
+                const suscripcion = await response.json();
+                console.log("Suscripción activa:", suscripcion);
+
+                // Obtener info del plan
+                if (suscripcion.plan_id) {
+                    const planResponse = await fetch(`http://localhost:8081/plans/${suscripcion.plan_id}`);
+                    if (planResponse.ok) {
+                        const plan = await planResponse.json();
+                        console.log("Plan del usuario:", plan);
+                        setSuscripcionActiva({
+                            ...suscripcion,
+                            plan_info: plan
+                        });
+                    }
+                }
+            } else if (response.status === 404) {
+                console.log("Usuario no tiene suscripción activa");
+                setSuscripcionActiva(null);
+            } else if (isAuthError(response)) {
+                handleSessionExpired(toast, navigate);
+            }
+        } catch (error) {
+            console.error("Error al cargar suscripción activa:", error);
+        }
+    };
+
+    // Helper: Verificar si una actividad está permitida por el plan del usuario
+    const actividadPermitida = (actividad) => {
+        if (!suscripcionActiva || !suscripcionActiva.plan_info) {
+            return true; // Si no hay plan cargado, no mostramos restricciones aún
+        }
+
+        const plan = suscripcionActiva.plan_info;
+
+        // Si el plan tiene acceso completo, todas las actividades están permitidas
+        if (plan.tipo_acceso === "completo") {
+            return true;
+        }
+
+        // Si el plan es limitado, verificar si la categoría está en las actividades permitidas
+        if (plan.tipo_acceso === "limitado" && plan.actividades_permitidas) {
+            return plan.actividades_permitidas.includes(actividad.categoria);
+        }
+
+        return true; // Por defecto, permitir
     };
 
     const handleFiltroChange = (e) => {
@@ -447,16 +502,39 @@ const Actividades = () => {
                                                 </button>
                                             </>
                                         ) : (
-                                            <button
-                                                className="inscripcion-button"
-                                                onClick={() => 
-                                                    estaInscripto(actividad.id_actividad) ? 
-                                                        handleUnenrolling(actividad.id_actividad) :
-                                                        handleEnroling(actividad.id_actividad)
-                                                }
-                                            >
-                                                {estaInscripto(actividad.id_actividad) ? "Desinscribir ❌" : "Inscribir ✔️"}
-                                            </button>
+                                            <>
+                                                {!actividadPermitida(actividad) ? (
+                                                    <div className="restriccion-plan-container">
+                                                        <button
+                                                            className="inscripcion-button disabled"
+                                                            disabled
+                                                            title={`Tu plan no incluye ${actividad.categoria}`}
+                                                        >
+                                                            🔒 No permitido
+                                                        </button>
+                                                        <span className="restriccion-mensaje">
+                                                            ⚠️ Tu plan "{suscripcionActiva?.plan_info?.nombre}" no incluye {actividad.categoria}
+                                                        </span>
+                                                        <button
+                                                            className="upgrade-plan-button"
+                                                            onClick={() => navigate('/planes')}
+                                                        >
+                                                            Actualizar plan →
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        className="inscripcion-button"
+                                                        onClick={() =>
+                                                            estaInscripto(actividad.id_actividad) ?
+                                                                handleUnenrolling(actividad.id_actividad) :
+                                                                handleEnroling(actividad.id_actividad)
+                                                        }
+                                                    >
+                                                        {estaInscripto(actividad.id_actividad) ? "Desinscribir ❌" : "Inscribir ✔️"}
+                                                    </button>
+                                                )}
+                                            </>
                                         )}
                                     </>
                                 )}

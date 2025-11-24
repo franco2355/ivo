@@ -80,13 +80,13 @@ func (s *UsersServiceImpl) Login(ctx context.Context, credentials domain.UserLog
 	// Buscar usuario por username o email
 	user, err := s.repository.GetByUsernameOrEmail(ctx, credentials.UsernameOrEmail)
 	if err != nil {
-		return domain.UserResponse{}, "", errors.New("invalid credentials")
+		return domain.UserResponse{}, "", errors.New("credenciales inválidas")
 	}
 
 	// Verificar password
 	hashedPassword := s.hashPassword(credentials.Password)
 	if user.Password != hashedPassword {
-		return domain.UserResponse{}, "", errors.New("invalid credentials")
+		return domain.UserResponse{}, "", errors.New("credenciales inválidas")
 	}
 
 	// Generar token JWT
@@ -180,58 +180,61 @@ func (s *UsersServiceImpl) hashPassword(password string) string {
 func (s *UsersServiceImpl) validateUserRegistration(userReg domain.UserRegister) error {
 	// Validar nombre
 	if strings.TrimSpace(userReg.Nombre) == "" {
-		return errors.New("nombre is required")
+		return errors.New("el nombre es requerido")
 	}
 	if len(userReg.Nombre) > 30 {
-		return errors.New("nombre must be at most 30 characters")
+		return errors.New("el nombre debe tener como máximo 30 caracteres")
 	}
 
 	// Validar apellido
 	if strings.TrimSpace(userReg.Apellido) == "" {
-		return errors.New("apellido is required")
+		return errors.New("el apellido es requerido")
 	}
 	if len(userReg.Apellido) > 30 {
-		return errors.New("apellido must be at most 30 characters")
+		return errors.New("el apellido debe tener como máximo 30 caracteres")
 	}
 
 	// Validar username
 	if strings.TrimSpace(userReg.Username) == "" {
-		return errors.New("username is required")
+		return errors.New("el nombre de usuario es requerido")
 	}
 	if len(userReg.Username) < 3 || len(userReg.Username) > 30 {
-		return errors.New("username must be between 3 and 30 characters")
+		return errors.New("el nombre de usuario debe tener entre 3 y 30 caracteres")
 	}
 	// Username solo puede contener letras, números, guiones y guiones bajos
 	usernameRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 	if !usernameRegex.MatchString(userReg.Username) {
-		return errors.New("username can only contain letters, numbers, hyphens and underscores")
+		return errors.New("el nombre de usuario solo puede contener letras, números, guiones y guiones bajos")
 	}
 
 	// Validar email
 	if strings.TrimSpace(userReg.Email) == "" {
-		return errors.New("email is required")
+		return errors.New("el email es requerido")
 	}
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	if !emailRegex.MatchString(userReg.Email) {
-		return errors.New("invalid email format")
+		return errors.New("formato de email inválido")
 	}
 
 	// Validar password
 	if strings.TrimSpace(userReg.Password) == "" {
-		return errors.New("password is required")
+		return errors.New("la contraseña es requerida")
 	}
 	if len(userReg.Password) < 8 {
-		return errors.New("password must be at least 8 characters")
+		return errors.New("la contraseña debe tener al menos 8 caracteres")
 	}
-	// Password debe tener al menos una letra mayúscula, una minúscula y un número
+	// Password debe tener al menos una letra mayúscula, una minúscula, un número y un carácter especial
 	if !regexp.MustCompile(`[A-Z]`).MatchString(userReg.Password) {
-		return errors.New("password must contain at least one uppercase letter")
+		return errors.New("la contraseña debe contener al menos una letra mayúscula")
 	}
 	if !regexp.MustCompile(`[a-z]`).MatchString(userReg.Password) {
-		return errors.New("password must contain at least one lowercase letter")
+		return errors.New("la contraseña debe contener al menos una letra minúscula")
 	}
 	if !regexp.MustCompile(`[0-9]`).MatchString(userReg.Password) {
-		return errors.New("password must contain at least one number")
+		return errors.New("la contraseña debe contener al menos un número")
+	}
+	if !regexp.MustCompile(`[!@#$%^&*(),.?":{}|<>]`).MatchString(userReg.Password) {
+		return errors.New("la contraseña debe contener al menos un carácter especial")
 	}
 
 	return nil

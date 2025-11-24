@@ -2,6 +2,9 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yourusername/gym-management/subscriptions-api/internal/clients"
@@ -9,6 +12,7 @@ import (
 	"github.com/yourusername/gym-management/subscriptions-api/internal/controllers"
 	"github.com/yourusername/gym-management/subscriptions-api/internal/dao"
 	"github.com/yourusername/gym-management/subscriptions-api/internal/database"
+	"github.com/yourusername/gym-management/subscriptions-api/internal/handlers"
 	"github.com/yourusername/gym-management/subscriptions-api/internal/middleware"
 	"github.com/yourusername/gym-management/subscriptions-api/internal/services"
 )
@@ -56,21 +60,62 @@ func main() {
 	)
 	healthService := services.NewHealthService(mongoDB.Client, eventPublisher)
 
-	// 6. Inicializar Controllers (Capa HTTP) con DI
+	// 6. Inicializar Payment Event Handler
+	paymentHandler := handlers.NewPaymentEventHandler(subscriptionService)
+
+	// 7. Inicializar RabbitMQ Consumer para eventos de pagos
+	var consumer *clients.RabbitMQConsumer
+	consumer, err = clients.NewRabbitMQConsumer(
+		cfg.RabbitMQURL,
+		cfg.RabbitMQExchange,
+		"subscriptions_payment_queue", // Nombre de la cola
+		paymentHandler,
+	)
+	if err != nil {
+		log.Printf("⚠️  Warning: No se pudo inicializar RabbitMQ Consumer: %v", err)
+		log.Println("⚠️  La aplicación continuará pero NO procesará eventos de pagos automáticamente")
+	} else {
+		// Iniciar consumer en background
+		if err := consumer.Start(); err != nil {
+			log.Printf("❌ Error iniciando consumer: %v", err)
+		} else {
+			log.Println("✅ RabbitMQ Consumer iniciado - Escuchando eventos de pagos")
+		}
+		defer consumer.Close()
+	}
+
+	// 8. Inicializar Controllers (Capa HTTP) con DI
 	planController := controllers.NewPlanController(planService)
 	subscriptionController := controllers.NewSubscriptionController(subscriptionService, healthService)
 
-	// 7. Configurar Gin Router
+	// 9. Configurar Gin Router
 	router := gin.Default()
 	router.Use(middleware.CORS())
 
-	// 8. Registrar Rutas
+	// 10. Registrar Rutas
 	registerRoutes(router, planController, subscriptionController, cfg)
 
-	// 9. Iniciar servidor
+	// 11. Configurar graceful shutdown
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+		<-sigChan
+
+		log.Println("\n🛑 Señal de apagado recibida, cerrando conexiones...")
+
+		if consumer != nil {
+			consumer.Close()
+		}
+		mongoDB.Close()
+
+		os.Exit(0)
+	}()
+
+	// 12. Iniciar servidor
 	log.Printf("🚀 Subscriptions API corriendo en puerto %s", cfg.Port)
 	log.Println("📦 Arquitectura: Controllers → Services → Repositories")
 	log.Println("💉 Dependency Injection: Activada")
+	log.Println("🎧 Event-Driven: Escuchando eventos de pagos vía RabbitMQ")
 
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("❌ Error iniciando servidor: %v", err)

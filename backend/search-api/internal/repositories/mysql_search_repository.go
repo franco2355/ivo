@@ -48,8 +48,7 @@ func (r *MySQLSearchRepository) SearchActivities(req dtos.SearchRequest) ([]dtos
 			a.sucursal_id,
 			COUNT(*) OVER() as total_count
 		FROM actividades a
-		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal
-	`
+		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal WHERE a.deleted_at IS NULL`
 
 	var whereClauses []string
 	var args []interface{}
@@ -173,8 +172,7 @@ func (r *MySQLSearchRepository) GetAllActivities() ([]dtos.SearchDocument, error
 			COALESCE(s.nombre, '') as sucursal_nombre,
 			a.sucursal_id
 		FROM actividades a
-		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal
-	`
+		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal WHERE a.deleted_at IS NULL`
 
 	rows, err := r.db.Query(query)
 	if err != nil {

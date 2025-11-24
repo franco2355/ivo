@@ -486,7 +486,7 @@ const FormularioPlan = ({ planInicial, onGuardar, onCancelar, toast }) => {
                 </div>
                 <ul className="beneficios-lista">
                     {formData.beneficios.map((beneficio, index) => (
-                        <li key={index}>
+                        <li key={`beneficio-${index}-${beneficio.substring(0, 10)}`}>
                             {beneficio}
                             <button type="button" onClick={() => eliminarBeneficio(index)}>×</button>
                         </li>

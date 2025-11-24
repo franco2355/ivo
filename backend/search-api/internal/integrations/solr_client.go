@@ -27,23 +27,24 @@ func NewSolrClient(solrURL string) *SolrClient {
 }
 
 // SolrDocument - Estructura de documento Solr
+// Nota: Solr devuelve campos multivaluados como arrays, por eso usamos []string
 type SolrDocument struct {
-	ID              string  `json:"id"`
-	Type            string  `json:"type"`
-	Titulo          string  `json:"titulo,omitempty"`
-	Descripcion     string  `json:"descripcion,omitempty"`
-	Categoria       string  `json:"categoria,omitempty"`
-	Instructor      string  `json:"instructor,omitempty"`
-	Dia             string  `json:"dia,omitempty"`
-	HorarioInicio   string  `json:"horario_inicio,omitempty"`
-	HorarioFinal    string  `json:"horario_final,omitempty"`
-	SucursalID      string  `json:"sucursal_id,omitempty"`
-	SucursalNombre  string  `json:"sucursal_nombre,omitempty"`
-	RequierePremium bool    `json:"requiere_premium,omitempty"`
-	CupoDisponible  int     `json:"cupo_disponible,omitempty"`
-	PlanNombre      string  `json:"plan_nombre,omitempty"`
-	PlanPrecio      float64 `json:"plan_precio,omitempty"`
-	PlanTipoAcceso  string  `json:"plan_tipo_acceso,omitempty"`
+	ID              string    `json:"id"`
+	Type            []string  `json:"type"` // Solr devuelve arrays para campos multivaluados
+	Titulo          []string  `json:"titulo,omitempty"`
+	Descripcion     []string  `json:"descripcion,omitempty"`
+	Categoria       []string  `json:"categoria,omitempty"`
+	Instructor      []string  `json:"instructor,omitempty"`
+	Dia             []string  `json:"dia,omitempty"`
+	HorarioInicio   []string  `json:"horario_inicio,omitempty"`
+	HorarioFinal    []string  `json:"horario_final,omitempty"`
+	SucursalID      []int     `json:"sucursal_id,omitempty"`
+	SucursalNombre  []string  `json:"sucursal_nombre,omitempty"`
+	RequierePremium []bool    `json:"requiere_premium,omitempty"`
+	CupoDisponible  []int     `json:"cupo_disponible,omitempty"`
+	PlanNombre      []string  `json:"plan_nombre,omitempty"`
+	PlanPrecio      []float64 `json:"plan_precio,omitempty"`
+	PlanTipoAcceso  []string  `json:"plan_tipo_acceso,omitempty"`
 }
 
 // SolrResponse - Respuesta de búsqueda de Solr
@@ -256,44 +257,117 @@ func (c *SolrClient) Ping() error {
 
 // convertToSolrDocument - Convierte SearchDocument a SolrDocument
 func (c *SolrClient) convertToSolrDocument(doc dtos.SearchDocument) SolrDocument {
-	return SolrDocument{
-		ID:              doc.ID,
-		Type:            doc.Type,
-		Titulo:          doc.Titulo,
-		Descripcion:     doc.Descripcion,
-		Categoria:       doc.Categoria,
-		Instructor:      doc.Instructor,
-		Dia:             doc.Dia,
-		HorarioInicio:   doc.HorarioInicio,
-		HorarioFinal:    doc.HorarioFinal,
-		SucursalID:      doc.SucursalID,
-		SucursalNombre:  doc.SucursalNombre,
-		RequierePremium: doc.RequierePremium,
-		CupoDisponible:  doc.CupoDisponible,
-		PlanNombre:      doc.PlanNombre,
-		PlanPrecio:      doc.PlanPrecio,
-		PlanTipoAcceso:  doc.PlanTipoAcceso,
+	solrDoc := SolrDocument{
+		ID: doc.ID,
 	}
+
+	// Convertir strings a arrays para Solr
+	if doc.Type != "" {
+		solrDoc.Type = []string{doc.Type}
+	}
+	if doc.Titulo != "" {
+		solrDoc.Titulo = []string{doc.Titulo}
+	}
+	if doc.Descripcion != "" {
+		solrDoc.Descripcion = []string{doc.Descripcion}
+	}
+	if doc.Categoria != "" {
+		solrDoc.Categoria = []string{doc.Categoria}
+	}
+	if doc.Instructor != "" {
+		solrDoc.Instructor = []string{doc.Instructor}
+	}
+	if doc.Dia != "" {
+		solrDoc.Dia = []string{doc.Dia}
+	}
+	if doc.HorarioInicio != "" {
+		solrDoc.HorarioInicio = []string{doc.HorarioInicio}
+	}
+	if doc.HorarioFinal != "" {
+		solrDoc.HorarioFinal = []string{doc.HorarioFinal}
+	}
+	if doc.SucursalID != "" {
+		// Convertir string a int si es posible
+		var sucursalID int
+		fmt.Sscanf(doc.SucursalID, "%d", &sucursalID)
+		if sucursalID > 0 {
+			solrDoc.SucursalID = []int{sucursalID}
+		}
+	}
+	if doc.SucursalNombre != "" {
+		solrDoc.SucursalNombre = []string{doc.SucursalNombre}
+	}
+	if doc.RequierePremium {
+		solrDoc.RequierePremium = []bool{doc.RequierePremium}
+	}
+	if doc.CupoDisponible > 0 {
+		solrDoc.CupoDisponible = []int{doc.CupoDisponible}
+	}
+	if doc.PlanNombre != "" {
+		solrDoc.PlanNombre = []string{doc.PlanNombre}
+	}
+	if doc.PlanPrecio > 0 {
+		solrDoc.PlanPrecio = []float64{doc.PlanPrecio}
+	}
+	if doc.PlanTipoAcceso != "" {
+		solrDoc.PlanTipoAcceso = []string{doc.PlanTipoAcceso}
+	}
+
+	return solrDoc
 }
 
 // convertFromSolrDocument - Convierte SolrDocument a SearchDocument
 func (c *SolrClient) convertFromSolrDocument(solrDoc SolrDocument) dtos.SearchDocument {
-	return dtos.SearchDocument{
-		ID:              solrDoc.ID,
-		Type:            solrDoc.Type,
-		Titulo:          solrDoc.Titulo,
-		Descripcion:     solrDoc.Descripcion,
-		Categoria:       solrDoc.Categoria,
-		Instructor:      solrDoc.Instructor,
-		Dia:             solrDoc.Dia,
-		HorarioInicio:   solrDoc.HorarioInicio,
-		HorarioFinal:    solrDoc.HorarioFinal,
-		SucursalID:      solrDoc.SucursalID,
-		SucursalNombre:  solrDoc.SucursalNombre,
-		RequierePremium: solrDoc.RequierePremium,
-		CupoDisponible:  solrDoc.CupoDisponible,
-		PlanNombre:      solrDoc.PlanNombre,
-		PlanPrecio:      solrDoc.PlanPrecio,
-		PlanTipoAcceso:  solrDoc.PlanTipoAcceso,
+	doc := dtos.SearchDocument{
+		ID: solrDoc.ID,
 	}
+
+	// Convertir arrays a strings (tomar primer elemento)
+	if len(solrDoc.Type) > 0 {
+		doc.Type = solrDoc.Type[0]
+	}
+	if len(solrDoc.Titulo) > 0 {
+		doc.Titulo = solrDoc.Titulo[0]
+	}
+	if len(solrDoc.Descripcion) > 0 {
+		doc.Descripcion = solrDoc.Descripcion[0]
+	}
+	if len(solrDoc.Categoria) > 0 {
+		doc.Categoria = solrDoc.Categoria[0]
+	}
+	if len(solrDoc.Instructor) > 0 {
+		doc.Instructor = solrDoc.Instructor[0]
+	}
+	if len(solrDoc.Dia) > 0 {
+		doc.Dia = solrDoc.Dia[0]
+	}
+	if len(solrDoc.HorarioInicio) > 0 {
+		doc.HorarioInicio = solrDoc.HorarioInicio[0]
+	}
+	if len(solrDoc.HorarioFinal) > 0 {
+		doc.HorarioFinal = solrDoc.HorarioFinal[0]
+	}
+	if len(solrDoc.SucursalID) > 0 {
+		doc.SucursalID = fmt.Sprintf("%d", solrDoc.SucursalID[0])
+	}
+	if len(solrDoc.SucursalNombre) > 0 {
+		doc.SucursalNombre = solrDoc.SucursalNombre[0]
+	}
+	if len(solrDoc.RequierePremium) > 0 {
+		doc.RequierePremium = solrDoc.RequierePremium[0]
+	}
+	if len(solrDoc.CupoDisponible) > 0 {
+		doc.CupoDisponible = solrDoc.CupoDisponible[0]
+	}
+	if len(solrDoc.PlanNombre) > 0 {
+		doc.PlanNombre = solrDoc.PlanNombre[0]
+	}
+	if len(solrDoc.PlanPrecio) > 0 {
+		doc.PlanPrecio = solrDoc.PlanPrecio[0]
+	}
+	if len(solrDoc.PlanTipoAcceso) > 0 {
+		doc.PlanTipoAcceso = solrDoc.PlanTipoAcceso[0]
+	}
+
+	return doc
 }

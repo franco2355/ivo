@@ -75,7 +75,13 @@ func (c *InscripcionesController) Create(ctx *gin.Context) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "No se puede inscribir, el cupo de la actividad ha sido alcanzado"})
 		} else if strings.Contains(errString, "actividad no encontrada") || strings.Contains(errString, "not found") {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "La actividad no existe"})
-		} else if strings.Contains(errString, "no tiene suscripción activa") {
+		} else if strings.Contains(errString, "tu plan") && strings.Contains(errString, "no incluye") {
+			// Restricción de plan - mensaje específico del servicio
+			ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		} else if strings.Contains(errString, "actualiza tu plan") || strings.Contains(errString, "upgrade") {
+			// Restricción de plan - mensaje de upgrade
+			ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		} else if strings.Contains(errString, "no tiene suscripción activa") || strings.Contains(errString, "no se encontró suscripción") {
 			ctx.JSON(http.StatusForbidden, gin.H{"error": "Debe tener una suscripción activa para inscribirse"})
 		} else if strings.Contains(errString, "requiere plan premium") {
 			ctx.JSON(http.StatusForbidden, gin.H{"error": "Esta actividad requiere un plan premium"})

@@ -14,8 +14,7 @@ const Checkout = () => {
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [formData, setFormData] = useState({
-        payment_method: 'mercadopago',
-        auto_renovacion: false
+        payment_method: 'mercadopago' // 'mercadopago' o 'cash'
     });
     const [showCheckout, setShowCheckout] = useState(false);
     const [currentPaymentId, setCurrentPaymentId] = useState(null);
@@ -143,8 +142,8 @@ const Checkout = () => {
                 usuario_id: userId,
                 plan_id: planId,
                 metodo_pago: formData.payment_method,
-                auto_renovacion: formData.auto_renovacion,
-                notas: 'Pago a través de Mercado Pago'
+                auto_renovacion: false,
+                notas: formData.payment_method === 'mercadopago' ? 'Pago a través de Mercado Pago' : 'Pago en efectivo'
             };
 
             console.log('[Checkout] Creando suscripción:', subscriptionData);
@@ -169,67 +168,106 @@ const Checkout = () => {
             const suscripcion = await subscriptionResponse.json();
             console.log('[Checkout] ✅ Suscripción creada:', suscripcion);
 
-            // 2. Procesar pago con Mercado Pago (usando endpoint /payments/process)
-            const paymentData = {
-                entity_type: "subscription",
-                entity_id: suscripcion.id,
-                user_id: userId,
-                amount: plan.precio_mensual,
-                currency: "ARS",
-                payment_method: "credit_card", // MP maneja todos los métodos
-                payment_gateway: "mercadopago", // ✅ Usar Mercado Pago REAL
-                callback_url: `${window.location.origin}/mi-suscripcion`,
-                webhook_url: `http://localhost:8083/webhooks/mercadopago`,
-                metadata: {
-                    plan_nombre: plan.nombre,
-                    duracion_dias: plan.duracion_dias,
-                    auto_renovacion: formData.auto_renovacion,
-                    usuario_id: userId,
-                    suscripcion_id: suscripcion.id
+            // 2. Procesar pago según el método seleccionado
+            if (formData.payment_method === 'cash') {
+                // PAGO EN EFECTIVO - Crear pago pendiente
+                const paymentData = {
+                    entity_type: "subscription",
+                    entity_id: suscripcion.id,
+                    user_id: userId,
+                    amount: plan.precio_mensual,
+                    currency: "ARS",
+                    payment_method: "cash",
+                    payment_gateway: "cash",
+                    metadata: {
+                        plan_nombre: plan.nombre,
+                        duracion_dias: plan.duracion_dias,
+                        usuario_id: userId,
+                        suscripcion_id: suscripcion.id
+                    }
+                };
+
+                console.log('[Checkout] Creando pago en efectivo:', paymentData);
+
+                const paymentResponse = await fetch('http://localhost:8083/payments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(paymentData)
+                });
+
+                if (!paymentResponse.ok) {
+                    const errorData = await paymentResponse.json().catch(() => ({}));
+                    throw new Error(errorData.error || "Error al crear el pago en efectivo");
                 }
-            };
 
-            console.log('[Checkout] Procesando pago con Mercado Pago:', paymentData);
+                const paymentResult = await paymentResponse.json();
+                console.log('[Checkout] ✅ Pago en efectivo registrado:', paymentResult);
 
-            // Usar el endpoint /payments/process que integra con Mercado Pago
-            const paymentResponse = await fetch('http://localhost:8083/payments/process', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(paymentData)
-            });
+                toast.success(`Pago en efectivo registrado. Código: ${paymentResult.transaction_id}`);
+                toast.info('Acércate a la sucursal dentro de las próximas 48 horas para completar el pago.');
+                navigate('/mi-suscripcion');
 
-            if (!paymentResponse.ok) {
-                const errorData = await paymentResponse.json().catch(() => ({}));
-                throw new Error(errorData.error || "Error al procesar el pago con Mercado Pago");
-            }
-
-            const paymentResult = await paymentResponse.json();
-            console.log('[Checkout] ✅ Respuesta de Mercado Pago:', paymentResult);
-
-            // 3. Abrir checkout de Mercado Pago
-            if (paymentResult.metadata && paymentResult.metadata.payment_url) {
-                const preferenceId = paymentResult.transaction_id; // El ID de la preferencia
-
-                console.log('[Checkout] 🎯 Preference ID:', preferenceId);
-                console.log('[Checkout] 🌐 Payment URL:', paymentResult.metadata.payment_url);
-
-                // Guardar el payment_id para polling automático
-                const paymentId = paymentResult.id;
-                setCurrentPaymentId(paymentId);
-
-                console.log('[Checkout] ✅ Abriendo checkout de Mercado Pago...');
-                console.log('[Checkout] 🌐 Redirigiendo a:', paymentResult.metadata.payment_url);
-
-                // Iniciar polling automático
-                startPaymentPolling(paymentId);
-
-                // Redireccionar a Mercado Pago (modal o página externa según configuración del backend)
-                window.location.href = paymentResult.metadata.payment_url;
             } else {
-                console.error('[Checkout] ❌ No se recibió payment_url de Mercado Pago');
-                toast.error("Error: No se pudo generar el link de pago. Por favor, intenta nuevamente.");
+                // MERCADO PAGO - Procesar con gateway externo
+                const paymentData = {
+                    entity_type: "subscription",
+                    entity_id: suscripcion.id,
+                    user_id: userId,
+                    amount: plan.precio_mensual,
+                    currency: "ARS",
+                    payment_method: "credit_card",
+                    payment_gateway: "mercadopago",
+                    callback_url: `${window.location.origin}/mi-suscripcion`,
+                    webhook_url: `http://localhost:8083/webhooks/mercadopago`,
+                    metadata: {
+                        plan_nombre: plan.nombre,
+                        duracion_dias: plan.duracion_dias,
+                        usuario_id: userId,
+                        suscripcion_id: suscripcion.id
+                    }
+                };
+
+                console.log('[Checkout] Procesando pago con Mercado Pago:', paymentData);
+
+                const paymentResponse = await fetch('http://localhost:8083/payments/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(paymentData)
+                });
+
+                if (!paymentResponse.ok) {
+                    const errorData = await paymentResponse.json().catch(() => ({}));
+                    throw new Error(errorData.error || "Error al procesar el pago con Mercado Pago");
+                }
+
+                const paymentResult = await paymentResponse.json();
+                console.log('[Checkout] ✅ Respuesta de Mercado Pago:', paymentResult);
+
+                // 3. Abrir checkout de Mercado Pago
+                if (paymentResult.metadata && paymentResult.metadata.payment_url) {
+                    const preferenceId = paymentResult.transaction_id;
+
+                    console.log('[Checkout] 🎯 Preference ID:', preferenceId);
+                    console.log('[Checkout] 🌐 Payment URL:', paymentResult.metadata.payment_url);
+
+                    const paymentId = paymentResult.id;
+                    setCurrentPaymentId(paymentId);
+
+                    console.log('[Checkout] ✅ Abriendo checkout de Mercado Pago...');
+
+                    // Iniciar polling automático
+                    startPaymentPolling(paymentId);
+
+                    // Redireccionar a Mercado Pago
+                    window.location.href = paymentResult.metadata.payment_url;
+                } else {
+                    console.error('[Checkout] ❌ No se recibió payment_url de Mercado Pago');
+                    toast.error("Error: No se pudo generar el link de pago. Por favor, intenta nuevamente.");
+                }
             }
 
         } catch (error) {
@@ -280,36 +318,67 @@ const Checkout = () => {
                     <form className="payment-form" onSubmit={handleSubmit}>
                         <h2>Método de Pago</h2>
 
-                        <div className="payment-methods">
-                            <div className="payment-method selected" style={{
-                                border: '2px solid #009ee3',
-                                padding: '20px',
-                                borderRadius: '8px',
-                                backgroundColor: '#f0f9ff',
-                                textAlign: 'center'
-                            }}>
+                        <div className="payment-methods" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div
+                                className={`payment-method ${formData.payment_method === 'mercadopago' ? 'selected' : ''}`}
+                                onClick={() => setFormData({ ...formData, payment_method: 'mercadopago' })}
+                                style={{
+                                    border: formData.payment_method === 'mercadopago' ? '2px solid #009ee3' : '2px solid #ddd',
+                                    padding: '20px',
+                                    borderRadius: '8px',
+                                    backgroundColor: formData.payment_method === 'mercadopago' ? '#f0f9ff' : '#fff',
+                                    textAlign: 'center',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease'
+                                }}>
                                 <div style={{
                                     fontSize: '48px',
                                     marginBottom: '10px'
                                 }}>💳</div>
-                                <h3 style={{ margin: '0 0 8px 0', color: '#009ee3' }}>Mercado Pago</h3>
+                                <h3 style={{ margin: '0 0 8px 0', color: formData.payment_method === 'mercadopago' ? '#009ee3' : '#333' }}>
+                                    Mercado Pago
+                                </h3>
                                 <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
-                                    Paga de forma segura con tarjetas de crédito, débito, efectivo y más
+                                    Tarjetas, débito, transferencia
+                                </p>
+                            </div>
+
+                            <div
+                                className={`payment-method ${formData.payment_method === 'cash' ? 'selected' : ''}`}
+                                onClick={() => setFormData({ ...formData, payment_method: 'cash' })}
+                                style={{
+                                    border: formData.payment_method === 'cash' ? '2px solid #4CAF50' : '2px solid #ddd',
+                                    padding: '20px',
+                                    borderRadius: '8px',
+                                    backgroundColor: formData.payment_method === 'cash' ? '#f0fff4' : '#fff',
+                                    textAlign: 'center',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease'
+                                }}>
+                                <div style={{
+                                    fontSize: '48px',
+                                    marginBottom: '10px'
+                                }}>💵</div>
+                                <h3 style={{ margin: '0 0 8px 0', color: formData.payment_method === 'cash' ? '#4CAF50' : '#333' }}>
+                                    Efectivo
+                                </h3>
+                                <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
+                                    Pagar en sucursal (48hs)
                                 </p>
                             </div>
                         </div>
 
-                        <div className="form-group checkbox-group">
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    name="auto_renovacion"
-                                    checked={formData.auto_renovacion}
-                                    onChange={handleInputChange}
-                                />
-                                <span>Activar renovación automática</span>
-                            </label>
-                        </div>
+                        {formData.payment_method === 'cash' && (
+                            <div style={{
+                                backgroundColor: '#fff3cd',
+                                border: '1px solid #ffc107',
+                                borderRadius: '8px',
+                                padding: '15px',
+                                marginTop: '20px'
+                            }}>
+                                <strong>⚠️ Importante:</strong> El pago en efectivo debe realizarse en sucursal dentro de las próximas 48 horas. Se te proporcionará un código de pago que deberás presentar en caja.
+                            </div>
+                        )}
 
                         <div className="total-section">
                             <div className="total-row">
@@ -336,7 +405,7 @@ const Checkout = () => {
                                 className="btn-pagar"
                                 disabled={processing}
                                 style={{
-                                    backgroundColor: '#009ee3',
+                                    backgroundColor: formData.payment_method === 'cash' ? '#4CAF50' : '#009ee3',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -344,10 +413,12 @@ const Checkout = () => {
                                 }}
                             >
                                 {processing ? (
-                                    'Abriendo Mercado Pago...'
+                                    formData.payment_method === 'cash' ? 'Registrando pago...' : 'Abriendo Mercado Pago...'
                                 ) : (
                                     <>
-                                        <span>Pagar con Mercado Pago</span>
+                                        <span>
+                                            {formData.payment_method === 'cash' ? 'Generar código de pago' : 'Pagar con Mercado Pago'}
+                                        </span>
                                         <span>${totalPagar.toFixed(2)}</span>
                                     </>
                                 )}
