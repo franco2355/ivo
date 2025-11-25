@@ -84,6 +84,11 @@ func (mp *MercadoPagoGateway) CreatePayment(ctx context.Context, request Payment
 		},
 		// Modo binario: finaliza el pago inmediatamente
 		"binary_mode": true,
+		// Personalización del checkout (colores y tema)
+		"theme": map[string]interface{}{
+			"header_color": "#1a1a1a",    // Color del header (negro)
+			"elements_color": "#009ee3",  // Color de botones y elementos (azul)
+		},
 		// Comentado auto_return para evitar error con cuentas que no lo tienen habilitado
 		// "auto_return": "approved",
 	}

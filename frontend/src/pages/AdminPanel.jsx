@@ -14,17 +14,55 @@ const AdminPanel = () => {
     const [actividades, setActividades] = useState([]);
     const [actividadEditar, setActividadEditar] = useState(null);
     const [mostrarAgregarModal, setMostrarAgregarModal] = useState(false);
+    const [validandoSesion, setValidandoSesion] = useState(true);
     const navigate = useNavigate();
     const toast = useToastContext();
 
+    // Validar sesión con el backend al cargar
     useEffect(() => {
-        const isAdmin = localStorage.getItem("isAdmin") === "true";
-        if (!isAdmin) {
-            navigate('/');
-            return;
-        }
-        fetchActividades();
-    }, [navigate]);
+        const validarSesionAdmin = async () => {
+            const token = localStorage.getItem('access_token');
+
+            // Si no hay token, redirigir al login
+            if (!token) {
+                toast.error('Debes iniciar sesión para acceder al panel de administración');
+                navigate('/login');
+                return;
+            }
+
+            try {
+                // Validar token con el backend haciendo una petición autenticada
+                const response = await fetch(ACTIVITIES_API.actividades, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (isAuthError(response)) {
+                    handleSessionExpired(toast, navigate);
+                    return;
+                }
+
+                // Verificar que el usuario sea admin desde el token decodificado
+                const isAdmin = localStorage.getItem("isAdmin") === "true";
+                if (!isAdmin) {
+                    toast.error('No tienes permisos de administrador');
+                    navigate('/');
+                    return;
+                }
+
+                // Sesión válida, cargar datos
+                setValidandoSesion(false);
+                fetchActividades();
+            } catch (error) {
+                console.error('Error validando sesión:', error);
+                toast.error('Error al validar la sesión');
+                navigate('/login');
+            }
+        };
+
+        validarSesionAdmin();
+    }, [navigate, toast]);
 
     const fetchActividades = async () => {
         try {
@@ -37,6 +75,7 @@ const AdminPanel = () => {
             }
         } catch (error) {
             console.error("Error al cargar actividades:", error);
+            toast.error('Error al cargar las actividades');
         }
     };
 
@@ -86,6 +125,17 @@ const AdminPanel = () => {
             }
         }
     };
+
+    // Mostrar loading mientras se valida la sesión
+    if (validandoSesion) {
+        return (
+            <div className="admin-container">
+                <div style={{ textAlign: 'center', padding: '50px' }}>
+                    <p>Validando permisos de administrador...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="admin-container">
@@ -143,33 +193,41 @@ const AdminPanel = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {actividades.map((actividad) => (
-                                        <tr key={actividad.id_actividad}>
-                                            <td>{actividad.titulo}</td>
-                                            <td>{actividad.descripcion}</td>
-                                            <td>{actividad.instructor}</td>
-                                            <td>{actividad.categoria}</td>
-                                            <td>{actividad.dia}</td>
-                                            <td>{actividad.hora_inicio} - {actividad.hora_fin}</td>
-                                            <td>{actividad.cupo - actividad.lugares} / {actividad.cupo}</td>
-                                            <td className="acciones-column">
-                                                <button
-                                                    className="action-button edit-button"
-                                                    onClick={() => handleEditar(actividad)}
-                                                    title="Editar"
-                                                >
-                                                    ✏️
-                                                </button>
-                                                <button
-                                                    className="action-button delete-button"
-                                                    onClick={() => handleEliminar(actividad)}
-                                                    title="Eliminar"
-                                                >
-                                                    🗑️
-                                                </button>
+                                    {actividades.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="8" style={{ textAlign: 'center', padding: '20px' }}>
+                                                No hay actividades disponibles
                                             </td>
                                         </tr>
-                                    ))}
+                                    ) : (
+                                        actividades.map((actividad, index) => (
+                                            <tr key={actividad.id_actividad || `actividad-${index}`}>
+                                                <td>{actividad.titulo}</td>
+                                                <td>{actividad.descripcion}</td>
+                                                <td>{actividad.instructor}</td>
+                                                <td>{actividad.categoria}</td>
+                                                <td>{actividad.dia}</td>
+                                                <td>{actividad.hora_inicio} - {actividad.hora_fin}</td>
+                                                <td>{actividad.cupo - actividad.lugares} / {actividad.cupo}</td>
+                                                <td className="acciones-column">
+                                                    <button
+                                                        className="action-button edit-button"
+                                                        onClick={() => handleEditar(actividad)}
+                                                        title="Editar"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        className="action-button delete-button"
+                                                        onClick={() => handleEliminar(actividad)}
+                                                        title="Eliminar"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
