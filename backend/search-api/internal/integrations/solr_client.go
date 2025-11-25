@@ -27,23 +27,100 @@ func NewSolrClient(solrURL string) *SolrClient {
 }
 
 // SolrDocument - Estructura de documento Solr
+// Solr puede devolver campos como arrays o valores únicos, usamos interface{} y extraemos el primer valor
 type SolrDocument struct {
-	ID              string  `json:"id"`
-	Type            string  `json:"type"`
-	Titulo          string  `json:"titulo,omitempty"`
-	Descripcion     string  `json:"descripcion,omitempty"`
-	Categoria       string  `json:"categoria,omitempty"`
-	Instructor      string  `json:"instructor,omitempty"`
-	Dia             string  `json:"dia,omitempty"`
-	HorarioInicio   string  `json:"horario_inicio,omitempty"`
-	HorarioFinal    string  `json:"horario_final,omitempty"`
-	SucursalID      string  `json:"sucursal_id,omitempty"`
-	SucursalNombre  string  `json:"sucursal_nombre,omitempty"`
-	RequierePremium bool    `json:"requiere_premium,omitempty"`
-	CupoDisponible  int     `json:"cupo_disponible,omitempty"`
-	PlanNombre      string  `json:"plan_nombre,omitempty"`
-	PlanPrecio      float64 `json:"plan_precio,omitempty"`
-	PlanTipoAcceso  string  `json:"plan_tipo_acceso,omitempty"`
+	ID              interface{} `json:"id"`
+	Type            interface{} `json:"type"`
+	Titulo          interface{} `json:"titulo,omitempty"`
+	Descripcion     interface{} `json:"descripcion,omitempty"`
+	Categoria       interface{} `json:"categoria,omitempty"`
+	Instructor      interface{} `json:"instructor,omitempty"`
+	Dia             interface{} `json:"dia,omitempty"`
+	HorarioInicio   interface{} `json:"horario_inicio,omitempty"`
+	HorarioFinal    interface{} `json:"horario_final,omitempty"`
+	SucursalID      interface{} `json:"sucursal_id,omitempty"`
+	SucursalNombre  interface{} `json:"sucursal_nombre,omitempty"`
+	RequierePremium interface{} `json:"requiere_premium,omitempty"`
+	CupoDisponible  interface{} `json:"cupo_disponible,omitempty"`
+	PlanNombre      interface{} `json:"plan_nombre,omitempty"`
+	PlanPrecio      interface{} `json:"plan_precio,omitempty"`
+	PlanTipoAcceso  interface{} `json:"plan_tipo_acceso,omitempty"`
+}
+
+// Helper function to extract string from Solr field (can be string or []string)
+func getSolrString(field interface{}) string {
+	if field == nil {
+		return ""
+	}
+	switch v := field.(type) {
+	case string:
+		return v
+	case []interface{}:
+		if len(v) > 0 {
+			if str, ok := v[0].(string); ok {
+				return str
+			}
+		}
+	}
+	return fmt.Sprintf("%v", field)
+}
+
+// Helper function to extract int from Solr field
+func getSolrInt(field interface{}) int {
+	if field == nil {
+		return 0
+	}
+	switch v := field.(type) {
+	case float64:
+		return int(v)
+	case int:
+		return v
+	case []interface{}:
+		if len(v) > 0 {
+			if num, ok := v[0].(float64); ok {
+				return int(num)
+			}
+		}
+	}
+	return 0
+}
+
+// Helper function to extract float64 from Solr field
+func getSolrFloat(field interface{}) float64 {
+	if field == nil {
+		return 0
+	}
+	switch v := field.(type) {
+	case float64:
+		return v
+	case int:
+		return float64(v)
+	case []interface{}:
+		if len(v) > 0 {
+			if num, ok := v[0].(float64); ok {
+				return num
+			}
+		}
+	}
+	return 0
+}
+
+// Helper function to extract bool from Solr field
+func getSolrBool(field interface{}) bool {
+	if field == nil {
+		return false
+	}
+	switch v := field.(type) {
+	case bool:
+		return v
+	case []interface{}:
+		if len(v) > 0 {
+			if b, ok := v[0].(bool); ok {
+				return b
+			}
+		}
+	}
+	return false
 }
 
 // SolrResponse - Respuesta de búsqueda de Solr
@@ -279,21 +356,21 @@ func (c *SolrClient) convertToSolrDocument(doc dtos.SearchDocument) SolrDocument
 // convertFromSolrDocument - Convierte SolrDocument a SearchDocument
 func (c *SolrClient) convertFromSolrDocument(solrDoc SolrDocument) dtos.SearchDocument {
 	return dtos.SearchDocument{
-		ID:              solrDoc.ID,
-		Type:            solrDoc.Type,
-		Titulo:          solrDoc.Titulo,
-		Descripcion:     solrDoc.Descripcion,
-		Categoria:       solrDoc.Categoria,
-		Instructor:      solrDoc.Instructor,
-		Dia:             solrDoc.Dia,
-		HorarioInicio:   solrDoc.HorarioInicio,
-		HorarioFinal:    solrDoc.HorarioFinal,
-		SucursalID:      solrDoc.SucursalID,
-		SucursalNombre:  solrDoc.SucursalNombre,
-		RequierePremium: solrDoc.RequierePremium,
-		CupoDisponible:  solrDoc.CupoDisponible,
-		PlanNombre:      solrDoc.PlanNombre,
-		PlanPrecio:      solrDoc.PlanPrecio,
-		PlanTipoAcceso:  solrDoc.PlanTipoAcceso,
+		ID:              getSolrString(solrDoc.ID),
+		Type:            getSolrString(solrDoc.Type),
+		Titulo:          getSolrString(solrDoc.Titulo),
+		Descripcion:     getSolrString(solrDoc.Descripcion),
+		Categoria:       getSolrString(solrDoc.Categoria),
+		Instructor:      getSolrString(solrDoc.Instructor),
+		Dia:             getSolrString(solrDoc.Dia),
+		HorarioInicio:   getSolrString(solrDoc.HorarioInicio),
+		HorarioFinal:    getSolrString(solrDoc.HorarioFinal),
+		SucursalID:      getSolrString(solrDoc.SucursalID),
+		SucursalNombre:  getSolrString(solrDoc.SucursalNombre),
+		RequierePremium: getSolrBool(solrDoc.RequierePremium),
+		CupoDisponible:  getSolrInt(solrDoc.CupoDisponible),
+		PlanNombre:      getSolrString(solrDoc.PlanNombre),
+		PlanPrecio:      getSolrFloat(solrDoc.PlanPrecio),
+		PlanTipoAcceso:  getSolrString(solrDoc.PlanTipoAcceso),
 	}
 }

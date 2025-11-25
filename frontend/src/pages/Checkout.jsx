@@ -22,7 +22,16 @@ const Checkout = () => {
     const [pollingInterval, setPollingInterval] = useState(null);
 
     const userId = localStorage.getItem("idUsuario");
+    const isAdmin = localStorage.getItem("isAdmin") === "true";
     const toast = useToastContext();
+
+    // Bloquear acceso si es admin
+    useEffect(() => {
+        if (isAdmin) {
+            toast.error("Los administradores no pueden comprar planes");
+            navigate('/planes');
+        }
+    }, [isAdmin, navigate, toast]);
 
     useEffect(() => {
         const fetchPlan = async () => {

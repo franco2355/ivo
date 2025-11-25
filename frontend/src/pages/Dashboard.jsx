@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMockSuscripcionByUserId } from '../data/mockData';
-import { PAYMENTS_API, USERS_API } from '../config/api';
+import { PAYMENTS_API, USERS_API, ACTIVITIES_API } from '../config/api';
 import { normalizePaymentStatus } from '../utils/paymentStatus';
 import { handleSessionExpired, isAuthError } from '../utils/auth';
 import { useToastContext } from '../context/ToastContext';
@@ -42,7 +42,7 @@ const Dashboard = () => {
             // Obtener inscripciones del usuario (backend principal)
             try {
                 console.log('[Dashboard] Cargando inscripciones...');
-                const inscResponse = await fetch(`${USERS_API.base}/inscripciones`, {
+                const inscResponse = await fetch(ACTIVITIES_API.inscripciones, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
                     }
@@ -66,7 +66,7 @@ const Dashboard = () => {
                         inscActivas.map(async (insc) => {
                             try {
                                 const actResponse = await fetch(
-                                    `${USERS_API.base}/actividades/${insc.id_actividad}`
+                                    ACTIVITIES_API.actividadById(insc.id_actividad)
                                 );
                                 if (actResponse.ok) {
                                     const actividad = await actResponse.json();

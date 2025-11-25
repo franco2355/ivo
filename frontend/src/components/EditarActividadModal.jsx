@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToastContext } from '../context/ToastContext';
 import { handleSessionExpired, isAuthError } from '../utils/auth';
-import { USERS_API } from '../config/api';
+import { ACTIVITIES_API } from '../config/api';
 import '../styles/EditarActividadModal.css';
 
 const EditarActividadModal = ({ actividad, onClose, onSave }) => {
@@ -106,7 +106,7 @@ const EditarActividadModal = ({ actividad, onClose, onSave }) => {
                 cupo: parseInt(formData.cupo, 10)
             };
 
-            const response = await fetch(`${USERS_API.base}/actividades/${formData.id_actividad}`, {
+            const response = await fetch(ACTIVITIES_API.actividadById(formData.id_actividad), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

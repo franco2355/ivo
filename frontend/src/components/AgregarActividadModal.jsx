@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToastContext } from '../context/ToastContext';
 import { handleSessionExpired, isAuthError } from '../utils/auth';
-import { USERS_API } from '../config/api';
+import { ACTIVITIES_API } from '../config/api';
 import '../styles/Modal.css';
 
 const AgregarActividadModal = ({ onClose, onSave }) => {
@@ -104,7 +104,7 @@ const AgregarActividadModal = ({ onClose, onSave }) => {
                 hora_fin: formData.hora_fin
             };
 
-            const response = await fetch(`${USERS_API.base}/actividades`, {
+            const response = await fetch(ACTIVITIES_API.actividades, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

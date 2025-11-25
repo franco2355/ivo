@@ -38,8 +38,8 @@ func (r *MySQLActividadesRepository) GetDB() *gorm.DB {
 
 // NewMySQLActividadesRepository crea una nueva instancia del repository
 func NewMySQLActividadesRepository(cfg config.MySQLConfig) *MySQLActividadesRepository {
-	// Construir DSN
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+	// Construir DSN con configuración UTF-8 completa
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=True&loc=Local",
 		cfg.User,
 		cfg.Pass,
 		cfg.Host,

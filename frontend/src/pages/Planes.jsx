@@ -11,6 +11,7 @@ const Planes = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const isAdmin = localStorage.getItem("isAdmin") === "true";
     const toast = useToastContext();
 
     useEffect(() => {
@@ -51,6 +52,11 @@ const Planes = () => {
 
     const handleSelectPlan = (planId) => {
         console.log('[Planes] Usuario seleccionó plan:', planId);
+
+        if (isAdmin) {
+            toast.info("Los administradores no pueden suscribirse a planes");
+            return;
+        }
 
         if (!isLoggedIn) {
             toast.warning("Debes iniciar sesión para suscribirte a un plan");
@@ -167,13 +173,27 @@ const Planes = () => {
                             </ul>
                         </div>
 
-                        <button
-                            className="btn-seleccionar-plan"
-                            style={{ backgroundColor: plan.color || '#4CAF50' }}
-                            onClick={() => handleSelectPlan(plan.id)}
-                        >
-                            Seleccionar Plan
-                        </button>
+                        {isAdmin ? (
+                            <button
+                                className="btn-seleccionar-plan"
+                                style={{
+                                    backgroundColor: '#999',
+                                    cursor: 'not-allowed',
+                                    opacity: 0.6
+                                }}
+                                disabled
+                            >
+                                Solo para usuarios
+                            </button>
+                        ) : (
+                            <button
+                                className="btn-seleccionar-plan"
+                                style={{ backgroundColor: plan.color || '#4CAF50' }}
+                                onClick={() => handleSelectPlan(plan.id)}
+                            >
+                                Seleccionar Plan
+                            </button>
+                        )}
                     </div>
                 ))}
             </div>
