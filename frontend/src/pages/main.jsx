@@ -16,6 +16,7 @@ const Dashboard = lazy(() => import('../pages/Dashboard.jsx'));
 const Planes = lazy(() => import('../pages/Planes.jsx'));
 const MiSuscripcion = lazy(() => import('../pages/MiSuscripcion.jsx'));
 const Checkout = lazy(() => import('../pages/Checkout.jsx'));
+const PagoResultado = lazy(() => import('../pages/PagoResultado.jsx'));
 const Pagos = lazy(() => import('../pages/Pagos.jsx'));
 const Sucursales = lazy(() => import('../pages/Sucursales.jsx'));
 const Layout = lazy(() => import('../components/Layout.jsx'));
@@ -40,6 +41,7 @@ createRoot(document.getElementById('root')).render(
                 <Route path="planes" element={<Planes />} />
                 <Route path="mi-suscripcion" element={<MiSuscripcion />} />
                 <Route path="checkout/:planId" element={<Checkout />} />
+                <Route path="pago/resultado" element={<PagoResultado />} />
                 <Route path="pagos" element={<Pagos />} />
                 <Route path="sucursales" element={<Sucursales />} />
                 <Route path="admin" element={<AdminPanel />} />

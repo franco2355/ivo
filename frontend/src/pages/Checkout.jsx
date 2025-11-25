@@ -228,7 +228,7 @@ const Checkout = () => {
                     currency: "ARS",
                     payment_method: "credit_card",
                     payment_gateway: "mercadopago",
-                    callback_url: `${window.location.origin}/mi-suscripcion`,
+                    callback_url: `${window.location.origin}/pago/resultado`,
                     webhook_url: `http://localhost:8083/webhooks/mercadopago`,
                     metadata: {
                         plan_nombre: plan.nombre,
