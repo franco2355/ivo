@@ -26,8 +26,8 @@ const AdminPanel = () => {
                 const responseData = await response.json();
                 // El API devuelve { data: [...], total, page, etc }
                 const data = responseData.data || responseData || [];
-                // Filtrar actividades que tengan id_actividad válido
-                const actividadesValidas = Array.isArray(data) ? data.filter(act => act.id_actividad) : [];
+                // Filtrar actividades que tengan id válido (el API devuelve "id" no "id_actividad")
+                const actividadesValidas = Array.isArray(data) ? data.filter(act => act.id) : [];
                 setActividades(actividadesValidas);
             }
         } catch (error) {
@@ -97,7 +97,7 @@ const AdminPanel = () => {
     };
 
     const handleEliminar = async (actividad) => {
-        if (!actividad.id_actividad) {
+        if (!actividad.id) {
             console.error("Error: La actividad no tiene ID", actividad);
             toast.error('Error: No se puede eliminar la actividad porque no tiene ID');
             return;
@@ -105,7 +105,7 @@ const AdminPanel = () => {
 
         if (window.confirm('¿Estás seguro de que deseas eliminar esta actividad? Se eliminarán también todas las inscripciones asociadas.')) {
             try {
-                const response = await fetch(ACTIVITIES_API.actividadById(actividad.id_actividad), {
+                const response = await fetch(ACTIVITIES_API.actividadById(actividad.id), {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
@@ -204,13 +204,13 @@ const AdminPanel = () => {
                                         </tr>
                                     ) : (
                                         actividades.map((actividad, index) => (
-                                            <tr key={actividad.id_actividad || `actividad-${index}`}>
+                                            <tr key={actividad.id || `actividad-${index}`}>
                                                 <td>{actividad.titulo}</td>
                                                 <td>{actividad.descripcion}</td>
                                                 <td>{actividad.instructor}</td>
                                                 <td>{actividad.categoria}</td>
                                                 <td>{actividad.dia}</td>
-                                                <td>{actividad.hora_inicio} - {actividad.hora_fin}</td>
+                                                <td>{actividad.horario_inicio} - {actividad.horario_final}</td>
                                                 <td>{actividad.cupo - actividad.lugares} / {actividad.cupo}</td>
                                                 <td className="acciones-column">
                                                     <button
