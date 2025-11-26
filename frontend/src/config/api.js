@@ -61,6 +61,8 @@ export const PAYMENTS_API = {
   paymentsByStatus: (status) => `${API_BASE_URLS.payments}/payments/status?status=${status}`,
   updateStatus: (id) => `${API_BASE_URLS.payments}/payments/${id}/status`,
   processPayment: (id) => `${API_BASE_URLS.payments}/payments/${id}/process`,
+  approveCashPayment: (id) => `${API_BASE_URLS.payments}/payments/${id}/approve`,
+  rejectCashPayment: (id) => `${API_BASE_URLS.payments}/payments/${id}/reject`,
   healthz: `${API_BASE_URLS.payments}/healthz`
 };
 

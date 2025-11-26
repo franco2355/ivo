@@ -84,10 +84,9 @@ func NewMySQLActividadesRepository(cfg config.MySQLConfig) *MySQLActividadesRepo
 		       a.cupo - COALESCE((SELECT COUNT(*)
 		                          FROM inscripciones i
 		                          WHERE i.actividad_id = a.id_actividad
-		                          AND i.is_activa = true
-		                          AND i.deleted_at IS NULL), 0) AS lugares
+		                          AND i.is_activa = true), 0) AS lugares
 		FROM actividades a
-		WHERE a.deleted_at IS NULL
+		WHERE a.activa = true
 	`
 	if err := db.Exec(createViewSQL).Error; err != nil {
 		log.Printf("Warning: Could not create view actividades_lugares: %v", err)

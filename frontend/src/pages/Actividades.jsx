@@ -95,6 +95,8 @@ const Actividades = () => {
 
                 // Mapear campos de activities-api a formato esperado por el frontend
                 const mappedResults = results.map(actividad => ({
+                    // Mantener ambos IDs por compatibilidad con el resto del frontend
+                    id: actividad.id,
                     id_actividad: actividad.id,
                     titulo: actividad.titulo,
                     descripcion: actividad.descripcion,
@@ -109,6 +111,8 @@ const Actividades = () => {
                     sucursal_id: actividad.sucursal_id
                 }));
 
+                console.log("✅ ACTIVIDADES MAPEADAS:", mappedResults);
+                console.log("✅ IDs de actividades:", mappedResults.map(a => ({id: a.id, id_actividad: a.id_actividad})));
                 setActividadesFiltradas(mappedResults);
                 setActividades(mappedResults);
             }
@@ -126,16 +130,18 @@ const Actividades = () => {
         }
 
         try {
-            const response = await fetch(ACTIVITIES_API.inscripcionesByUsuario(userId), {
+            // Usar el endpoint /inscripciones que usa el token JWT para identificar al usuario
+            const response = await fetch(ACTIVITIES_API.inscripciones, {
                 headers: {'Authorization': `Bearer ${localStorage.getItem('access_token')}`}
             });
             if (response.ok) {
                 const data = await response.json();
+                console.log("✅ INSCRIPCIONES RAW:", data);
                 const inscripcionesActivas = Array.isArray(data)
                     ? data.filter(insc => insc.is_activa)
                     : [];
-
-                console.log("Inscripciones cargadas:", inscripcionesActivas);
+                console.log("✅ INSCRIPCIONES ACTIVAS:", inscripcionesActivas);
+                console.log("✅ IDs de actividades inscritas:", inscripcionesActivas.map(i => i.actividad_id));
                 setInscripciones(inscripcionesActivas);
             } else if (isAuthError(response)) {
                 handleSessionExpired(toast, navigate);
@@ -346,7 +352,7 @@ const Actividades = () => {
     };
 
     const handleEliminar = async (actividad) => {
-        if (!actividad.id_actividad) {
+        if (!actividad.id) {
             console.error("Error: La actividad no tiene ID", actividad);
             toast.error('Error: No se puede eliminar la actividad porque no tiene ID');
             return;
@@ -354,8 +360,8 @@ const Actividades = () => {
 
         if (window.confirm('¿Estás seguro de que deseas eliminar esta actividad?')) {
             try {
-                console.log("Intentando eliminar actividad con ID:", actividad.id_actividad);
-                const response = await fetch(ACTIVITIES_API.actividadById(actividad.id_actividad), {
+                console.log("Intentando eliminar actividad con ID:", actividad.id);
+                const response = await fetch(ACTIVITIES_API.actividadById(actividad.id), {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
@@ -380,10 +386,19 @@ const Actividades = () => {
     };
 
     const estaInscripto = (id_actividad) => {
-        return inscripciones.some(insc => 
-            insc.id_actividad === id_actividad &&
-            insc.is_activa
-        )
+        console.log("🔍 VERIFICANDO inscripción para actividad ID:", id_actividad, "tipo:", typeof id_actividad);
+        console.log("🔍 INSCRIPCIONES disponibles:", inscripciones);
+        const resultado = inscripciones.some(insc => {
+            const inscActividadId = Number(insc.actividad_id);
+            const actividadId = Number(id_actividad);
+            const match = inscActividadId === actividadId && insc.is_activa;
+            if (match) {
+                console.log(`✅ MATCH ENCONTRADO: actividad_id=${inscActividadId} === ${actividadId}`);
+            }
+            return match;
+        });
+        console.log("🔍 RESULTADO estaInscripto:", resultado);
+        return resultado;
     };
 
     const toggleExpand = (actividadId) => {
@@ -460,8 +475,8 @@ const Actividades = () => {
                 ) : (
                     actividadesFiltradas.map((actividad) => (
                         <div 
-                            className={`actividad-card ${expandedActividadId === actividad.id_actividad ? 'expanded' : ''}`} 
-                            key={actividad.id_actividad}
+                            className={`actividad-card ${expandedActividadId === actividad.id ? 'expanded' : ''}`} 
+                            key={actividad.id}
                         >
                             <h3>{actividad.titulo}</h3>
                             <div className="actividad-info-basic">
@@ -471,7 +486,7 @@ const Actividades = () => {
                                 </p>
                             </div>
 
-                            {expandedActividadId === actividad.id_actividad && (
+                            {expandedActividadId === actividad.id && (
                                 <div className="actividad-info-expanded">
                                     <div className="actividad-imagen">
                                         <img 
@@ -534,14 +549,14 @@ const Actividades = () => {
                                                     </div>
                                                 ) : (
                                                     <button
-                                                        className={`inscripcion-button ${estaInscripto(actividad.id_actividad) ? 'cancelar' : ''}`}
+                                                        className={`inscripcion-button ${estaInscripto(actividad.id) ? 'cancelar' : ''}`}
                                                         onClick={() =>
-                                                            estaInscripto(actividad.id_actividad) ?
-                                                                handleUnenrolling(actividad.id_actividad) :
-                                                                handleEnroling(actividad.id_actividad)
+                                                            estaInscripto(actividad.id) ?
+                                                                handleUnenrolling(actividad.id) :
+                                                                handleEnroling(actividad.id)
                                                         }
                                                     >
-                                                        {estaInscripto(actividad.id_actividad) ? "Cancelar Inscripción" : "Inscribirse"}
+                                                        {estaInscripto(actividad.id) ? "Cancelar Inscripción" : "Inscribirse"}
                                                     </button>
                                                 )}
                                             </>
@@ -550,9 +565,9 @@ const Actividades = () => {
                                 )}
                                 <button
                                     className="ver-mas-button"
-                                    onClick={() => toggleExpand(actividad.id_actividad)}
+                                    onClick={() => toggleExpand(actividad.id)}
                                 >
-                                    {expandedActividadId === actividad.id_actividad ? "Ver menos 🔼" : "Ver más 🔽"}
+                                    {expandedActividadId === actividad.id ? "Ver menos 🔼" : "Ver más 🔽"}
                                 </button>
                             </div>
                         </div>

@@ -25,7 +25,7 @@ type SearchDocument struct {
 	PlanTipoAcceso string  `json:"plan_tipo_acceso,omitempty"`
 
 	// Campos de Suscripción (admin)
-	UsuarioID string `json:"usuario_id,omitempty"`
+	UsuarioID int    `json:"usuario_id,omitempty"`
 	Estado    string `json:"estado,omitempty"`
 
 	// Metadata

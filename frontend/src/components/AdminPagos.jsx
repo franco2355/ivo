@@ -61,12 +61,17 @@ const AdminPagos = () => {
     const fetchUsuarios = async (userIds) => {
         try {
             const usuariosMap = {};
+            const token = localStorage.getItem('access_token');
 
             // Fetch cada usuario
             await Promise.all(
                 userIds.map(async (userId) => {
                     try {
-                        const response = await fetch(USERS_API.userById(userId));
+                        const response = await fetch(USERS_API.userById(userId), {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
                         if (response.ok) {
                             const userData = await response.json();
                             usuariosMap[userId] = `${userData.nombre} ${userData.apellido}`;
@@ -98,7 +103,7 @@ const AdminPagos = () => {
         }
 
         try {
-            const response = await fetch(PAYMENTS_API.processPayment(pago.id), {
+            const response = await fetch(PAYMENTS_API.approveCashPayment(pago.id), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -128,13 +133,15 @@ const AdminPagos = () => {
             return;
         }
 
+        const reason = prompt('¿Por qué rechazas este pago? (opcional)');
+
         try {
-            const response = await fetch(PAYMENTS_API.updateStatus(pago.id), {
-                method: 'PATCH',
+            const response = await fetch(PAYMENTS_API.rejectCashPayment(pago.id), {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ status: 'failed' })
+                body: JSON.stringify({ reason: reason || 'Rechazado por administrador' })
             });
 
             if (!response.ok) {
