@@ -144,6 +144,42 @@ func (c *PaymentController) ProcessPayment(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Pago procesado correctamente"})
 }
 
+// ApproveCashPayment aprueba un pago en efectivo (solo admin)
+func (c *PaymentController) ApproveCashPayment(ctx *gin.Context) {
+	paymentID := ctx.Param("id")
+
+	// Actualizar el estado a "completed"
+	req := dtos.UpdatePaymentStatusRequest{
+		Status: "completed",
+	}
+
+	err := c.service.UpdatePaymentStatus(ctx.Request.Context(), paymentID, req)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Pago en efectivo aprobado correctamente"})
+}
+
+// RejectCashPayment rechaza un pago en efectivo (solo admin)
+func (c *PaymentController) RejectCashPayment(ctx *gin.Context) {
+	paymentID := ctx.Param("id")
+
+	// Actualizar el estado a "failed"
+	updateReq := dtos.UpdatePaymentStatusRequest{
+		Status: "failed",
+	}
+
+	err := c.service.UpdatePaymentStatus(ctx.Request.Context(), paymentID, updateReq)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Pago en efectivo rechazado"})
+}
+
 // HealthCheck verifica el estado del servicio
 func (c *PaymentController) HealthCheck(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{

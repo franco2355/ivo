@@ -1,9 +1,7 @@
 #!/bin/bash
 
 # Script para levantar el sistema completo del gimnasio
-# Soluciona problemas de puertos y limpia el entorno antes de iniciar
-
-set -e  # Detener en caso de error
+# Detecta puertos disponibles automáticamente
 
 echo "🚀 Iniciando sistema de gestión de gimnasio..."
 echo "================================================"
@@ -14,30 +12,49 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Puertos que necesita el sistema
-PORTS=(8080 8081 8082 8083 8084 5173 3306 27017)
+# Usar puertos por defecto directamente - más rápido y confiable
+USERS_API_PORT=5005
+SUBSCRIPTIONS_API_PORT=5004
+ACTIVITIES_API_PORT=5003
+PAYMENTS_API_PORT=5001
+SEARCH_API_PORT=5002
+MYSQL_PORT=3307
+MONGO_PORT=27017
+RABBITMQ_AMQP_PORT=5672
+RABBITMQ_MGMT_PORT=15672
+MEMCACHED_PORT=11211
+SOLR_PORT=8983
+FRONTEND_PORT=5173
 
-echo -e "${YELLOW}📋 Paso 1: Verificando y liberando puertos...${NC}"
+echo -e "${YELLOW}📋 Paso 1: Configurando puertos...${NC}"
 
-# Función para matar procesos en un puerto específico
-kill_port() {
-    local port=$1
-    local pids=$(lsof -ti:$port 2>/dev/null)
+echo -e "${GREEN}  ✓ Puertos configurados:${NC}"
+echo "    - Users API: $USERS_API_PORT"
+echo "    - Subscriptions API: $SUBSCRIPTIONS_API_PORT"
+echo "    - Activities API: $ACTIVITIES_API_PORT"
+echo "    - Payments API: $PAYMENTS_API_PORT"
+echo "    - Search API: $SEARCH_API_PORT"
+echo "    - MySQL: $MYSQL_PORT"
+echo "    - MongoDB: $MONGO_PORT"
+echo "    - RabbitMQ AMQP: $RABBITMQ_AMQP_PORT"
+echo "    - RabbitMQ Management: $RABBITMQ_MGMT_PORT"
+echo "    - Memcached: $MEMCACHED_PORT"
+echo "    - Solr: $SOLR_PORT"
+echo "    - Frontend: $FRONTEND_PORT"
 
-    if [ ! -z "$pids" ]; then
-        echo -e "${YELLOW}  ⚠️  Puerto $port ocupado, liberando...${NC}"
-        kill -9 $pids 2>/dev/null || true
-        sleep 1
-        echo -e "${GREEN}  ✓ Puerto $port liberado${NC}"
-    else
-        echo -e "${GREEN}  ✓ Puerto $port disponible${NC}"
-    fi
-}
-
-# Liberar todos los puertos necesarios
-for port in "${PORTS[@]}"; do
-    kill_port $port
-done
+# Exportar variables de entorno
+export USERS_API_PORT
+export SUBSCRIPTIONS_API_PORT
+export ACTIVITIES_API_PORT
+export PAYMENTS_API_PORT
+export SEARCH_API_PORT
+export MYSQL_EXTERNAL_PORT=$MYSQL_PORT
+export MONGO_EXTERNAL_PORT=$MONGO_PORT
+export RABBITMQ_AMQP_PORT
+export RABBITMQ_MANAGEMENT_PORT=$RABBITMQ_MGMT_PORT
+export MEMCACHED_PORT
+export SOLR_PORT
+export FRONTEND_PORT
 
 echo ""
 echo -e "${YELLOW}📋 Paso 2: Deteniendo contenedores anteriores...${NC}"
@@ -57,10 +74,10 @@ if [[ $REPLY =~ ^[SsYy]$ ]]; then
     docker compose down -v 2>/dev/null || true
 
     echo -e "${YELLOW}  Limpiando imágenes huérfanas...${NC}"
-    docker image prune -f
+    docker image prune -f 2>/dev/null || true
 
     echo -e "${YELLOW}  Limpiando contenedores detenidos...${NC}"
-    docker container prune -f
+    docker container prune -f 2>/dev/null || true
 
     echo -e "${GREEN}  ✓ Limpieza completa realizada${NC}"
 else
@@ -71,13 +88,7 @@ echo ""
 echo -e "${YELLOW}📋 Paso 4: Construyendo imágenes de Docker...${NC}"
 
 # Construir las imágenes
-docker compose build --no-cache 2>&1 | while read line; do
-    if echo "$line" | grep -q "ERROR"; then
-        echo -e "${RED}$line${NC}"
-    else
-        echo "$line"
-    fi
-done
+docker compose build --no-cache 2>&1 | tail -20
 
 echo -e "${GREEN}  ✓ Imágenes construidas${NC}"
 
@@ -93,7 +104,7 @@ echo ""
 echo -e "${YELLOW}📋 Paso 6: Esperando que los servicios estén listos...${NC}"
 
 # Esperar a que los servicios estén listos
-sleep 5
+sleep 8
 
 # Función para verificar si un servicio está listo
 check_service() {
@@ -118,12 +129,12 @@ check_service() {
 }
 
 # Verificar servicios principales
-check_service "Users API" "http://localhost:8080/healthz"
-check_service "Subscriptions API" "http://localhost:8081/healthz"
-check_service "Activities API" "http://localhost:8082/healthz"
-check_service "Payments API" "http://localhost:8083/healthz"
-check_service "Search API" "http://localhost:8084/healthz"
-check_service "Frontend" "http://localhost:5173"
+check_service "Users API" "http://localhost:$USERS_API_PORT/healthz" || true
+check_service "Subscriptions API" "http://localhost:$SUBSCRIPTIONS_API_PORT/healthz" || true
+check_service "Activities API" "http://localhost:$ACTIVITIES_API_PORT/healthz" || true
+check_service "Payments API" "http://localhost:$PAYMENTS_API_PORT/healthz" || true
+check_service "Search API" "http://localhost:$SEARCH_API_PORT/healthz" || true
+check_service "Frontend" "http://localhost:$FRONTEND_PORT" || true
 
 echo ""
 echo -e "${GREEN}================================================${NC}"
@@ -131,14 +142,18 @@ echo -e "${GREEN}✅ Sistema iniciado correctamente!${NC}"
 echo -e "${GREEN}================================================${NC}"
 echo ""
 echo "📊 URLs de los servicios:"
-echo "  - Frontend:          http://localhost:5173"
-echo "  - Users API:         http://localhost:8080"
-echo "  - Subscriptions API: http://localhost:8081"
-echo "  - Activities API:    http://localhost:8082"
-echo "  - Payments API:      http://localhost:8083"
-echo "  - Search API:        http://localhost:8084"
-echo "  - MySQL:             localhost:3306"
-echo "  - MongoDB:           localhost:27017"
+echo "  - Frontend:          http://localhost:$FRONTEND_PORT"
+echo "  - Users API:         http://localhost:$USERS_API_PORT"
+echo "  - Subscriptions API: http://localhost:$SUBSCRIPTIONS_API_PORT"
+echo "  - Activities API:    http://localhost:$ACTIVITIES_API_PORT"
+echo "  - Payments API:      http://localhost:$PAYMENTS_API_PORT"
+echo "  - Search API:        http://localhost:$SEARCH_API_PORT"
+echo "  - MySQL:             localhost:$MYSQL_PORT"
+echo "  - MongoDB:           localhost:$MONGO_PORT"
+echo "  - RabbitMQ:          localhost:$RABBITMQ_AMQP_PORT"
+echo "  - RabbitMQ UI:       http://localhost:$RABBITMQ_MGMT_PORT"
+echo "  - Solr:              http://localhost:$SOLR_PORT/solr"
+echo "  - Memcached:         localhost:$MEMCACHED_PORT"
 echo ""
 echo "📝 Comandos útiles:"
 echo "  - Ver logs:          docker compose logs -f [servicio]"

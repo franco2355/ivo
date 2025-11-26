@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -25,10 +26,19 @@ type ActividadesRepository interface {
 	Delete(ctx context.Context, id uint) error
 }
 
+// cacheEntry estructura para almacenar datos cacheados con timestamp
+type cacheEntry struct {
+	data      []domain.Actividad
+	timestamp time.Time
+}
+
 // MySQLActividadesRepository implementa ActividadesRepository usando MySQL/GORM
 // Migrado de backend/clients/actividad/actividad_client.go
 type MySQLActividadesRepository struct {
-	db *gorm.DB
+	db          *gorm.DB
+	cache       *cacheEntry
+	cacheMutex  sync.RWMutex
+	cacheTTL    time.Duration
 }
 
 // GetDB retorna la conexión de base de datos para compartir con otros repositorios
@@ -84,10 +94,9 @@ func NewMySQLActividadesRepository(cfg config.MySQLConfig) *MySQLActividadesRepo
 		       a.cupo - COALESCE((SELECT COUNT(*)
 		                          FROM inscripciones i
 		                          WHERE i.actividad_id = a.id_actividad
-		                          AND i.is_activa = true
-		                          AND i.deleted_at IS NULL), 0) AS lugares
+		                          AND i.is_activa = true), 0) AS lugares
 		FROM actividades a
-		WHERE a.deleted_at IS NULL
+		WHERE a.activa = true
 	`
 	if err := db.Exec(createViewSQL).Error; err != nil {
 		log.Printf("Warning: Could not create view actividades_lugares: %v", err)
@@ -96,14 +105,25 @@ func NewMySQLActividadesRepository(cfg config.MySQLConfig) *MySQLActividadesRepo
 	log.Println("✅ Connected to MySQL successfully (Actividades)")
 
 	return &MySQLActividadesRepository{
-		db: db,
+		db:       db,
+		cacheTTL: 5 * time.Second, // Cache de 5 segundos para reducir queries
 	}
 }
 
 // List obtiene todas las actividades (usando la vista con lugares)
+// Implementa cache con TTL para reducir queries a la base de datos
 func (r *MySQLActividadesRepository) List(ctx context.Context) ([]domain.Actividad, error) {
-	var actividadesDAO []dao.ActividadVista
+	// Verificar cache primero (lectura)
+	r.cacheMutex.RLock()
+	if r.cache != nil && time.Since(r.cache.timestamp) < r.cacheTTL {
+		cachedData := r.cache.data
+		r.cacheMutex.RUnlock()
+		return cachedData, nil
+	}
+	r.cacheMutex.RUnlock()
 
+	// Cache expirado o no existe, obtener datos de la BD
+	var actividadesDAO []dao.ActividadVista
 	if err := r.db.WithContext(ctx).Find(&actividadesDAO).Error; err != nil {
 		return nil, fmt.Errorf("error listing actividades: %w", err)
 	}
@@ -114,7 +134,22 @@ func (r *MySQLActividadesRepository) List(ctx context.Context) ([]domain.Activid
 		actividades[i] = actDAO.ToDomain()
 	}
 
+	// Actualizar cache (escritura)
+	r.cacheMutex.Lock()
+	r.cache = &cacheEntry{
+		data:      actividades,
+		timestamp: time.Now(),
+	}
+	r.cacheMutex.Unlock()
+
 	return actividades, nil
+}
+
+// invalidateCache limpia el cache para forzar una nueva consulta
+func (r *MySQLActividadesRepository) invalidateCache() {
+	r.cacheMutex.Lock()
+	r.cache = nil
+	r.cacheMutex.Unlock()
 }
 
 // GetByID obtiene una actividad por ID (usando la vista)
@@ -175,6 +210,9 @@ func (r *MySQLActividadesRepository) Create(ctx context.Context, actividad domai
 		return domain.Actividad{}, fmt.Errorf("error creating actividad: %w", err)
 	}
 
+	// Invalidar cache después de crear
+	r.invalidateCache()
+
 	return actividadDAO.ToDomain(), nil
 }
 
@@ -193,6 +231,9 @@ func (r *MySQLActividadesRepository) Update(ctx context.Context, id uint, activi
 		return domain.Actividad{}, errors.New("actividad not found")
 	}
 
+	// Invalidar cache después de actualizar
+	r.invalidateCache()
+
 	// Obtener la actividad actualizada
 	return r.GetByID(ctx, id)
 }
@@ -206,6 +247,9 @@ func (r *MySQLActividadesRepository) Delete(ctx context.Context, id uint) error 
 	if result.RowsAffected == 0 {
 		return errors.New("actividad not found")
 	}
+
+	// Invalidar cache después de eliminar
+	r.invalidateCache()
 
 	return nil
 }
