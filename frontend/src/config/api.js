@@ -1,11 +1,11 @@
 // Configuración centralizada de endpoints de API
 
 const API_BASE_URLS = {
-  users: 'http://localhost:8080',
-  subscriptions: 'http://localhost:8081', // Backend en desarrollo - usar mock
-  activities: 'http://localhost:8082',
-  payments: 'http://localhost:8083',
-  search: 'http://localhost:8084' // Backend en desarrollo - no usar
+  users: 'http://localhost:5005',
+  subscriptions: 'http://localhost:5004',
+  activities: 'http://localhost:5003',
+  payments: 'http://localhost:5001',
+  search: 'http://localhost:5002'
 };
 
 // Flag para indicar qué APIs están en desarrollo (usarán mock data)

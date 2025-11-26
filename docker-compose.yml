@@ -160,7 +160,7 @@ services:
       DB_PASS: ${DB_PASS}
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
-      DB_SCHEMA: ${DB_SCHEMA}
+      DB_SCHEMA: ${DB_SCHEMA_ACTIVITIES}
       JWT_SECRET: ${JWT_SECRET}
       RABBITMQ_URL: ${RABBITMQ_URL}
       RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
@@ -252,7 +252,7 @@ services:
       dockerfile: Dockerfile
     container_name: gym-frontend
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT}:5173"
     depends_on:
       - users-api
       - subscriptions-api

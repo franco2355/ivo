@@ -30,7 +30,7 @@ type ActividadCreate struct {
 	Dia           string `json:"dia" binding:"required"`
 	HorarioInicio string `json:"horario_inicio" binding:"required"` // "HH:MM"
 	HorarioFinal  string `json:"horario_final" binding:"required"`  // "HH:MM"
-	FotoUrl       string `json:"foto_url" binding:"required"`
+	FotoUrl       string `json:"foto_url"`
 	Instructor    string `json:"instructor" binding:"required"`
 	Categoria     string `json:"categoria" binding:"required"`
 	SucursalID    *uint  `json:"sucursal_id,omitempty"` // TODO: Validar que existe
@@ -44,7 +44,7 @@ type ActividadUpdate struct {
 	Dia           string `json:"dia" binding:"required"`
 	HorarioInicio string `json:"horario_inicio" binding:"required"`
 	HorarioFinal  string `json:"horario_final" binding:"required"`
-	FotoUrl       string `json:"foto_url" binding:"required"`
+	FotoUrl       string `json:"foto_url"`
 	Instructor    string `json:"instructor" binding:"required"`
 	Categoria     string `json:"categoria" binding:"required"`
 	SucursalID    *uint  `json:"sucursal_id,omitempty"`
