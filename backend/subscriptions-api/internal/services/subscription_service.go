@@ -52,7 +52,24 @@ func (s *SubscriptionService) CreateSubscription(ctx context.Context, req dtos.C
 		return nil, fmt.Errorf("usuario no válido: %w", err)
 	}
 
-	// 2. Obtener plan
+	// 2. Verificar si el usuario ya tiene una suscripción activa
+	existingSubscription, err := s.subscriptionRepo.FindActiveByUserID(ctx, req.UsuarioID)
+	if err == nil && existingSubscription != nil {
+		// Encontró una suscripción activa, no permitir crear otra
+		return nil, fmt.Errorf("ya tienes una suscripción activa. No puedes crear otra hasta que expire o sea cancelada")
+	}
+
+	// Verificar si hay suscripciones pendientes de pago
+	filters := map[string]interface{}{
+		"usuario_id": req.UsuarioID,
+		"estado":     "pendiente_pago",
+	}
+	pendingSubscriptions, errPending := s.subscriptionRepo.FindAll(ctx, filters)
+	if errPending == nil && len(pendingSubscriptions) > 0 {
+		return nil, fmt.Errorf("ya tienes una suscripción pendiente de pago. Por favor completa el pago o cancélala antes de crear una nueva")
+	}
+
+	// 3. Obtener plan
 	planObjID, err := primitive.ObjectIDFromHex(req.PlanID)
 	if err != nil {
 		return nil, fmt.Errorf("ID de plan inválido")
@@ -67,11 +84,11 @@ func (s *SubscriptionService) CreateSubscription(ctx context.Context, req dtos.C
 		return nil, fmt.Errorf("el plan no está activo")
 	}
 
-	// 3. Calcular fechas
+	// 4. Calcular fechas
 	now := time.Now()
 	fechaVencimiento := now.AddDate(0, 0, plan.DuracionDias)
 
-	// 4. Crear suscripción
+	// 5. Crear suscripción
 	subscription := &entities.Subscription{
 		ID:               primitive.NewObjectID(),
 		UsuarioID:        req.UsuarioID,
@@ -90,12 +107,12 @@ func (s *SubscriptionService) CreateSubscription(ctx context.Context, req dtos.C
 		UpdatedAt:             now,
 	}
 
-	// 5. Guardar en repositorio
+	// 6. Guardar en repositorio
 	if err := s.subscriptionRepo.Create(ctx, subscription); err != nil {
 		return nil, err
 	}
 
-	// 6. Publicar evento
+	// 7. Publicar evento
 	eventData := map[string]interface{}{
 		"usuario_id": subscription.UsuarioID,
 		"plan_id":    subscription.PlanID.Hex(),
@@ -103,7 +120,7 @@ func (s *SubscriptionService) CreateSubscription(ctx context.Context, req dtos.C
 	}
 	s.eventPublisher.PublishSubscriptionEvent("create", subscription.ID.Hex(), eventData)
 
-	// 7. Mapear a DTO de respuesta
+	// 8. Mapear a DTO de respuesta
 	return s.mapSubscriptionToResponse(subscription, plan.Nombre), nil
 }
 

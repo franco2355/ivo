@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PAYMENTS_API, SUBSCRIPTIONS_API } from '../config/api';
 import '../styles/Checkout.css';
@@ -19,6 +19,7 @@ const Checkout = () => {
     const [showCheckout, setShowCheckout] = useState(false);
     const [currentPaymentId, setCurrentPaymentId] = useState(null);
     const [pollingInterval, setPollingInterval] = useState(null);
+    const isSubmitting = useRef(false); // Ref para prevenir doble submit
 
     const userId = localStorage.getItem("idUsuario");
     const isAdmin = localStorage.getItem("isAdmin") === "true";
@@ -134,12 +135,24 @@ const Checkout = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Prevenir múltiples envíos con doble verificación
+        if (processing || isSubmitting.current) {
+            console.log('[Checkout] ⚠️ Ya hay un proceso en curso, ignorando click');
+            toast.warning('Ya se está procesando tu suscripción, por favor espera...');
+            return;
+        }
+
+        // Bloquear inmediatamente
+        isSubmitting.current = true;
         setProcessing(true);
 
         try {
             const token = localStorage.getItem('access_token');
             if (!token) {
                 toast.warning("Debes iniciar sesión para continuar");
+                setProcessing(false);
+                isSubmitting.current = false;
                 navigate('/login');
                 return;
             }
@@ -281,9 +294,35 @@ const Checkout = () => {
 
         } catch (error) {
             console.error("[Checkout] ❌ Error:", error);
-            toast.error(`Error al procesar la suscripción: ${error.message}`);
+
+            // Manejar errores específicos con mensajes más amigables
+            const errorMessage = error.message || 'Error desconocido';
+
+            if (errorMessage.includes('ya tienes una suscripción activa')) {
+                toast.error('Ya tienes una suscripción activa', {
+                    duration: 5000,
+                });
+                toast.info('Podés ver los detalles de tu suscripción actual en "Mi Suscripción"', {
+                    duration: 5000,
+                });
+                setTimeout(() => navigate('/mi-suscripcion'), 2000);
+            } else if (errorMessage.includes('suscripción pendiente de pago')) {
+                toast.error('Ya tienes una suscripción pendiente de pago', {
+                    duration: 5000,
+                });
+                toast.info('Por favor completa el pago pendiente o contacta con soporte para cancelarla', {
+                    duration: 5000,
+                });
+                setTimeout(() => navigate('/mi-suscripcion'), 2000);
+            } else if (errorMessage.includes('plan no está activo')) {
+                toast.error('Este plan ya no está disponible');
+                setTimeout(() => navigate('/planes'), 2000);
+            } else {
+                toast.error(`Error al procesar la suscripción: ${errorMessage}`);
+            }
         } finally {
             setProcessing(false);
+            isSubmitting.current = false; // Desbloquear
         }
     };
 

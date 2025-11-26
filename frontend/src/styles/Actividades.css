@@ -81,6 +81,14 @@
     @apply bg-[#45a049];
   }
 
+  .inscripcion-button.cancelar {
+    @apply bg-[#dc3545] text-white;
+  }
+
+  .inscripcion-button.cancelar:hover {
+    @apply bg-[#c82333];
+  }
+
   .ver-mas-button {
     @apply bg-secondary text-white;
   }

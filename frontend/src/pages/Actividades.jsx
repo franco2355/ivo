@@ -41,7 +41,7 @@ const Actividades = () => {
     // Ejecutar búsqueda cuando cambien los filtros (con debounce en búsqueda)
     useEffect(() => {
         searchActividades();
-    }, [debouncedBusqueda, filtros.categoria, filtros.dia, filtros.soloInscripto]);
+    }, [debouncedBusqueda, filtros.categoria, filtros.dia, filtros.soloInscripto, inscripciones]);
 
     const searchActividades = async () => {
         try {
@@ -51,10 +51,11 @@ const Actividades = () => {
             const response = await fetch(ACTIVITIES_API.actividades);
 
             if (response.ok) {
-                const data = await response.json();
-                console.log("Activities loaded:", data);
+                const responseData = await response.json();
+                console.log("Activities loaded:", responseData);
 
-                let results = data || [];
+                // El API ahora devuelve { data: [...], total, page, etc }
+                let results = responseData.data || responseData || [];
 
                 // Filtrar por búsqueda (título, descripción, instructor)
                 if (debouncedBusqueda) {
@@ -83,10 +84,13 @@ const Actividades = () => {
 
                 // Filtrar solo inscripto
                 if (filtros.soloInscripto) {
-                    const idsInscripto = inscripciones.filter(insc => insc.is_activa).map(insc => insc.id_actividad);
+                    const idsInscripto = inscripciones.filter(insc => insc.is_activa).map(insc => insc.actividad_id);
+                    console.log("IDs inscritos:", idsInscripto);
+                    console.log("Actividades antes del filtro:", results.map(a => a.id));
                     results = results.filter(actividad =>
-                        idsInscripto.includes(parseInt(actividad.id))
+                        idsInscripto.includes(actividad.id)
                     );
+                    console.log("Actividades después del filtro:", results.map(a => a.id));
                 }
 
                 // Mapear campos de activities-api a formato esperado por el frontend
@@ -116,17 +120,23 @@ const Actividades = () => {
     };
     
     const fetchInscripciones = async () => {
+        if (!userId) {
+            console.log("No hay usuario logueado, saltando inscripciones");
+            return;
+        }
+
         try {
-            const response = await fetch(ACTIVITIES_API.inscripciones, {
-                headers: {'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            },
+            const response = await fetch(ACTIVITIES_API.inscripcionesByUsuario(userId), {
+                headers: {'Authorization': `Bearer ${localStorage.getItem('access_token')}`}
             });
             if (response.ok) {
-                const resp = await response.json();
-                const data = resp.filter(insc => insc.is_activa)
+                const data = await response.json();
+                const inscripcionesActivas = Array.isArray(data)
+                    ? data.filter(insc => insc.is_activa)
+                    : [];
 
-                console.log("Inscripciones cargadas:", data);
-                setInscripciones(data);
+                console.log("Inscripciones cargadas:", inscripcionesActivas);
+                setInscripciones(inscripcionesActivas);
             } else if (isAuthError(response)) {
                 handleSessionExpired(toast, navigate);
             }
@@ -306,7 +316,7 @@ const Actividades = () => {
             });
 
             if (response.status == 204) {
-                toast.success("Desinscrito exitosamente");
+                toast.success("Inscripción cancelada exitosamente");
                 fetchInscripciones();
             } else if (isAuthError(response)) {
                 handleSessionExpired(toast, navigate);
@@ -524,14 +534,14 @@ const Actividades = () => {
                                                     </div>
                                                 ) : (
                                                     <button
-                                                        className="inscripcion-button"
+                                                        className={`inscripcion-button ${estaInscripto(actividad.id_actividad) ? 'cancelar' : ''}`}
                                                         onClick={() =>
                                                             estaInscripto(actividad.id_actividad) ?
                                                                 handleUnenrolling(actividad.id_actividad) :
                                                                 handleEnroling(actividad.id_actividad)
                                                         }
                                                     >
-                                                        {estaInscripto(actividad.id_actividad) ? "Desinscribir ❌" : "Inscribir ✔️"}
+                                                        {estaInscripto(actividad.id_actividad) ? "Cancelar Inscripción" : "Inscribirse"}
                                                     </button>
                                                 )}
                                             </>

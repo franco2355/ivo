@@ -47,6 +47,9 @@ func (c *UsersController) Register(ctx *gin.Context) {
 	// Llamar al service
 	user, token, err := c.service.Register(ctx.Request.Context(), userReg)
 	if err != nil {
+		// LOG DETALLADO DEL ERROR
+		ctx.Writer.Header().Set("X-Debug-Error", err.Error())
+
 		// Determinar código de estado y mensaje según el error
 		statusCode := http.StatusInternalServerError
 		errorMessage := "Error al registrar usuario"
