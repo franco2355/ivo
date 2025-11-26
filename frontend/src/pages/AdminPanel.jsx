@@ -68,9 +68,13 @@ const AdminPanel = () => {
         try {
             const response = await fetch(ACTIVITIES_API.actividades);
             if (response.ok) {
-                const data = await response.json();
-                // Filtrar actividades que tengan id_actividad válido
-                const actividadesValidas = data.filter(act => act.id_actividad);
+                const result = await response.json();
+                // El API ahora devuelve { data: [...], total, page, etc }
+                const activitiesArray = result.data || result;
+                // Filtrar actividades que tengan id o id_actividad válido
+                const actividadesValidas = Array.isArray(activitiesArray)
+                    ? activitiesArray.filter(act => act.id_actividad || act.id)
+                    : [];
                 setActividades(actividadesValidas);
             }
         } catch (error) {

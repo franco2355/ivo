@@ -39,7 +39,7 @@ func NewMySQLInscripcionesRepository(db *gorm.DB) *MySQLInscripcionesRepository 
 }
 
 // ListByUser obtiene todas las inscripciones de un usuario
-// Solo devuelve inscripciones de actividades NO eliminadas (deleted_at IS NULL)
+// Solo devuelve inscripciones de actividades activas
 // Migrado de backend/clients/inscripcion/inscripcion_client.go:12
 func (r *MySQLInscripcionesRepository) ListByUser(ctx context.Context, usuarioID uint) ([]domain.Inscripcion, error) {
 	var inscripcionesDAO []dao.Inscripcion
@@ -47,7 +47,7 @@ func (r *MySQLInscripcionesRepository) ListByUser(ctx context.Context, usuarioID
 	err := r.db.WithContext(ctx).
 		Joins("JOIN actividades ON inscripciones.actividad_id = actividades.id_actividad").
 		Where("inscripciones.usuario_id = ?", usuarioID).
-		Where("actividades.deleted_at IS NULL").
+		Where("actividades.activa = ?", true).
 		Find(&inscripcionesDAO).Error
 
 	if err != nil {
@@ -64,14 +64,14 @@ func (r *MySQLInscripcionesRepository) ListByUser(ctx context.Context, usuarioID
 }
 
 // GetByUserAndActividad obtiene una inscripción específica
-// Solo devuelve la inscripción si la actividad NO está eliminada (deleted_at IS NULL)
+// Solo devuelve la inscripción si la actividad está activa
 func (r *MySQLInscripcionesRepository) GetByUserAndActividad(ctx context.Context, usuarioID, actividadID uint) (domain.Inscripcion, error) {
 	var inscripcionDAO dao.Inscripcion
 
 	err := r.db.WithContext(ctx).
 		Joins("JOIN actividades ON inscripciones.actividad_id = actividades.id_actividad").
 		Where("inscripciones.usuario_id = ? AND inscripciones.actividad_id = ?", usuarioID, actividadID).
-		Where("actividades.deleted_at IS NULL").
+		Where("actividades.activa = ?", true).
 		First(&inscripcionDAO).Error
 
 	if err != nil {
