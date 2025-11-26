@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditarActividadModal from '../components/EditarActividadModal';
 import AgregarActividadModal from '../components/AgregarActividadModal';
@@ -17,24 +17,6 @@ const AdminPanel = () => {
     const [validandoSesion, setValidandoSesion] = useState(true);
     const navigate = useNavigate();
     const toast = useToastContext();
-
-    // Función para cargar actividades (con useCallback para evitar re-renders)
-    const fetchActividades = useCallback(async () => {
-        try {
-            const response = await fetch(ACTIVITIES_API.actividades);
-            if (response.ok) {
-                const responseData = await response.json();
-                // El API devuelve { data: [...], total, page, etc }
-                const data = responseData.data || responseData || [];
-                // Filtrar actividades que tengan id válido (el API devuelve "id" no "id_actividad")
-                const actividadesValidas = Array.isArray(data) ? data.filter(act => act.id) : [];
-                setActividades(actividadesValidas);
-            }
-        } catch (error) {
-            console.error("Error al cargar actividades:", error);
-            toast.error('Error al cargar las actividades');
-        }
-    }, [toast]);
 
     // Validar sesión con el backend al cargar
     useEffect(() => {
@@ -80,7 +62,26 @@ const AdminPanel = () => {
         };
 
         validarSesionAdmin();
-    }, [navigate, toast, fetchActividades]);
+    }, [navigate, toast]);
+
+    const fetchActividades = async () => {
+        try {
+            const response = await fetch(ACTIVITIES_API.actividades);
+            if (response.ok) {
+                const result = await response.json();
+                // El API ahora devuelve { data: [...], total, page, etc }
+                const activitiesArray = result.data || result;
+                // Filtrar actividades que tengan id o id_actividad válido
+                const actividadesValidas = Array.isArray(activitiesArray)
+                    ? activitiesArray.filter(act => act.id_actividad || act.id)
+                    : [];
+                setActividades(actividadesValidas);
+            }
+        } catch (error) {
+            console.error("Error al cargar actividades:", error);
+            toast.error('Error al cargar las actividades');
+        }
+    };
 
     const handleEditar = (actividad) => {
         setActividadEditar(actividad);

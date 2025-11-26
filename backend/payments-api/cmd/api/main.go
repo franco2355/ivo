@@ -184,6 +184,13 @@ func registerRoutes(
 
 		// Procesar reembolso
 		paymentRoutes.POST("/:id/refund", refundPaymentHandler(paymentService))
+
+		// ========== RUTAS PARA PAGOS EN EFECTIVO (ADMIN) ⭐ ==========
+		// Aprobar pago en efectivo (solo admin)
+		paymentRoutes.POST("/:id/approve", paymentController.ApproveCashPayment)
+
+		// Rechazar pago en efectivo (solo admin)
+		paymentRoutes.POST("/:id/reject", paymentController.RejectCashPayment)
 	}
 
 	// ========== WEBHOOKS ==========

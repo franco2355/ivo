@@ -92,6 +92,12 @@ func (s *ActividadesServiceImpl) Create(ctx context.Context, actividadCreate dom
 		return domain.ActividadResponse{}, err
 	}
 
+	// Aplicar valor por defecto para FotoUrl si está vacío
+	fotoUrl := actividadCreate.FotoUrl
+	if fotoUrl == "" {
+		fotoUrl = "https://via.placeholder.com/400x300?text=Sin+Imagen"
+	}
+
 	// Crear dominio
 	actividad := domain.Actividad{
 		Titulo:        actividadCreate.Titulo,
@@ -100,7 +106,7 @@ func (s *ActividadesServiceImpl) Create(ctx context.Context, actividadCreate dom
 		Dia:           actividadCreate.Dia,
 		HorarioInicio: actividadCreate.HorarioInicio,
 		HorarioFinal:  actividadCreate.HorarioFinal,
-		FotoUrl:       actividadCreate.FotoUrl,
+		FotoUrl:       fotoUrl,
 		Instructor:    actividadCreate.Instructor,
 		Categoria:     actividadCreate.Categoria,
 		SucursalID:    actividadCreate.SucursalID,
@@ -141,6 +147,12 @@ func (s *ActividadesServiceImpl) Update(ctx context.Context, id uint, actividadU
 		return domain.ActividadResponse{}, err
 	}
 
+	// Aplicar valor por defecto para FotoUrl si está vacío
+	fotoUrl := actividadUpdate.FotoUrl
+	if fotoUrl == "" {
+		fotoUrl = "https://via.placeholder.com/400x300?text=Sin+Imagen"
+	}
+
 	// Crear dominio
 	actividad := domain.Actividad{
 		Titulo:        actividadUpdate.Titulo,
@@ -149,7 +161,7 @@ func (s *ActividadesServiceImpl) Update(ctx context.Context, id uint, actividadU
 		Dia:           actividadUpdate.Dia,
 		HorarioInicio: actividadUpdate.HorarioInicio,
 		HorarioFinal:  actividadUpdate.HorarioFinal,
-		FotoUrl:       actividadUpdate.FotoUrl,
+		FotoUrl:       fotoUrl,
 		Instructor:    actividadUpdate.Instructor,
 		Categoria:     actividadUpdate.Categoria,
 		SucursalID:    actividadUpdate.SucursalID,

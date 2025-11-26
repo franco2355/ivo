@@ -2,10 +2,10 @@
 
 const API_BASE_URLS = {
   users: 'http://localhost:8080',
-  subscriptions: 'http://localhost:8081', // Backend en desarrollo - usar mock
+  subscriptions: 'http://localhost:8081',
   activities: 'http://localhost:8082',
   payments: 'http://localhost:8083',
-  search: 'http://localhost:8084' // Search API con Solr
+  search: 'http://localhost:8084'
 };
 
 // Flag para indicar qué APIs están en desarrollo (usarán mock data)
@@ -61,6 +61,8 @@ export const PAYMENTS_API = {
   paymentsByStatus: (status) => `${API_BASE_URLS.payments}/payments/status?status=${status}`,
   updateStatus: (id) => `${API_BASE_URLS.payments}/payments/${id}/status`,
   processPayment: (id) => `${API_BASE_URLS.payments}/payments/${id}/process`,
+  approveCashPayment: (id) => `${API_BASE_URLS.payments}/payments/${id}/approve`,
+  rejectCashPayment: (id) => `${API_BASE_URLS.payments}/payments/${id}/reject`,
   healthz: `${API_BASE_URLS.payments}/healthz`
 };
 

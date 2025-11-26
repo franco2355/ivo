@@ -21,10 +21,10 @@ type Actividad struct {
 	FotoUrl       string         `gorm:"column:foto_url;type:varchar(511);not null"`
 	Instructor    string         `gorm:"type:varchar(50);not null"`
 	Categoria     string         `gorm:"type:varchar(40);not null"`
-	SucursalID    *uint          `gorm:"column:sucursal_id;index"` // TODO: Agregar FK cuando se cree Sucursal
-	CreatedAt     time.Time      `gorm:"autoCreateTime"`
-	UpdatedAt     time.Time      `gorm:"autoUpdateTime"`
-	DeletedAt     gorm.DeletedAt `gorm:"index"` // Soft delete support
+	SucursalID    *uint     `gorm:"column:sucursal_id;index"` // TODO: Agregar FK cuando se cree Sucursal
+	CreatedAt     time.Time `gorm:"autoCreateTime"`
+	UpdatedAt     time.Time `gorm:"autoUpdateTime"`
+	// DeletedAt removido - la tabla no tiene esta columna
 
 	// Relación con Inscripciones
 	Inscripciones []Inscripcion `gorm:"foreignKey:ActividadID;constraint:OnDelete:CASCADE"`
@@ -56,11 +56,6 @@ func (ac *Actividad) BeforeUpdate(tx *gorm.DB) (err error) {
 
 // ToDomain convierte de DAO (MySQL) a Domain (negocio)
 func (a Actividad) ToDomain() domain.Actividad {
-	var deletedAt *time.Time
-	if a.DeletedAt.Valid {
-		deletedAt = &a.DeletedAt.Time
-	}
-
 	return domain.Actividad{
 		ID:            a.ID,
 		Titulo:        a.Titulo,
@@ -75,7 +70,7 @@ func (a Actividad) ToDomain() domain.Actividad {
 		SucursalID:    a.SucursalID,
 		CreatedAt:     a.CreatedAt,
 		UpdatedAt:     a.UpdatedAt,
-		DeletedAt:     deletedAt,
+		DeletedAt:     nil, // La tabla no tiene soft delete
 	}
 }
 

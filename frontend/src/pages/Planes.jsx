@@ -8,15 +8,53 @@ const Planes = () => {
     const [planes, setPlanes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [activeSuscripcion, setActiveSuscripcion] = useState(null);
     const navigate = useNavigate();
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     const isAdmin = localStorage.getItem("isAdmin") === "true";
+    const userId = localStorage.getItem("idUsuario");
     const toast = useToastContext();
 
     useEffect(() => {
-        console.log('[Planes] Componente montado, cargando planes...');
-        cargarPlanes();
+        console.log('[Planes] Componente montado, cargando datos...');
+        cargarDatos();
     }, []);
+
+    // Recargar planes cuando cambie la suscripción activa
+    useEffect(() => {
+        if (planes.length > 0 && activeSuscripcion) {
+            // Filtrar el plan activo de la lista
+            const planesDisponibles = planes.filter(plan => plan._id !== activeSuscripcion.plan_id);
+            if (planesDisponibles.length !== planes.length) {
+                console.log('[Planes] Filtrando plan activo de la lista');
+                setPlanes(planesDisponibles);
+            }
+        }
+    }, [activeSuscripcion]);
+
+    const cargarDatos = async () => {
+        // Primero cargar la suscripción activa si el usuario está logueado
+        if (isLoggedIn && userId) {
+            await cargarSuscripcionActiva();
+        }
+        // Luego cargar los planes
+        await cargarPlanes();
+    };
+
+    const cargarSuscripcionActiva = async () => {
+        try {
+            const response = await fetch(SUBSCRIPTIONS_API.activeSubscription(userId));
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.estado === 'activa') {
+                    setActiveSuscripcion(data);
+                    console.log('[Planes] Suscripción activa encontrada:', data);
+                }
+            }
+        } catch (error) {
+            console.error('[Planes] Error al cargar suscripción activa:', error);
+        }
+    };
 
     const cargarPlanes = async () => {
         try {
@@ -37,7 +75,15 @@ const Planes = () => {
             // Subscriptions API devuelve { plans: [...], total, page, ... }
             if (data && Array.isArray(data.plans)) {
                 console.log('[Planes] Planes cargados:', data.plans.length);
-                setPlanes(data.plans);
+
+                // Filtrar el plan al que ya está suscrito (si existe)
+                let planesDisponibles = data.plans;
+                if (activeSuscripcion && activeSuscripcion.plan_id) {
+                    planesDisponibles = data.plans.filter(plan => plan._id !== activeSuscripcion.plan_id);
+                    console.log('[Planes] Plan activo filtrado en carga inicial. Planes disponibles:', planesDisponibles.length);
+                }
+
+                setPlanes(planesDisponibles);
             } else if (data.plans === null || data.total === 0) {
                 // No hay planes, pero no es un error
                 console.warn('[Planes] No hay planes disponibles');
@@ -65,6 +111,12 @@ const Planes = () => {
         if (!isLoggedIn) {
             toast.warning("Debes iniciar sesión para suscribirte a un plan");
             navigate('/login');
+            return;
+        }
+
+        // Verificar si ya tiene este plan activo
+        if (activeSuscripcion && activeSuscripcion.plan_id === planId) {
+            toast.info(`Ya tienes una suscripción activa al ${activeSuscripcion.plan_nombre}`);
             return;
         }
 
