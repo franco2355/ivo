@@ -32,9 +32,11 @@ const Actividades = () => {
     const debouncedBusqueda = useDebounce(filtros.busqueda, 500);
 
     useEffect(() => {
-        if (isLoggedIn && !isAdmin) {
+        if (isLoggedIn) {
             fetchInscripciones();
-            fetchSuscripcionActiva();
+            if (!isAdmin) {
+                fetchSuscripcionActiva();
+            }
         }
     }, []);
 
@@ -143,11 +145,21 @@ const Actividades = () => {
                 console.log("✅ INSCRIPCIONES ACTIVAS:", inscripcionesActivas);
                 console.log("✅ IDs de actividades inscritas:", inscripcionesActivas.map(i => i.actividad_id));
                 setInscripciones(inscripcionesActivas);
-            } else if (isAuthError(response)) {
-                handleSessionExpired(toast, navigate);
+            } else {
+                console.error("❌ ERROR al cargar inscripciones. Status:", response.status);
+                const errorData = await response.json().catch(() => ({}));
+                console.error("❌ Error data:", errorData);
+
+                if (isAuthError(response)) {
+                    handleSessionExpired(toast, navigate);
+                } else {
+                    // Si hay error pero no es de autenticación, dejamos inscripciones vacío
+                    setInscripciones([]);
+                }
             }
         } catch (error) {
-            console.error("Error al cargar inscripciones:", error);
+            console.error("❌ EXCEPCIÓN al cargar inscripciones:", error);
+            setInscripciones([]);
         }
     };
 
@@ -189,22 +201,20 @@ const Actividades = () => {
     // Helper: Verificar si una actividad está permitida por el plan del usuario
     const actividadPermitida = (actividad) => {
         if (!suscripcionActiva || !suscripcionActiva.plan_info) {
-            return true; // Si no hay plan cargado, no mostramos restricciones aún
+            return true;
         }
 
         const plan = suscripcionActiva.plan_info;
 
-        // Si el plan tiene acceso completo, todas las actividades están permitidas
         if (plan.tipo_acceso === "completo") {
             return true;
         }
 
-        // Si el plan es limitado, verificar si la categoría está en las actividades permitidas
         if (plan.tipo_acceso === "limitado" && plan.actividades_permitidas) {
             return plan.actividades_permitidas.includes(actividad.categoria);
         }
 
-        return true; // Por defecto, permitir
+        return true;
     };
 
     const handleFiltroChange = (e) => {
@@ -386,19 +396,9 @@ const Actividades = () => {
     };
 
     const estaInscripto = (id_actividad) => {
-        console.log("🔍 VERIFICANDO inscripción para actividad ID:", id_actividad, "tipo:", typeof id_actividad);
-        console.log("🔍 INSCRIPCIONES disponibles:", inscripciones);
-        const resultado = inscripciones.some(insc => {
-            const inscActividadId = Number(insc.actividad_id);
-            const actividadId = Number(id_actividad);
-            const match = inscActividadId === actividadId && insc.is_activa;
-            if (match) {
-                console.log(`✅ MATCH ENCONTRADO: actividad_id=${inscActividadId} === ${actividadId}`);
-            }
-            return match;
-        });
-        console.log("🔍 RESULTADO estaInscripto:", resultado);
-        return resultado;
+        return inscripciones.some(insc =>
+            Number(insc.actividad_id) === Number(id_actividad) && insc.is_activa
+        );
     };
 
     const toggleExpand = (actividadId) => {
@@ -473,9 +473,11 @@ const Actividades = () => {
                         No se encontraron actividades.
                     </div>
                 ) : (
-                    actividadesFiltradas.map((actividad) => (
-                        <div 
-                            className={`actividad-card ${expandedActividadId === actividad.id ? 'expanded' : ''}`} 
+                    actividadesFiltradas.map((actividad) => {
+                        const inscrito = estaInscripto(actividad.id);
+                        return (
+                        <div
+                            className={`actividad-card ${expandedActividadId === actividad.id ? 'expanded' : ''}`}
                             key={actividad.id}
                         >
                             <h3>{actividad.titulo}</h3>
@@ -549,14 +551,14 @@ const Actividades = () => {
                                                     </div>
                                                 ) : (
                                                     <button
-                                                        className={`inscripcion-button ${estaInscripto(actividad.id) ? 'cancelar' : ''}`}
+                                                        className={`inscripcion-button ${inscrito ? 'cancelar' : ''}`}
                                                         onClick={() =>
-                                                            estaInscripto(actividad.id) ?
+                                                            inscrito ?
                                                                 handleUnenrolling(actividad.id) :
                                                                 handleEnroling(actividad.id)
                                                         }
                                                     >
-                                                        {estaInscripto(actividad.id) ? "Cancelar Inscripción" : "Inscribirse"}
+                                                        {inscrito ? "Cancelar Inscripción" : "Inscribirse"}
                                                     </button>
                                                 )}
                                             </>
@@ -571,7 +573,8 @@ const Actividades = () => {
                                 </button>
                             </div>
                         </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 
