@@ -122,6 +122,7 @@ func registerRoutes(router *gin.Engine, searchController *controllers.SearchCont
 		searchRoutes.POST("", searchController.Search)              // Búsqueda avanzada
 		searchRoutes.GET("", searchController.QuickSearch)          // Búsqueda rápida (query params)
 		searchRoutes.GET("/stats", searchController.GetStats)       // Estadísticas del índice
+		searchRoutes.GET("/categories", searchController.GetCategories) // Categorías únicas
 		searchRoutes.GET("/:id", searchController.GetDocument)      // Obtener documento por ID
 		searchRoutes.POST("/index", searchController.IndexDocument) // Indexar documento manualmente
 		searchRoutes.DELETE("/:id", searchController.DeleteDocument) // Eliminar documento

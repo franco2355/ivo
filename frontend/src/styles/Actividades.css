@@ -114,43 +114,54 @@
   }
 
   .filtros-container {
-    @apply flex items-center gap-4 justify-end p-6 bg-white rounded-card w-full box-border m-0;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    @apply flex items-center gap-3 justify-center p-5 bg-white rounded-xl w-full max-w-[900px] mx-auto box-border;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   }
 
   .search-wrapper {
-    @apply relative flex items-center flex-1 max-w-[500px] min-w-[300px];
+    @apply relative flex items-center flex-1 min-w-[200px];
   }
 
   .search-icon {
-    @apply absolute left-4 text-gray text-base pointer-events-none;
+    @apply absolute left-3 text-[#9ca3af] text-sm pointer-events-none;
   }
 
   .filtro-input {
-    @apply text-black w-full border border-[#e0e0e0] rounded-2xl text-[1.05rem] bg-white font-medium;
-    padding: 1.1rem 1rem 1.1rem 2.8rem;
+    @apply text-[#333] w-full border border-[#e5e7eb] rounded-lg text-sm bg-[#f9fafb] font-normal;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
     transition: all 0.2s ease;
+    height: 44px;
   }
 
   .filtro-input::placeholder {
-    @apply text-[#888] opacity-100 text-[1.05rem] font-medium;
-    letter-spacing: 0.5px;
+    @apply text-[#9ca3af] opacity-100 text-sm font-normal;
   }
 
   .filtro-input:focus {
-    @apply text-black outline-none border-primary;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    @apply text-[#333] outline-none border-primary bg-white;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15);
   }
 
   .filtro-select {
-    @apply text-black min-w-[140px] border border-[#e0e0e0] rounded-lg text-sm bg-white cursor-pointer;
-    padding: 0.9rem 1rem;
+    @apply text-[#333] min-w-[130px] border border-[#e5e7eb] rounded-lg text-sm bg-[#f9fafb] cursor-pointer font-normal;
+    padding: 0 1rem;
     transition: all 0.2s ease;
+    height: 44px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
   }
 
   .filtro-select:focus {
-    @apply text-black outline-none border-primary;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    @apply text-[#333] outline-none border-primary bg-white;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15);
+  }
+
+  .filtro-select:hover {
+    @apply border-[#d1d5db] bg-white;
   }
 
   .actividad-card.expanded {
@@ -271,7 +282,7 @@
     }
 
     .filtros-container {
-      @apply flex-col items-stretch gap-4 p-4 w-full m-0;
+      @apply flex-col items-stretch gap-3 p-4 w-full max-w-none;
     }
 
     .search-wrapper {
@@ -279,6 +290,10 @@
     }
 
     .filtro-select {
+      @apply w-full;
+    }
+
+    .filtro-input {
       @apply w-full;
     }
 

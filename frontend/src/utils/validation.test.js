@@ -26,33 +26,39 @@ describe('Validation Utils', () => {
 
     describe('validatePassword', () => {
         it('should validate strong passwords', () => {
-            const result = validatePassword('Password123');
+            const result = validatePassword('Password123!');
             expect(result.valid).toBe(true);
             expect(result.errors).toHaveLength(0);
         });
 
         it('should reject passwords that are too short', () => {
-            const result = validatePassword('Pass1');
+            const result = validatePassword('Pass1!');
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('al menos 8 caracteres');
         });
 
         it('should reject passwords without uppercase', () => {
-            const result = validatePassword('password123');
+            const result = validatePassword('password123!');
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('una letra mayúscula');
         });
 
         it('should reject passwords without lowercase', () => {
-            const result = validatePassword('PASSWORD123');
+            const result = validatePassword('PASSWORD123!');
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('una letra minúscula');
         });
 
         it('should reject passwords without numbers', () => {
-            const result = validatePassword('Password');
+            const result = validatePassword('Password!');
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('un número');
+        });
+
+        it('should reject passwords without special characters', () => {
+            const result = validatePassword('Password123');
+            expect(result.valid).toBe(false);
+            expect(result.errors).toContain('un carácter especial');
         });
     });
 

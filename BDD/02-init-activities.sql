@@ -92,12 +92,29 @@ ON DUPLICATE KEY UPDATE nombre=nombre;
 -- =====================================================
 INSERT INTO actividades (titulo, descripcion, cupo, dia, horario_inicio, horario_final, instructor, categoria, sucursal_id, foto_url)
 VALUES
-    ('Yoga Matutino', 'Clase de yoga para comenzar el día con energía', 20, 'Lunes', '2024-01-01 08:00:00', '2024-01-01 09:00:00', 'María González', 'yoga', 1, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b'),
-    ('Spinning Intenso', 'Entrenamiento cardiovascular de alta intensidad', 15, 'Martes', '2024-01-01 18:00:00', '2024-01-01 19:00:00', 'Carlos Pérez', 'spinning', 1, 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'),
-    ('Funcional', 'Entrenamiento funcional para todo el cuerpo', 25, 'Miércoles', '2024-01-01 19:00:00', '2024-01-01 20:00:00', 'Laura Martínez', 'funcional', 2, 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b'),
-    ('Pilates', 'Fortalecimiento del core y flexibilidad', 18, 'Jueves', '2024-01-01 10:00:00', '2024-01-01 11:00:00', 'Ana Rodríguez', 'pilates', 2, 'https://images.unsplash.com/photo-1518611012118-696072aa579a'),
-    ('CrossFit', 'Entrenamiento de alta intensidad variado', 20, 'Viernes', '2024-01-01 17:00:00', '2024-01-01 18:00:00', 'Javier López', 'crossfit', 3, 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438'),
-    ('Zumba', 'Baile fitness con ritmos latinos', 30, 'Sábado', '2024-01-01 11:00:00', '2024-01-01 12:00:00', 'Sofía Fernández', 'baile', 3, 'https://images.unsplash.com/photo-1518310383802-640c2de311b2')
+    -- Lunes
+    ('Yoga Matutino', 'Clase de yoga para comenzar el dia con energia y flexibilidad. Ideal para todos los niveles.', 20, 'Lunes', '2024-01-01 08:00:00', '2024-01-01 09:00:00', 'Maria Gonzalez', 'yoga', 1, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b'),
+    ('Yoga Vespertino', 'Clase de yoga relajante para terminar el dia. Ideal para liberar tensiones.', 20, 'Lunes', '2024-01-01 19:00:00', '2024-01-01 20:00:00', 'Maria Gonzalez', 'yoga', 1, 'https://images.unsplash.com/photo-1506126613408-eca07ce68773'),
+
+    -- Martes
+    ('Spinning Intenso', 'Entrenamiento cardiovascular de alta intensidad en bicicleta estatica.', 15, 'Martes', '2024-01-01 18:00:00', '2024-01-01 19:00:00', 'Carlos Perez', 'spinning', 1, 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'),
+    ('Boxeo', 'Entrenamiento de boxeo. Mejora coordinacion, fuerza y resistencia cardiovascular.', 16, 'Martes', '2024-01-01 19:00:00', '2024-01-01 20:00:00', 'Roberto Sanchez', 'boxeo', 2, 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed'),
+
+    -- Miercoles
+    ('Spinning Matutino', 'Activa tu metabolismo con spinning a primera hora del dia.', 15, 'Miercoles', '2024-01-01 07:00:00', '2024-01-01 08:00:00', 'Carlos Perez', 'spinning', 2, 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'),
+    ('Funcional', 'Entrenamiento funcional para mejorar fuerza, resistencia y movilidad.', 25, 'Miercoles', '2024-01-01 19:00:00', '2024-01-01 20:00:00', 'Laura Martinez', 'funcional', 2, 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b'),
+    ('Stretching', 'Clase de elongacion y flexibilidad. Previene lesiones y mejora movilidad.', 25, 'Miercoles', '2024-01-01 20:00:00', '2024-01-01 21:00:00', 'Maria Gonzalez', 'stretching', 1, 'https://images.unsplash.com/photo-1599901860904-17e6ed7083a0'),
+
+    -- Jueves
+    ('Pilates', 'Fortalecimiento del core y mejora de la postura. Trabaja mente y cuerpo.', 18, 'Jueves', '2024-01-01 10:00:00', '2024-01-01 11:00:00', 'Ana Rodriguez', 'pilates', 2, 'https://images.unsplash.com/photo-1518611012118-696072aa579a'),
+    ('Funcional Avanzado', 'Entrenamiento funcional de alta intensidad para nivel avanzado.', 20, 'Jueves', '2024-01-01 18:00:00', '2024-01-01 19:00:00', 'Laura Martinez', 'funcional', 1, 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b'),
+
+    -- Viernes
+    ('Pilates Reformer', 'Pilates con equipo especializado. Mejora fuerza y flexibilidad.', 12, 'Viernes', '2024-01-01 10:00:00', '2024-01-01 11:00:00', 'Ana Rodriguez', 'pilates', 3, 'https://images.unsplash.com/photo-1518310383802-640c2de311b2'),
+    ('CrossFit', 'Entrenamiento de alta intensidad variado. Desarrolla fuerza y acondicionamiento.', 20, 'Viernes', '2024-01-01 17:00:00', '2024-01-01 18:00:00', 'Javier Lopez', 'crossfit', 3, 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438'),
+
+    -- Sabado
+    ('Zumba', 'Baile fitness con ritmos latinos. Quema calorias mientras te diviertes.', 30, 'Sabado', '2024-01-01 11:00:00', '2024-01-01 12:00:00', 'Sofia Fernandez', 'baile', 3, 'https://images.unsplash.com/photo-1518310383802-640c2de311b2')
 ON DUPLICATE KEY UPDATE titulo=titulo;
 
 -- =====================================================

@@ -27,7 +27,7 @@ export const PASSWORD_VALIDATION = {
     REQUIRE_UPPERCASE: true,
     REQUIRE_LOWERCASE: true,
     REQUIRE_NUMBER: true,
-    REQUIRE_SPECIAL: false
+    REQUIRE_SPECIAL: true
 };
 
 // Tamaños de spinners

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditarActividadModal from '../components/EditarActividadModal';
 import AgregarActividadModal from '../components/AgregarActividadModal';
@@ -17,6 +17,24 @@ const AdminPanel = () => {
     const [validandoSesion, setValidandoSesion] = useState(true);
     const navigate = useNavigate();
     const toast = useToastContext();
+
+    // Función para cargar actividades (con useCallback para evitar re-renders)
+    const fetchActividades = useCallback(async () => {
+        try {
+            const response = await fetch(ACTIVITIES_API.actividades);
+            if (response.ok) {
+                const responseData = await response.json();
+                // El API devuelve { data: [...], total, page, etc }
+                const data = responseData.data || responseData || [];
+                // Filtrar actividades que tengan id_actividad válido
+                const actividadesValidas = Array.isArray(data) ? data.filter(act => act.id_actividad) : [];
+                setActividades(actividadesValidas);
+            }
+        } catch (error) {
+            console.error("Error al cargar actividades:", error);
+            toast.error('Error al cargar las actividades');
+        }
+    }, [toast]);
 
     // Validar sesión con el backend al cargar
     useEffect(() => {
@@ -62,22 +80,7 @@ const AdminPanel = () => {
         };
 
         validarSesionAdmin();
-    }, [navigate, toast]);
-
-    const fetchActividades = async () => {
-        try {
-            const response = await fetch(ACTIVITIES_API.actividades);
-            if (response.ok) {
-                const data = await response.json();
-                // Filtrar actividades que tengan id_actividad válido
-                const actividadesValidas = data.filter(act => act.id_actividad);
-                setActividades(actividadesValidas);
-            }
-        } catch (error) {
-            console.error("Error al cargar actividades:", error);
-            toast.error('Error al cargar las actividades');
-        }
-    };
+    }, [navigate, toast, fetchActividades]);
 
     const handleEditar = (actividad) => {
         setActividadEditar(actividad);

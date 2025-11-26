@@ -128,6 +128,9 @@ const Register = () => {
         if (!/[0-9]/.test(password)) {
             errors.push("un número");
         }
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+            errors.push("un carácter especial (!@#$%^&*(),.?\":{}|<>)");
+        }
 
         return errors;
     };
@@ -312,7 +315,7 @@ const Register = () => {
                         className={fieldErrors.password && touched.password ? 'input-error' : ''}
                     />
                     <small className={fieldErrors.password && touched.password ? "password-hint error" : "password-hint"}>
-                        {fieldErrors.password && touched.password ? fieldErrors.password : "Debe tener: 8+ caracteres, mayúscula, minúscula y número"}
+                        {fieldErrors.password && touched.password ? fieldErrors.password : "Debe tener: 8+ caracteres, mayúscula, minúscula, número y carácter especial"}
                     </small>
                 </div>
 

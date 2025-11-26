@@ -113,7 +113,7 @@ services:
       DB_PASS: ${DB_PASS}
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
-      DB_SCHEMA: ${DB_SCHEMA}
+      DB_SCHEMA: ${DB_SCHEMA_USERS}
       JWT_SECRET: ${JWT_SECRET}
     ports:
       - "${USERS_API_PORT}:${USERS_API_PORT}"
@@ -160,7 +160,7 @@ services:
       DB_PASS: ${DB_PASS}
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
-      DB_SCHEMA: ${DB_SCHEMA}
+      DB_SCHEMA: ${DB_SCHEMA_ACTIVITIES}
       JWT_SECRET: ${JWT_SECRET}
       RABBITMQ_URL: ${RABBITMQ_URL}
       RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}

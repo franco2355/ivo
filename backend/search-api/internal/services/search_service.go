@@ -292,3 +292,32 @@ func (s *SearchService) GetStats() map[string]interface{} {
 
 	return stats
 }
+
+// GetUniqueCategories retorna las categorías únicas de las actividades
+func (s *SearchService) GetUniqueCategories() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	categorySet := make(map[string]bool)
+	for _, doc := range s.documents {
+		if doc.Categoria != "" {
+			categorySet[doc.Categoria] = true
+		}
+	}
+
+	categories := make([]string, 0, len(categorySet))
+	for cat := range categorySet {
+		categories = append(categories, cat)
+	}
+
+	// Ordenar alfabéticamente
+	for i := 0; i < len(categories)-1; i++ {
+		for j := i + 1; j < len(categories); j++ {
+			if categories[i] > categories[j] {
+				categories[i], categories[j] = categories[j], categories[i]
+			}
+		}
+	}
+
+	return categories
+}

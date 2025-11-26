@@ -15,6 +15,7 @@ const Actividades = () => {
     const [actividadEditar, setActividadEditar] = useState(null);
     const [expandedActividadId, setExpandedActividadId] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [categorias, setCategorias] = useState([]); // Lista de categorías disponibles
     const [suscripcionActiva, setSuscripcionActiva] = useState(null); // Nueva: info del plan del usuario
     const [filtros, setFiltros] = useState({
         busqueda: "",
@@ -28,15 +29,42 @@ const Actividades = () => {
     const navigate = useNavigate();
     const toast = useToastContext();
 
+    // Función helper para extraer solo la hora de timestamps ISO (ej: "2024-01-01T18:00:00Z" -> "18:00")
+    const extractTime = (timeString) => {
+        if (!timeString) return '';
+        if (timeString.includes('T')) {
+            const timePart = timeString.split('T')[1];
+            return timePart ? timePart.substring(0, 5) : timeString;
+        }
+        return timeString;
+    };
+
     // Debounce solo el campo de búsqueda para mejor performance
     const debouncedBusqueda = useDebounce(filtros.busqueda, 500);
 
+    // Cargar categorías al montar el componente
     useEffect(() => {
+        fetchCategorias();
         if (isLoggedIn && !isAdmin) {
             fetchInscripciones();
             fetchSuscripcionActiva();
         }
     }, []);
+
+    const fetchCategorias = async () => {
+        try {
+            const response = await fetch(SEARCH_API.categories);
+            if (response.ok) {
+                const data = await response.json();
+                setCategorias(data.categories || []);
+                console.log("📂 Categorías cargadas:", data.categories);
+            }
+        } catch (error) {
+            console.error("Error al cargar categorías:", error);
+            // Fallback: categorías por defecto
+            setCategorias(['yoga', 'spinning', 'funcional', 'pilates', 'crossfit', 'baile', 'boxeo', 'stretching']);
+        }
+    };
 
     // Ejecutar búsqueda cuando cambien los filtros (con debounce en búsqueda)
     useEffect(() => {
@@ -47,15 +75,94 @@ const Actividades = () => {
         try {
             setLoading(true);
 
-            // Usar Activities API directamente
+            // Usar Search API con Solr para búsquedas
+            const searchParams = {
+                q: debouncedBusqueda || undefined,
+                type: 'activity', // Solo buscar actividades, no suscripciones
+                categoria: filtros.categoria || undefined,
+                dia: filtros.dia || undefined,
+                page_size: 100 // Traer suficientes resultados
+            };
+
+            const searchUrl = SEARCH_API.buildSearchUrl(searchParams);
+            console.log("🔍 Search URL:", searchUrl);
+
+            const response = await fetch(searchUrl);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log("✅ Search API response:", data);
+
+                let results = data.results || [];
+
+                // Filtrar solo inscripto (esto se hace en cliente porque depende del estado local)
+                if (filtros.soloInscripto) {
+                    const idsInscripto = inscripciones.filter(insc => insc.is_activa).map(insc => insc.id_actividad);
+                    results = results.filter(actividad =>
+                        idsInscripto.includes(parseInt(actividad.id))
+                    );
+                }
+
+                // Mapear campos de Search API a formato esperado por el frontend
+                const mappedResults = results.map(actividad => {
+                    // Extraer solo la hora de los timestamps ISO (ej: "2024-01-01T18:00:00Z" -> "18:00")
+                    const extractTime = (isoString) => {
+                        if (!isoString) return '';
+                        if (isoString.includes('T')) {
+                            const timePart = isoString.split('T')[1];
+                            return timePart ? timePart.substring(0, 5) : isoString;
+                        }
+                        return isoString;
+                    };
+
+                    return {
+                        id_actividad: actividad.id,
+                        titulo: actividad.titulo,
+                        descripcion: actividad.descripcion,
+                        categoria: actividad.categoria,
+                        instructor: actividad.instructor,
+                        dia: actividad.dia,
+                        hora_inicio: extractTime(actividad.horario_inicio),
+                        hora_fin: extractTime(actividad.horario_final),
+                        cupo: actividad.cupo_disponible || actividad.cupo,
+                        lugares: actividad.cupo_disponible || actividad.lugares,
+                        foto_url: actividad.foto_url,
+                        sucursal_id: actividad.sucursal_id
+                    };
+                });
+
+                setActividadesFiltradas(mappedResults);
+                setActividades(mappedResults);
+
+                // Log de cache hit/miss
+                const cacheStatus = response.headers.get('X-Cache');
+                if (cacheStatus) {
+                    console.log(`💾 Cache: ${cacheStatus}`);
+                }
+            } else {
+                // Fallback a Activities API si Search falla
+                console.warn("⚠️ Search API falló, usando fallback a Activities API");
+                await searchActividadesFallback();
+            }
+        } catch (error) {
+            console.error("❌ Error en Search API:", error);
+            // Fallback a Activities API
+            await searchActividadesFallback();
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fallback: usar Activities API directamente si Search API no está disponible
+    const searchActividadesFallback = async () => {
+        try {
             const response = await fetch(ACTIVITIES_API.actividades);
 
             if (response.ok) {
-                const responseData = await response.json();
-                console.log("Activities loaded:", responseData);
+                const data = await response.json();
+                console.log("📋 Fallback - Activities loaded:", data);
 
-                // El API ahora devuelve { data: [...], total, page, etc }
-                let results = responseData.data || responseData || [];
+                let results = data || [];
 
                 // Filtrar por búsqueda (título, descripción, instructor)
                 if (debouncedBusqueda) {
@@ -93,7 +200,7 @@ const Actividades = () => {
                     console.log("Actividades después del filtro:", results.map(a => a.id));
                 }
 
-                // Mapear campos de activities-api a formato esperado por el frontend
+                // Mapear campos
                 const mappedResults = results.map(actividad => ({
                     id_actividad: actividad.id,
                     titulo: actividad.titulo,
@@ -113,9 +220,7 @@ const Actividades = () => {
                 setActividades(mappedResults);
             }
         } catch (error) {
-            console.error("Error al buscar actividades:", error);
-        } finally {
-            setLoading(false);
+            console.error("❌ Error en fallback:", error);
         }
     };
     
@@ -407,14 +512,19 @@ const Actividades = () => {
                         className="filtro-input"
                     />
                 </div>
-                <input
-                    type="text"
+                <select
                     name="categoria"
-                    placeholder="Categoría..."
                     value={filtros.categoria}
                     onChange={handleFiltroChange}
-                    className="filtro-input"
-                />
+                    className="filtro-select"
+                >
+                    <option value="">Categoría</option>
+                    {categorias.map(cat => (
+                        <option key={cat} value={cat}>
+                            {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                        </option>
+                    ))}
+                </select>
                 <select
                     name="dia"
                     value={filtros.dia}

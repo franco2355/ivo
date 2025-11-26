@@ -5,13 +5,13 @@ const API_BASE_URLS = {
   subscriptions: 'http://localhost:8081', // Backend en desarrollo - usar mock
   activities: 'http://localhost:8082',
   payments: 'http://localhost:8083',
-  search: 'http://localhost:8084' // Backend en desarrollo - no usar
+  search: 'http://localhost:8084' // Search API con Solr
 };
 
 // Flag para indicar qué APIs están en desarrollo (usarán mock data)
 export const USE_MOCK = {
   subscriptions: true,  // API en desarrollo por otro equipo
-  search: true,         // API no terminada
+  search: false,        // API operativa - usando Solr
   sucursales: true      // Funcionalidad nueva, backend pendiente
 };
 
@@ -64,13 +64,24 @@ export const PAYMENTS_API = {
   healthz: `${API_BASE_URLS.payments}/healthz`
 };
 
-// Endpoints de Search API (No usar - Backend no terminado)
+// Endpoints de Search API (Operativa - Solr + Memcached)
 export const SEARCH_API = {
   base: API_BASE_URLS.search,
   search: `${API_BASE_URLS.search}/search`,
   searchById: (id) => `${API_BASE_URLS.search}/search/${id}`,
   stats: `${API_BASE_URLS.search}/search/stats`,
-  healthz: `${API_BASE_URLS.search}/healthz`
+  categories: `${API_BASE_URLS.search}/search/categories`,
+  healthz: `${API_BASE_URLS.search}/healthz`,
+  // Helper para construir URL con query params
+  buildSearchUrl: (params) => {
+    const url = new URL(`${API_BASE_URLS.search}/search`);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        url.searchParams.append(key, value);
+      }
+    });
+    return url.toString();
+  }
 };
 
 export default {
