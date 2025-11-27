@@ -2,6 +2,7 @@ package clients
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/streadway/amqp"
@@ -132,32 +133,75 @@ func (r *RabbitMQConsumer) handleMessage(msg amqp.Delivery) {
 
 	log.Printf("📥 Evento recibido: %s.%s (ID: %s)\n", event.Type, event.Action, event.ID)
 
-	// Procesar según la acción
-	switch event.Action {
-	case "create", "update":
-		err = r.searchService.IndexFromEvent(event)
+	// Procesar según el tipo de evento
+	switch event.Type {
+	case "inscription":
+		// Cuando cambia una inscripción, reindexar la actividad afectada
+		err = r.handleInscriptionEvent(event)
 		if err != nil {
-			log.Printf("❌ Error indexando documento: %v\n", err)
+			log.Printf("❌ Error procesando evento de inscripción: %v\n", err)
 			msg.Nack(false, true) // Requeue
 			return
 		}
-		log.Printf("✅ Documento indexado: %s_%s\n", event.Type, event.ID)
+		log.Printf("✅ Actividad reindexada por cambio en inscripción\n")
 
-	case "delete":
-		docID := event.ID  // Usar solo el ID numérico para consistencia
-		err = r.searchService.DeleteDocument(docID)
-		if err != nil {
-			log.Printf("❌ Error eliminando documento: %v\n", err)
-			msg.Nack(false, true)
-			return
+	default:
+		// Para otros eventos (activity, plan, subscription), procesamiento normal
+		switch event.Action {
+		case "create", "update":
+			err = r.searchService.IndexFromEvent(event)
+			if err != nil {
+				log.Printf("❌ Error indexando documento: %v\n", err)
+				msg.Nack(false, true) // Requeue
+				return
+			}
+			log.Printf("✅ Documento indexado: %s_%s\n", event.Type, event.ID)
+
+		case "delete":
+			docID := event.ID  // Usar solo el ID numérico para consistencia
+			err = r.searchService.DeleteDocument(docID)
+			if err != nil {
+				log.Printf("❌ Error eliminando documento: %v\n", err)
+				msg.Nack(false, true)
+				return
+			}
+			log.Printf("🗑️  Documento eliminado: %s\n", docID)
 		}
-		log.Printf("🗑️  Documento eliminado: %s\n", docID)
 	}
 
 	// Invalidar caché relacionado
 	r.cacheService.InvalidatePattern(event.Type)
 
 	msg.Ack(false)
+}
+
+// handleInscriptionEvent procesa eventos de inscripción reindexando la actividad afectada
+func (r *RabbitMQConsumer) handleInscriptionEvent(event dtos.RabbitMQEvent) error {
+	// Extraer actividad_id del evento
+	actividadID, ok := event.Data["actividad_id"]
+	if !ok {
+		log.Printf("⚠️  Evento de inscripción sin actividad_id\n")
+		return nil
+	}
+
+	// Convertir a string
+	actividadIDStr := ""
+	switch v := actividadID.(type) {
+	case float64:
+		actividadIDStr = fmt.Sprintf("%.0f", v)
+	case int:
+		actividadIDStr = fmt.Sprintf("%d", v)
+	case string:
+		actividadIDStr = v
+	default:
+		log.Printf("⚠️  Tipo de actividad_id no soportado: %T\n", v)
+		return nil
+	}
+
+	log.Printf("🔄 Reindexando actividad %s por cambio en inscripción\n", actividadIDStr)
+
+	// Reindexar la actividad desde MySQL para obtener cupo actualizado
+	return r.searchService.ReindexActivityByID(actividadIDStr)
 }
 
 // Close cierra las conexiones

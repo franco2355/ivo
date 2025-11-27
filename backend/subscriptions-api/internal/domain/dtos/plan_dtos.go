@@ -11,6 +11,7 @@ type CreatePlanRequest struct {
 	DuracionDias          int      `json:"duracion_dias" binding:"required,gt=0"`
 	Activo                bool     `json:"activo"`
 	ActividadesPermitidas []string `json:"actividades_permitidas"`
+	ActividadesPorSemana  int      `json:"actividades_por_semana" binding:"omitempty,min=0"` // 0 = ilimitado
 }
 
 // UpdatePlanRequest - DTO para actualizar un plan
@@ -22,6 +23,7 @@ type UpdatePlanRequest struct {
 	DuracionDias          *int      `json:"duracion_dias,omitempty" binding:"omitempty,gt=0"`
 	Activo                *bool     `json:"activo,omitempty"`
 	ActividadesPermitidas *[]string `json:"actividades_permitidas,omitempty"`
+	ActividadesPorSemana  *int      `json:"actividades_por_semana,omitempty" binding:"omitempty,min=0"`
 }
 
 // PlanResponse - DTO para respuesta de un plan
@@ -34,6 +36,7 @@ type PlanResponse struct {
 	DuracionDias          int       `json:"duracion_dias"`
 	Activo                bool      `json:"activo"`
 	ActividadesPermitidas []string  `json:"actividades_permitidas"`
+	ActividadesPorSemana  int       `json:"actividades_por_semana"`
 	CreatedAt             time.Time `json:"created_at"`
 	UpdatedAt             time.Time `json:"updated_at"`
 }

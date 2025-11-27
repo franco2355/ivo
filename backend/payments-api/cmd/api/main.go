@@ -92,7 +92,7 @@ func main() {
 	router.Use(middleware.CORS())
 
 	// ========== 8. REGISTRAR RUTAS ==========
-	registerRoutes(router, paymentController, webhookController, paymentService, mongoDB, rabbitMQClient)
+	registerRoutes(router, paymentController, webhookController, paymentService, mongoDB, rabbitMQClient, cfg)
 
 	// ========== 9. INICIAR SERVIDOR ==========
 	log.Println("")
@@ -130,6 +130,7 @@ func registerRoutes(
 	paymentService *services.PaymentService,
 	mongoDB *database.MongoDB,
 	rabbitMQClient *clients.RabbitMQPublisher,
+	cfg *config.Config,
 ) {
 	// ========== HEALTH CHECK ==========
 	router.GET("/healthz", func(ctx *gin.Context) {
@@ -170,16 +171,36 @@ func registerRoutes(
 		ctx.JSON(http.StatusOK, health)
 	})
 
+	// ========== MIDDLEWARE DE AUTENTICACIÓN ==========
+	jwtSecret := cfg.JWTSecret
+	if jwtSecret == "" {
+		jwtSecret = "your-secret-key" // Valor por defecto para desarrollo
+	}
+	authMiddleware := middleware.JWTAuthMiddleware(jwtSecret)
+	adminMiddleware := middleware.AdminOnlyMiddleware()
+
 	// ========== RUTAS BÁSICAS (compatibilidad) ==========
 	paymentRoutes := router.Group("/payments")
 	{
-		paymentRoutes.POST("", paymentController.CreatePayment)
-		paymentRoutes.GET("", paymentController.GetAllPayments)
-		paymentRoutes.GET("/:id", paymentController.GetPayment)
-		paymentRoutes.GET("/user/:user_id", paymentController.GetPaymentsByUser)
-		paymentRoutes.GET("/entity", paymentController.GetPaymentsByEntity)
-		paymentRoutes.GET("/status", paymentController.GetPaymentsByStatus)
-		paymentRoutes.PATCH("/:id/status", paymentController.UpdatePaymentStatus)
+		// Usuario autenticado puede crear su propio pago (al suscribirse)
+		// Admin también puede crear pagos para otros usuarios
+		paymentRoutes.POST("", authMiddleware, paymentController.CreatePayment)
+
+		// Admin puede ver todos los pagos
+		paymentRoutes.GET("", authMiddleware, adminMiddleware, paymentController.GetAllPayments)
+
+		// Usuario autenticado puede ver un pago específico (validar que es suyo o es admin)
+		paymentRoutes.GET("/:id", authMiddleware, paymentController.GetPayment)
+
+		// Usuario puede ver sus propios pagos
+		paymentRoutes.GET("/user/:user_id", authMiddleware, paymentController.GetPaymentsByUser)
+
+		// Admin puede filtrar por entidad y status
+		paymentRoutes.GET("/entity", authMiddleware, adminMiddleware, paymentController.GetPaymentsByEntity)
+		paymentRoutes.GET("/status/:status", authMiddleware, adminMiddleware, paymentController.GetPaymentsByStatus)
+
+		// Solo admin puede actualizar status manualmente
+		paymentRoutes.PATCH("/:id/status", authMiddleware, adminMiddleware, paymentController.UpdatePaymentStatus)
 		paymentRoutes.POST("/:id/process", paymentController.ProcessPayment)
 
 		// ========== RUTAS MEJORADAS CON GATEWAYS ⭐ ==========

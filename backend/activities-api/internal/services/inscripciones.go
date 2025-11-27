@@ -153,11 +153,16 @@ func (s *InscripcionesServiceImpl) Create(ctx context.Context, usuarioID, activi
 		if httpCtx.Err() == context.DeadlineExceeded {
 			return domain.InscripcionResponse{}, fmt.Errorf("timeout validando suscripción: el servicio tardó más de 5 segundos en responder")
 		}
-		return domain.InscripcionResponse{}, fmt.Errorf("no tiene suscripción activa: %w", err)
+		return domain.InscripcionResponse{}, fmt.Errorf("debe tener un plan para inscribirse a esta actividad")
 	}
 
 	// Validar restricciones del plan - Verificar si la actividad está permitida
 	if err := s.validatePlanRestrictions(activeSub, actividadValidada); err != nil {
+		return domain.InscripcionResponse{}, err
+	}
+
+	// Validar límite de actividades semanales del plan
+	if err := s.validateWeeklyActivityLimit(ctx, usuarioID, activeSub); err != nil {
 		return domain.InscripcionResponse{}, err
 	}
 
@@ -224,6 +229,7 @@ type Plan struct {
 	Nombre                string   `json:"nombre"`
 	TipoAcceso            string   `json:"tipo_acceso"` // "limitado" | "completo"
 	ActividadesPermitidas []string `json:"actividades_permitidas"`
+	ActividadesPorSemana  int      `json:"actividades_por_semana"` // Límite de actividades por semana (0 = ilimitado)
 }
 
 // getActiveSubscription valida que el usuario tenga una suscripción activa
@@ -266,7 +272,7 @@ func (s *InscripcionesServiceImpl) getActiveSubscription(ctx context.Context, us
 	}
 	if resp.StatusCode == 404 {
 		fmt.Printf("❌ [getActiveSubscription] Error 404 - Suscripción no encontrada\n")
-		return Subscription{}, fmt.Errorf("no se encontró suscripción activa")
+		return Subscription{}, fmt.Errorf("debe tener un plan para inscribirse a esta actividad")
 	}
 	if resp.StatusCode != 200 {
 		// Leer el body para obtener más detalles del error
@@ -372,5 +378,59 @@ func (s *InscripcionesServiceImpl) validatePlanRestrictions(subscription Subscri
 		}
 	}
 
+	return nil
+}
+
+// validateWeeklyActivityLimit valida que el usuario no exceda el límite de actividades por semana de su plan
+func (s *InscripcionesServiceImpl) validateWeeklyActivityLimit(ctx context.Context, usuarioID uint, subscription Subscription) error {
+	// Si el plan no tiene límite (0 o tipo_acceso completo), permitir
+	if subscription.PlanInfo.ActividadesPorSemana == 0 || subscription.PlanInfo.TipoAcceso == "completo" {
+		fmt.Printf("✅ [validateWeeklyActivityLimit] Sin límite semanal (ActividadesPorSemana: %d, TipoAcceso: %s)\n", subscription.PlanInfo.ActividadesPorSemana, subscription.PlanInfo.TipoAcceso)
+		return nil
+	}
+
+	// Obtener inscripciones activas del usuario
+	inscripcionesActivas, err := s.inscripcionesRepo.ListByUser(ctx, usuarioID)
+	if err != nil {
+		return fmt.Errorf("error verificando inscripciones activas: %w", err)
+	}
+
+	// Calcular el inicio de la semana actual (Lunes a las 00:00:00)
+	now := time.Now()
+	weekday := int(now.Weekday())
+	if weekday == 0 { // Domingo
+		weekday = 7
+	}
+	// Restar días para llegar al lunes
+	startOfWeek := now.AddDate(0, 0, -(weekday - 1))
+	startOfWeek = time.Date(startOfWeek.Year(), startOfWeek.Month(), startOfWeek.Day(), 0, 0, 0, 0, startOfWeek.Location())
+
+	fmt.Printf("📅 [validateWeeklyActivityLimit] Inicio de semana: %s\n", startOfWeek.Format("2006-01-02 15:04:05"))
+
+	// Contar inscripciones activas de esta semana
+	inscripcionesEstaSemana := 0
+	for _, insc := range inscripcionesActivas {
+		if insc.IsActiva && insc.FechaInscripcion.After(startOfWeek) {
+			inscripcionesEstaSemana++
+			fmt.Printf("📝 [validateWeeklyActivityLimit] Inscripción #%d (actividad: %d) en esta semana: %s\n",
+				insc.ID, insc.ActividadID, insc.FechaInscripcion.Format("2006-01-02 15:04:05"))
+		}
+	}
+
+	fmt.Printf("📊 [validateWeeklyActivityLimit] Inscripciones esta semana: %d, Límite del plan: %d\n",
+		inscripcionesEstaSemana, subscription.PlanInfo.ActividadesPorSemana)
+
+	// Verificar si ya alcanzó el límite
+	if inscripcionesEstaSemana >= subscription.PlanInfo.ActividadesPorSemana {
+		return fmt.Errorf(
+			"has alcanzado el límite de actividades semanales de tu plan '%s' (%d/%d actividades). Espera a la próxima semana o mejora tu plan",
+			subscription.PlanInfo.Nombre,
+			inscripcionesEstaSemana,
+			subscription.PlanInfo.ActividadesPorSemana,
+		)
+	}
+
+	fmt.Printf("✅ [validateWeeklyActivityLimit] Dentro del límite (%d/%d)\n",
+		inscripcionesEstaSemana+1, subscription.PlanInfo.ActividadesPorSemana)
 	return nil
 }

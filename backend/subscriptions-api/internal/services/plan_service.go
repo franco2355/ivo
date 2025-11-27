@@ -214,6 +214,7 @@ func (s *PlanService) mapPlanToResponse(plan *entities.Plan) *dtos.PlanResponse 
 		DuracionDias:          plan.DuracionDias,
 		Activo:                plan.Activo,
 		ActividadesPermitidas: plan.ActividadesPermitidas,
+		ActividadesPorSemana:  plan.ActividadesPorSemana,
 		CreatedAt:             plan.CreatedAt,
 		UpdatedAt:             plan.UpdatedAt,
 	}

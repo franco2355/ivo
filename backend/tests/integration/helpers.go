@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"testing"
+	"time"
 )
 
 // API URLs
@@ -73,6 +75,73 @@ type InscripcionResponse struct {
 type ErrorResponse struct {
 	Error   string `json:"error"`
 	Details string `json:"details"`
+}
+
+// RegisterRequest estructura para registro de usuario
+type RegisterRequest struct {
+	Nombre   string `json:"nombre"`
+	Apellido string `json:"apellido"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// generateRandomUser genera un usuario aleatorio con datos válidos
+func generateRandomUser() RegisterRequest {
+	rand.Seed(time.Now().UnixNano())
+	randomNum := rand.Intn(999999)
+
+	// Username entre 3 y 30 caracteres
+	username := fmt.Sprintf("user_%d", randomNum)
+	email := fmt.Sprintf("test%d@test.com", randomNum)
+
+	// Generar password que cumple todas las validaciones:
+	// - Al menos 8 caracteres
+	// - Al menos una mayúscula
+	// - Al menos una minúscula
+	// - Al menos un número
+	// - Al menos un carácter especial
+	password := fmt.Sprintf("Test%d!Pass", randomNum)
+
+	return RegisterRequest{
+		Nombre:   "Test",
+		Apellido: "User",
+		Username: username,
+		Email:    email,
+		Password: password,
+	}
+}
+
+// registerUser registra un nuevo usuario y retorna token y userID
+func registerUser(t *testing.T) (string, int, RegisterRequest) {
+	userData := generateRandomUser()
+
+	body, _ := json.Marshal(userData)
+	resp, err := http.Post(usersAPIURL+"/register", "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		t.Fatalf("❌ Error registrando usuario: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		t.Fatalf("❌ Registro falló - Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var loginResp LoginResponse
+	if err := json.NewDecoder(resp.Body).Decode(&loginResp); err != nil {
+		t.Fatalf("❌ Error decodificando respuesta de registro: %v", err)
+	}
+
+	t.Logf("✅ Usuario registrado - Username: %s, ID: %d", userData.Username, loginResp.User.ID)
+
+	return "Bearer " + loginResp.Token, loginResp.User.ID, userData
+}
+
+// registerAndLoginUser crea un usuario nuevo y retorna sus credenciales
+func registerAndLoginUser(t *testing.T) (string, int) {
+	token, userID, _ := registerUser(t)
+	return token, userID
 }
 
 // Helper function: login - compatible con ambos tipos (int y uint)

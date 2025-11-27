@@ -274,6 +274,22 @@ func (s *SearchService) IndexFromEvent(event dtos.RabbitMQEvent) error {
 	return s.IndexDocument(doc)
 }
 
+// ReindexActivityByID obtiene una actividad desde MySQL y la reindexa en Solr
+func (s *SearchService) ReindexActivityByID(activityID string) error {
+	if s.mysqlRepo == nil {
+		return fmt.Errorf("mysql repository not available")
+	}
+
+	// Obtener actividad actualizada desde MySQL
+	activity, err := s.mysqlRepo.GetActivityByID(activityID)
+	if err != nil {
+		return fmt.Errorf("error obteniendo actividad desde MySQL: %w", err)
+	}
+
+	// Indexar en Solr
+	return s.IndexDocument(activity)
+}
+
 // GetStats retorna estadísticas del índice
 func (s *SearchService) GetStats() map[string]interface{} {
 	s.mu.RLock()

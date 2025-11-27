@@ -16,6 +16,7 @@ type Plan struct {
 	DuracionDias          int                `bson:"duracion_dias"`
 	Activo                bool               `bson:"activo"`
 	ActividadesPermitidas []string           `bson:"actividades_permitidas"`
+	ActividadesPorSemana  int                `bson:"actividades_por_semana"` // Límite de actividades por semana (0 = ilimitado)
 	CreatedAt             time.Time          `bson:"created_at"`
 	UpdatedAt             time.Time          `bson:"updated_at"`
 }

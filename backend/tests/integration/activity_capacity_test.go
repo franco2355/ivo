@@ -15,15 +15,15 @@ import (
 func TestActivityCapacityLimit(t *testing.T) {
 	t.Log("🚀 Iniciando test de integración: Activity Capacity Limit")
 
-	// ==================== PASO 1: Login de usuarios ====================
-	t.Log("\n📝 PASO 1: Login de múltiples usuarios y admin")
+	// ==================== PASO 1: Crear usuario y admin ====================
+	t.Log("\n📝 PASO 1: Registrar nuevo usuario y admin")
 
 	adminToken, adminID := login(t, "admin", "admin123")
 	t.Logf("✅ Admin logueado - ID: %d", adminID)
 
-	// Login de usuario principal
-	user1Token, user1ID := login(t, "testuser", "password123")
-	t.Logf("✅ Usuario 1 logueado - ID: %d", user1ID)
+	// Registrar usuario principal
+	user1Token, user1ID, user1Data := registerUser(t)
+	t.Logf("✅ Usuario 1 registrado - ID: %d, Username: %s", user1ID, user1Data.Username)
 
 	// Crear usuarios de prueba adicionales (o usar existentes)
 	// Por simplicidad, usaremos el mismo usuario pero simularemos diferentes IDs
@@ -113,7 +113,7 @@ func TestActivityCapacityLimit(t *testing.T) {
 		json.NewDecoder(resp.Body).Decode(&errorResp)
 		t.Logf("⚠️  Primera inscripción falló - Status: %d, Error: %v", resp.StatusCode, errorResp)
 		// Si ya estaba inscrito, desinscribirse y volver a intentar
-		desinscribirse(t, user1Token, user1ID, activityID)
+		desinscribirse(t, user1Token, uint(user1ID), activityID)
 
 		// Reintentar
 		httpReq, _ = http.NewRequest("POST", "http://localhost:8082/inscripciones", bytes.NewBuffer(inscripcionBody))
@@ -155,7 +155,7 @@ func TestActivityCapacityLimit(t *testing.T) {
 	// ==================== PASO 6: Desinscribirse y verificar liberación ====================
 	t.Log("\n📝 PASO 6: Desinscribirse y verificar que se libera el cupo")
 
-	desinscribirse(t, user1Token, user1ID, activityID)
+	desinscribirse(t, user1Token, uint(user1ID), activityID)
 	t.Log("✅ Desinscripción exitosa")
 
 	time.Sleep(1 * time.Second)
@@ -246,8 +246,8 @@ func TestConcurrentInscriptions(t *testing.T) {
 	adminToken, adminID := login(t, "admin", "admin123")
 	t.Logf("✅ Admin logueado - ID: %d", adminID)
 
-	userToken, userID := login(t, "testuser", "password123")
-	t.Logf("✅ Usuario logueado - ID: %d", userID)
+	userToken, userID, userData := registerUser(t)
+	t.Logf("✅ Usuario registrado - ID: %d, Username: %s", userID, userData.Username)
 
 	// Activar suscripción
 	subscriptionID := createSubscription(t, userToken, userID, PlanPremiumID)

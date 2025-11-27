@@ -8,10 +8,10 @@ import (
 func TestPlanUpgradeFlow(t *testing.T) {
 	t.Log("🚀 Iniciando test de integración: Plan Upgrade Flow")
 
-	// ==================== PASO 1: Login ====================
-	t.Log("\n📝 PASO 1: Login como usuario regular")
-	userToken, userID := login(t, "testuser", "password123")
-	t.Logf("✅ Usuario logueado - ID: %d, Token: %.20s...", userID, userToken)
+	// ==================== PASO 1: Setup ====================
+	t.Log("\n📝 PASO 1: Registrar usuario y admin")
+	userToken, userID, userData := registerUser(t)
+	t.Logf("✅ Usuario registrado - ID: %d, Username: %s", userID, userData.Username)
 
 	t.Log("\n📝 PASO 2: Login como admin")
 	adminToken, adminID := login(t, "admin", "admin123")

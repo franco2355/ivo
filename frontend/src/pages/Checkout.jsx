@@ -14,7 +14,7 @@ const Checkout = () => {
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [formData, setFormData] = useState({
-        payment_method: 'mercadopago' // 'mercadopago' o 'cash'
+        payment_method: 'cash' // Por defecto pago en efectivo
     });
     const [showCheckout, setShowCheckout] = useState(false);
     const [currentPaymentId, setCurrentPaymentId] = useState(null);
@@ -228,7 +228,7 @@ const Checkout = () => {
                 console.log('[Checkout] ✅ Pago en efectivo registrado:', paymentResult);
 
                 toast.success(`Pago en efectivo registrado. Código: ${paymentResult.transaction_id}`);
-                toast.info('Acércate a la sucursal dentro de las próximas 48 horas para completar el pago.');
+                toast.info('Acércate a la sucursal para completar el pago.');
                 navigate('/mi-suscripcion');
 
             } else {
@@ -366,31 +366,8 @@ const Checkout = () => {
                     <form className="payment-form" onSubmit={handleSubmit}>
                         <h2>Método de Pago</h2>
 
-                        <div className="payment-methods" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div
-                                className={`payment-method ${formData.payment_method === 'mercadopago' ? 'selected' : ''}`}
-                                onClick={() => setFormData({ ...formData, payment_method: 'mercadopago' })}
-                                style={{
-                                    border: formData.payment_method === 'mercadopago' ? '2px solid #009ee3' : '2px solid #ddd',
-                                    padding: '20px',
-                                    borderRadius: '8px',
-                                    backgroundColor: formData.payment_method === 'mercadopago' ? '#f0f9ff' : '#fff',
-                                    textAlign: 'center',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.3s ease'
-                                }}>
-                                <div style={{
-                                    fontSize: '48px',
-                                    marginBottom: '10px'
-                                }}>💳</div>
-                                <h3 style={{ margin: '0 0 8px 0', color: formData.payment_method === 'mercadopago' ? '#009ee3' : '#333' }}>
-                                    Mercado Pago
-                                </h3>
-                                <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
-                                    Tarjetas, débito, transferencia
-                                </p>
-                            </div>
-
+                        {/* Opción de MercadoPago oculta temporalmente */}
+                        <div className="payment-methods" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
                             <div
                                 className={`payment-method ${formData.payment_method === 'cash' ? 'selected' : ''}`}
                                 onClick={() => setFormData({ ...formData, payment_method: 'cash' })}
@@ -411,7 +388,7 @@ const Checkout = () => {
                                     Efectivo
                                 </h3>
                                 <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
-                                    Pagar en sucursal (48hs)
+                                    Pagar en sucursal
                                 </p>
                             </div>
                         </div>
@@ -424,7 +401,7 @@ const Checkout = () => {
                                 padding: '15px',
                                 marginTop: '20px'
                             }}>
-                                <strong>⚠️ Importante:</strong> El pago en efectivo debe realizarse en sucursal dentro de las próximas 48 horas. Se te proporcionará un código de pago que deberás presentar en caja.
+                                <strong>⚠️ Importante:</strong> El pago en efectivo debe realizarse en sucursal. Se te proporcionará un código de pago que deberás presentar en caja.
                             </div>
                         )}
 

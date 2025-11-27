@@ -57,9 +57,13 @@ func (c *UsersController) Register(ctx *gin.Context) {
 
 		// Errores de validación (400)
 		if contains(errorCode, "required") ||
+			contains(errorCode, "requerido") ||
 			contains(errorCode, "must") ||
+			contains(errorCode, "debe") ||
 			contains(errorCode, "invalid") ||
-			contains(errorCode, "can only contain") {
+			contains(errorCode, "inválido") ||
+			contains(errorCode, "can only contain") ||
+			contains(errorCode, "solo puede contener") {
 			statusCode = http.StatusBadRequest
 			errorMessage = translateValidationError(errorCode)
 		} else if contains(errorCode, "already_exists") {

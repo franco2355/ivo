@@ -11,9 +11,22 @@
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
 
+  /* Cambiar grid a single column cuando hay card expandida */
+  .actividades-grid.has-expanded {
+    @apply grid;
+    grid-template-columns: 1fr;
+    place-items: center;
+  }
+
   .actividad-card {
     @apply bg-white rounded-lg p-5 relative transition-all duration-300;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Ocultar cards que no están expandidas cuando hay una expandida */
+  .actividades-grid.has-expanded .actividad-card:not(.expanded) {
+    display: none !important;
+    visibility: hidden !important;
   }
 
   .actividad-card:hover {
@@ -170,6 +183,25 @@
     box-shadow: 0 8px 32px rgba(0,0,0,0.25);
     padding: 32px 24px 24px 24px;
     animation: fadeInScale 0.2s;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Scrollbar personalizado para card expandida */
+  .actividad-card.expanded::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  .actividad-card.expanded::-webkit-scrollbar-track {
+    @apply bg-[#f1f1f1] rounded;
+  }
+
+  .actividad-card.expanded::-webkit-scrollbar-thumb {
+    @apply bg-[#c1c1c1] rounded;
+  }
+
+  .actividad-card.expanded::-webkit-scrollbar-thumb:hover {
+    @apply bg-[#a1a1a1];
   }
 
   @keyframes fadeInScale {

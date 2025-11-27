@@ -20,17 +20,6 @@ const Planes = () => {
         cargarDatos();
     }, []);
 
-    // Recargar planes cuando cambie la suscripción activa
-    useEffect(() => {
-        if (planes.length > 0 && activeSuscripcion) {
-            // Filtrar el plan activo de la lista
-            const planesDisponibles = planes.filter(plan => plan._id !== activeSuscripcion.plan_id);
-            if (planesDisponibles.length !== planes.length) {
-                console.log('[Planes] Filtrando plan activo de la lista');
-                setPlanes(planesDisponibles);
-            }
-        }
-    }, [activeSuscripcion]);
 
     const cargarDatos = async () => {
         // Primero cargar la suscripción activa si el usuario está logueado
@@ -76,18 +65,11 @@ const Planes = () => {
             if (data && Array.isArray(data.plans)) {
                 console.log('[Planes] Planes cargados:', data.plans.length);
 
-                // Filtrar solo planes activos
+                // Filtrar solo planes activos (mostrar todos, incluso el que tiene activo)
                 let planesActivos = data.plans.filter(plan => plan.activo === true);
                 console.log('[Planes] Planes activos:', planesActivos.length);
 
-                // Filtrar el plan al que ya está suscrito (si existe)
-                let planesDisponibles = planesActivos;
-                if (activeSuscripcion && activeSuscripcion.plan_id) {
-                    planesDisponibles = planesActivos.filter(plan => plan._id !== activeSuscripcion.plan_id);
-                    console.log('[Planes] Plan activo filtrado. Planes disponibles:', planesDisponibles.length);
-                }
-
-                setPlanes(planesDisponibles);
+                setPlanes(planesActivos);
             } else if (data.plans === null || data.total === 0) {
                 // No hay planes, pero no es un error
                 console.warn('[Planes] No hay planes disponibles');
@@ -104,7 +86,7 @@ const Planes = () => {
         }
     };
 
-    const handleSelectPlan = (planId) => {
+    const handleSelectPlan = async (planId) => {
         console.log('[Planes] Usuario seleccionó plan:', planId);
 
         if (isAdmin) {
@@ -122,6 +104,48 @@ const Planes = () => {
         if (activeSuscripcion && activeSuscripcion.plan_id === planId) {
             toast.info(`Ya tienes una suscripción activa al ${activeSuscripcion.plan_nombre}`);
             return;
+        }
+
+        // Si tiene una suscripción activa a otro plan, confirmar el cambio
+        if (activeSuscripcion && activeSuscripcion.plan_id !== planId) {
+            const planNuevo = planes.find(p => p.id === planId);
+            const confirmar = window.confirm(
+                `¿Querés cambiar tu plan "${activeSuscripcion.plan_nombre}" por "${planNuevo?.nombre}"?\n\n` +
+                `Importante: Tu suscripción actual será cancelada y se creará una nueva. ` +
+                `El cambio es inmediato.`
+            );
+
+            if (!confirmar) {
+                return;
+            }
+
+            try {
+                // Cancelar suscripción actual
+                const token = localStorage.getItem('access_token');
+                const cancelResponse = await fetch(SUBSCRIPTIONS_API.cancelSubscription(activeSuscripcion.id), {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!cancelResponse.ok) {
+                    throw new Error('Error al cancelar la suscripción actual');
+                }
+
+                toast.success('Suscripción anterior cancelada. Procediendo con el nuevo plan...');
+
+                // Esperar un momento para que se procese la cancelación
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Actualizar estado local
+                setActiveSuscripcion(null);
+            } catch (error) {
+                console.error('Error al cancelar suscripción:', error);
+                toast.error('Error al cambiar de plan. Por favor, intentá nuevamente.');
+                return;
+            }
         }
 
         // Navegar al checkout con el plan seleccionado
@@ -180,8 +204,11 @@ const Planes = () => {
                 {planes.map((plan) => (
                     <div
                         key={plan.id}
-                        className={`plan-card ${plan.popular ? 'popular' : ''}`}
+                        className={`plan-card ${plan.popular ? 'popular' : ''} ${activeSuscripcion && activeSuscripcion.plan_id === plan.id ? 'plan-actual' : ''}`}
                     >
+                        {activeSuscripcion && activeSuscripcion.plan_id === plan.id && (
+                            <div className="plan-actual-badge">Tu Plan Actual</div>
+                        )}
                         {plan.popular && <div className="popular-badge">Más Popular</div>}
                         {plan.ahorro && <div className="ahorro-badge">{plan.ahorro}</div>}
 
@@ -244,6 +271,31 @@ const Planes = () => {
                                 disabled
                             >
                                 Solo para usuarios
+                            </button>
+                        ) : activeSuscripcion && activeSuscripcion.plan_id === plan.id ? (
+                            <button
+                                className="btn-seleccionar-plan"
+                                style={{
+                                    backgroundColor: '#2196F3',
+                                    cursor: 'not-allowed',
+                                    opacity: 0.7
+                                }}
+                                disabled
+                                title="Este es tu plan actual"
+                            >
+                                Plan Actual
+                            </button>
+                        ) : activeSuscripcion ? (
+                            <button
+                                className="btn-seleccionar-plan btn-cambiar-plan"
+                                style={{
+                                    backgroundColor: '#FF9800',
+                                    border: '2px solid #F57C00'
+                                }}
+                                onClick={() => handleSelectPlan(plan.id)}
+                                title="Cambiar a este plan"
+                            >
+                                Cambiar a este plan
                             </button>
                         ) : (
                             <button

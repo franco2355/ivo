@@ -34,7 +34,8 @@ export const SUBSCRIPTIONS_API = {
   subscriptionById: (id) => `${API_BASE_URLS.subscriptions}/subscriptions/${id}`,
   activeSubscription: (userId) => `${API_BASE_URLS.subscriptions}/subscriptions/active/${userId}`,
   subscriptionsByUser: (userId) => `${API_BASE_URLS.subscriptions}/subscriptions/user/${userId}`,
-  updateStatus: (id) => `${API_BASE_URLS.subscriptions}/subscriptions/${id}/status`
+  updateStatus: (id) => `${API_BASE_URLS.subscriptions}/subscriptions/${id}/status`,
+  cancelSubscription: (id) => `${API_BASE_URLS.subscriptions}/subscriptions/${id}/cancel`
 };
 
 // Endpoints de Activities API

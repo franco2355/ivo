@@ -13,6 +13,7 @@ type SubscriptionRepository interface {
 	FindByID(ctx context.Context, id primitive.ObjectID) (*entities.Subscription, error)
 	FindAll(ctx context.Context, filters map[string]interface{}) ([]*entities.Subscription, error)
 	FindActiveByUserID(ctx context.Context, userID string) (*entities.Subscription, error)
+	FindExpiredSubscriptions(ctx context.Context) ([]*entities.Subscription, error)
 	Update(ctx context.Context, id primitive.ObjectID, subscription *entities.Subscription) error
 	UpdateStatus(ctx context.Context, id primitive.ObjectID, status, pagoID string) error
 	Delete(ctx context.Context, id primitive.ObjectID) error

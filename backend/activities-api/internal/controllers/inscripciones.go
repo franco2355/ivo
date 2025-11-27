@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"activities-api/internal/services"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -57,9 +58,13 @@ func (c *InscripcionesController) Create(ctx *gin.Context) {
 		ActividadID uint `json:"actividad_id" binding:"required"`
 	}
 	if err := ctx.ShouldBindJSON(&inscripcionCreate); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Datos con formato incorrecto", "details": err.Error()})
+		// Log del error para debuggear
+		fmt.Printf("❌ [Create] Error en binding JSON: %v\n", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Debe proporcionar el ID de la actividad (actividad_id)"})
 		return
 	}
+
+	fmt.Printf("✅ [Create] Inscripción recibida - Usuario: %v, Actividad: %v\n", userID, inscripcionCreate.ActividadID)
 
 	// Obtener el token de autorización
 	authHeader := ctx.GetHeader("Authorization")
@@ -81,8 +86,11 @@ func (c *InscripcionesController) Create(ctx *gin.Context) {
 		} else if strings.Contains(errString, "actualiza tu plan") || strings.Contains(errString, "upgrade") {
 			// Restricción de plan - mensaje de upgrade
 			ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
-		} else if strings.Contains(errString, "no tiene suscripción activa") || strings.Contains(errString, "no se encontró suscripción") {
-			ctx.JSON(http.StatusForbidden, gin.H{"error": "Debe tener una suscripción activa para inscribirse"})
+		} else if strings.Contains(errString, "has alcanzado el") && strings.Contains(errString, "actividades semanales") {
+			// Límite semanal alcanzado - devolver mensaje directo
+			ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		} else if strings.Contains(errString, "debe tener un plan para inscribirse") || strings.Contains(errString, "no tiene suscripción activa") || strings.Contains(errString, "no se encontró suscripción") {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "No tenés un plan activo para esta actividad"})
 		} else if strings.Contains(errString, "requiere plan premium") {
 			ctx.JSON(http.StatusForbidden, gin.H{"error": "Esta actividad requiere un plan premium"})
 		} else {

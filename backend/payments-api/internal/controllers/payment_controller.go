@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -42,9 +43,21 @@ func (c *PaymentController) CreatePayment(ctx *gin.Context) {
 func (c *PaymentController) GetPayment(ctx *gin.Context) {
 	paymentID := ctx.Param("id")
 
+	// Obtener información del usuario autenticado
+	currentUserID, _ := ctx.Get("id_usuario")
+	isAdmin, _ := ctx.Get("is_admin")
+
 	payment, err := c.service.GetPaymentByID(ctx.Request.Context(), paymentID)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Payment not found"})
+		return
+	}
+
+	// 🔒 VALIDACIÓN DE SEGURIDAD: Solo el dueño del pago o admin puede verlo
+	if payment.UserID != fmt.Sprintf("%d", currentUserID.(uint)) && !isAdmin.(bool) {
+		ctx.JSON(http.StatusForbidden, gin.H{
+			"error": "You don't have permission to view this payment",
+		})
 		return
 	}
 
@@ -64,9 +77,21 @@ func (c *PaymentController) GetAllPayments(ctx *gin.Context) {
 
 // GetPaymentsByUser obtiene todos los pagos de un usuario
 func (c *PaymentController) GetPaymentsByUser(ctx *gin.Context) {
-	userID := ctx.Param("user_id")
+	requestedUserID := ctx.Param("user_id")
 
-	payments, err := c.service.GetPaymentsByUser(ctx.Request.Context(), userID)
+	// Obtener información del usuario autenticado
+	currentUserID, _ := ctx.Get("id_usuario")
+	isAdmin, _ := ctx.Get("is_admin")
+
+	// 🔒 VALIDACIÓN DE SEGURIDAD: Solo puedes ver tus propios pagos (o admin puede ver cualquiera)
+	if requestedUserID != fmt.Sprintf("%d", currentUserID.(uint)) && !isAdmin.(bool) {
+		ctx.JSON(http.StatusForbidden, gin.H{
+			"error": "You can only view your own payments",
+		})
+		return
+	}
+
+	payments, err := c.service.GetPaymentsByUser(ctx.Request.Context(), requestedUserID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -94,9 +119,10 @@ func (c *PaymentController) GetPaymentsByEntity(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, payments)
 }
 
-// GetPaymentsByStatus obtiene pagos por estado
+// GetPaymentsByStatus obtiene pagos por estado (solo admin)
 func (c *PaymentController) GetPaymentsByStatus(ctx *gin.Context) {
-	status := ctx.Query("status")
+	// Obtener status del parámetro de ruta
+	status := ctx.Param("status")
 
 	if status == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "status es requerido"})

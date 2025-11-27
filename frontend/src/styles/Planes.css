@@ -56,6 +56,19 @@
     box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
   }
 
+  .plan-actual-badge {
+    @apply absolute top-0 left-0 px-6 py-2 font-bold text-sm z-20;
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    color: white;
+    border-bottom-right-radius: 15px;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+  }
+
+  .plan-card.plan-actual {
+    border: 3px solid #2196F3;
+    background: linear-gradient(to bottom, #e3f2fd 0%, #ffffff 100%);
+  }
+
   .ahorro-badge {
     @apply absolute top-4 left-4 px-4 py-2 rounded-full font-bold text-sm z-10;
     background: linear-gradient(135deg, #4CAF50 0%, #388e3c 100%);

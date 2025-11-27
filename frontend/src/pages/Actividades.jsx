@@ -99,10 +99,17 @@ const Actividades = () => {
 
                 // Filtrar solo inscripto (esto se hace en cliente porque depende del estado local)
                 if (filtros.soloInscripto) {
-                    const idsInscripto = inscripciones.filter(insc => insc.is_activa).map(insc => insc.id_actividad);
-                    results = results.filter(actividad =>
-                        idsInscripto.includes(parseInt(actividad.id))
-                    );
+                    const idsInscripto = inscripciones.filter(insc => insc.is_activa).map(insc => insc.actividad_id);
+                    console.log("🔍 DEBUG Filtro inscriptas:");
+                    console.log("  - IDs inscritas:", idsInscripto);
+                    console.log("  - IDs de actividades (antes filtro):", results.map(a => a.id));
+                    results = results.filter(actividad => {
+                        const actividadId = parseInt(actividad.id);
+                        const match = idsInscripto.includes(actividadId);
+                        console.log(`  - Actividad ${actividad.id} (${actividadId}): ${match ? '✅ incluida' : '❌ no incluida'}`);
+                        return match;
+                    });
+                    console.log("  - Actividades filtradas:", results.length);
                 }
 
                 // Mapear campos de Search API a formato esperado por el frontend
@@ -344,7 +351,7 @@ const Actividades = () => {
                     "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
                 },
                 body: JSON.stringify({
-                    actividad_id: actividadId,
+                    actividad_id: parseInt(actividadId),
                 }),
             });
 
@@ -507,6 +514,7 @@ const Actividades = () => {
     };
 
     const toggleExpand = (actividadId) => {
+        console.log('Toggle expand:', { actividadId, current: expandedActividadId, type: typeof actividadId });
         setExpandedActividadId(expandedActividadId === actividadId ? null : actividadId);
     };
 
@@ -575,7 +583,7 @@ const Actividades = () => {
                 )}
             </div>
 
-            <div className="actividades-grid">
+            <div className={`actividades-grid ${expandedActividadId ? 'has-expanded' : ''}`}>
                 {loading ? (
                     <Spinner size="large" message="Cargando actividades..." />
                 ) : actividadesFiltradas.length === 0 ? (
@@ -584,11 +592,15 @@ const Actividades = () => {
                     </div>
                 ) : (
                     actividadesFiltradas.map((actividad) => {
-                        const inscrito = estaInscripto(actividad.id);
+                        const actividadId = actividad.id_actividad || actividad.id;
+                        const inscrito = estaInscripto(actividadId);
+                        const isExpanded = expandedActividadId !== null && String(expandedActividadId) === String(actividadId);
+                        const shouldHide = expandedActividadId !== null && !isExpanded;
                         return (
                         <div
-                            className={`actividad-card ${expandedActividadId === actividad.id ? 'expanded' : ''}`}
-                            key={actividad.id}
+                            className={`actividad-card ${isExpanded ? 'expanded' : ''}`}
+                            key={actividadId}
+                            style={shouldHide ? { display: 'none' } : {}}
                         >
                             <h3>{actividad.titulo}</h3>
                             <div className="actividad-info-basic">
@@ -598,12 +610,16 @@ const Actividades = () => {
                                 </p>
                             </div>
 
-                            {expandedActividadId === actividad.id && (
+                            {isExpanded && (
                                 <div className="actividad-info-expanded">
                                     <div className="actividad-imagen">
-                                        <img 
-                                            src={actividad.foto_url || "https://via.placeholder.com/300x200"} 
+                                        <img
+                                            src={actividad.foto_url || "https://media.istockphoto.com/id/1339701353/es/foto/atleta-negra-haciendo-ejercicios-de-estiramiento-mientras-calienta-con-un-grupo-de-mujeres-en.jpg?s=1024x1024&w=is&k=20&c=WCBDDweSYURamdiEqmw7IZ_uWOsgr0HkZmwVJuOLp8s="}
                                             alt={actividad.titulo}
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect width='300' height='200' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial, sans-serif' font-size='18' fill='%23757575'%3ESin imagen%3C/text%3E%3C/svg%3E";
+                                            }}
                                         />
                                     </div>
                                     <div className="actividad-detalles">
@@ -664,8 +680,8 @@ const Actividades = () => {
                                                         className={`inscripcion-button ${inscrito ? 'cancelar' : ''}`}
                                                         onClick={() =>
                                                             inscrito ?
-                                                                handleUnenrolling(actividad.id) :
-                                                                handleEnroling(actividad.id)
+                                                                handleUnenrolling(actividadId) :
+                                                                handleEnroling(actividadId)
                                                         }
                                                     >
                                                         {inscrito ? "Cancelar Inscripción" : "Inscribirse"}
@@ -677,9 +693,9 @@ const Actividades = () => {
                                 )}
                                 <button
                                     className="ver-mas-button"
-                                    onClick={() => toggleExpand(actividad.id)}
+                                    onClick={() => toggleExpand(actividadId)}
                                 >
-                                    {expandedActividadId === actividad.id ? "Ver menos 🔼" : "Ver más 🔽"}
+                                    {isExpanded ? "Ver menos 🔼" : "Ver más 🔽"}
                                 </button>
                             </div>
                         </div>

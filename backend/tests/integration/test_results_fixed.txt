@@ -1,0 +1,494 @@
+=== RUN   TestActivityCapacityLimit
+    activity_capacity_test.go:16: 🚀 Iniciando test de integración: Activity Capacity Limit
+    activity_capacity_test.go:19: 
+        📝 PASO 1: Registrar nuevo usuario y admin
+    activity_capacity_test.go:22: ✅ Admin logueado - ID: 1
+    helpers.go:136: ✅ Usuario registrado - Username: user_56461, ID: 26
+    activity_capacity_test.go:26: ✅ Usuario 1 registrado - ID: 26, Username: user_56461
+    activity_capacity_test.go:33: 
+        📝 PASO 2: Crear actividad con cupo limitado (3 personas)
+    activity_capacity_test.go:82: ✅ Actividad creada con ID: 91, Cupo: 3
+    activity_capacity_test.go:85: 
+        📝 PASO 3: Activar suscripción Premium para usuario
+    activity_capacity_test.go:90: ✅ Suscripción activada
+    activity_capacity_test.go:93: 
+        📝 PASO 4: Inscribir 3 veces para llenar el cupo
+    activity_capacity_test.go:125: ✅ Primera inscripción exitosa
+    activity_capacity_test.go:131: 
+        📝 PASO 5: Verificar información de la actividad
+    activity_capacity_test.go:149: ✅ Actividad consultada - Cupo total: 3, Lugares disponibles: 2
+    activity_capacity_test.go:152: ✅ Lugares ocupados correctamente (Disponibles: 2 de 3)
+    activity_capacity_test.go:156: 
+        📝 PASO 6: Desinscribirse y verificar que se libera el cupo
+    activity_capacity_test.go:159: ✅ Desinscripción exitosa
+    activity_capacity_test.go:178: ✅ Cupo liberado correctamente (Disponibles ahora: 3)
+    activity_capacity_test.go:184: 
+        📝 PASO 7: Re-inscribirse a la actividad
+    activity_capacity_test.go:201: ✅ Re-inscripción exitosa
+    activity_capacity_test.go:204: 
+        ================================================================================
+    activity_capacity_test.go:205: 🎉 TEST DE LÍMITE DE CUPOS COMPLETADO EXITOSAMENTE!
+    activity_capacity_test.go:206: ================================================================================
+    activity_capacity_test.go:207: ✅ Actividad con cupo limitado creada
+    activity_capacity_test.go:208: ✅ Inscripción exitosa dentro del cupo
+    activity_capacity_test.go:209: ✅ Información de cupos consultada correctamente
+    activity_capacity_test.go:210: ✅ Desinscripción libera el cupo
+    activity_capacity_test.go:211: ✅ Re-inscripción exitosa
+    activity_capacity_test.go:212: ================================================================================
+--- PASS: TestActivityCapacityLimit (1.26s)
+=== RUN   TestConcurrentInscriptions
+    activity_capacity_test.go:243: 🚀 Iniciando test de integración: Concurrent Inscriptions
+    activity_capacity_test.go:247: ✅ Admin logueado - ID: 1
+    helpers.go:136: ✅ Usuario registrado - Username: user_30562, ID: 27
+    activity_capacity_test.go:250: ✅ Usuario registrado - ID: 27, Username: user_30562
+    activity_capacity_test.go:262: 
+        📝 Inscribiéndose a 5 actividades en paralelo
+    activity_capacity_test.go:304: ✅ Inscripciones simultáneas: 1 de 5 exitosas
+    activity_capacity_test.go:307: ✅ Al menos una inscripción simultánea fue exitosa (no hay race conditions graves)
+    activity_capacity_test.go:310: 
+        ================================================================================
+    activity_capacity_test.go:311: 🎉 TEST DE INSCRIPCIONES CONCURRENTES COMPLETADO!
+    activity_capacity_test.go:312: ================================================================================
+--- PASS: TestConcurrentInscriptions (0.23s)
+=== RUN   TestCashPaymentFlowWithPlanRestrictions
+    cash_payment_and_restrictions_test.go:33: 🚀 Iniciando test de integración completo: Cash Payment + Plan Restrictions
+    cash_payment_and_restrictions_test.go:38: 
+        📝 PASO 1: Registrar nuevo usuario con datos válidos
+    helpers.go:136: ✅ Usuario registrado - Username: user_665053, ID: 28
+    cash_payment_and_restrictions_test.go:40: ✅ Usuario registrado y logueado - Username: user_665053, ID: 28
+    cash_payment_and_restrictions_test.go:45: 
+        📝 PASO 2: Login como admin
+    cash_payment_and_restrictions_test.go:47: ✅ Admin logueado - ID: 1, Token: Bearer eyJhbGciOiJIU...
+    cash_payment_and_restrictions_test.go:52: 
+        📝 PASO 3: Crear suscripción con Plan Básico (limitado a yoga y spinning)
+    cash_payment_and_restrictions_test.go:54: ✅ Suscripción creada - ID: 6928a0dd5d377ac363522e4d
+    cash_payment_and_restrictions_test.go:61: ✅ Suscripción en estado: pendiente_pago
+    cash_payment_and_restrictions_test.go:66: 
+        📝 PASO 4: Crear pago en efectivo
+    cash_payment_and_restrictions_test.go:68: ✅ Pago en efectivo creado - ID: 6928a0ddc18923d549b1d228
+    cash_payment_and_restrictions_test.go:78: ✅ Pago en estado: pending, Gateway: cash
+    cash_payment_and_restrictions_test.go:83: 
+        📝 PASO 5: Admin aprueba el pago en efectivo
+    cash_payment_and_restrictions_test.go:85: ✅ Pago aprobado por admin
+    cash_payment_and_restrictions_test.go:92: ✅ Pago actualizado a estado: completed
+    cash_payment_and_restrictions_test.go:97: 
+        📝 PASO 6: Activando suscripción...
+    cash_payment_and_restrictions_test.go:108: ✅ Suscripción activada! Estado: activa, PagoID: 6928a0ddc18923d549b1d228
+    cash_payment_and_restrictions_test.go:113: 
+        📝 PASO 7: Verificar suscripción activa desde endpoint /active
+    cash_payment_and_restrictions_test.go:118: ✅ Suscripción activa verificada - Plan: Plan Básico
+    cash_payment_and_restrictions_test.go:123: 
+        📝 PASO 8: Intentar inscribirse a Funcional (NO permitida por Plan Básico)
+    cash_payment_and_restrictions_test.go:128: ✅ Inscripción bloqueada correctamente! Error: La actividad no existe
+    cash_payment_and_restrictions_test.go:132: ⚠️  Mensaje de error diferente al esperado: La actividad no existe
+    cash_payment_and_restrictions_test.go:138: 
+        📝 PASO 9: Limpiar inscripciones previas a Yoga si existen
+    cash_payment_and_restrictions_test.go:152: 
+        📝 PASO 10: Inscribirse a Yoga (permitida por Plan Básico)
+    cash_payment_and_restrictions_test.go:163: ✅ Inscripción exitosa a Yoga! UsuarioID: 28, ActividadID: 1
+    cash_payment_and_restrictions_test.go:168: 
+        📝 PASO 11: Verificar lista de inscripciones del usuario
+    cash_payment_and_restrictions_test.go:180: ✅ Inscripción a Yoga encontrada en la lista (Total inscripciones: 1)
+    cash_payment_and_restrictions_test.go:186: 
+        ================================================================================
+    cash_payment_and_restrictions_test.go:187: 🎉 TEST COMPLETADO EXITOSAMENTE!
+    cash_payment_and_restrictions_test.go:188: ================================================================================
+    cash_payment_and_restrictions_test.go:189: ✅ Login de usuario y admin
+    cash_payment_and_restrictions_test.go:190: ✅ Creación de suscripción con Plan Básico (limitado)
+    cash_payment_and_restrictions_test.go:191: ✅ Creación de pago en efectivo
+    cash_payment_and_restrictions_test.go:192: ✅ Aprobación de pago por admin
+    cash_payment_and_restrictions_test.go:193: ✅ Activación automática de suscripción via RabbitMQ
+    cash_payment_and_restrictions_test.go:194: ✅ Bloqueo de inscripción a actividad NO permitida
+    cash_payment_and_restrictions_test.go:195: ✅ Inscripción exitosa a actividad permitida
+    cash_payment_and_restrictions_test.go:196: ================================================================================
+--- PASS: TestCashPaymentFlowWithPlanRestrictions (0.31s)
+=== RUN   TestJWTSecurityValidation
+    jwt_security_test.go:13: 🚀 Iniciando test de integración: JWT Security Validation
+    jwt_security_test.go:18: 
+        📝 PASO 1: Registrar nuevo usuario
+    helpers.go:136: ✅ Usuario registrado - Username: user_548421, ID: 29
+    jwt_security_test.go:20: ✅ Usuario registrado - Username: user_548421, ID: 29
+    jwt_security_test.go:23: ✅ Admin logueado - ID: 1
+    jwt_security_test.go:26: 
+        📝 PASO 2: Intentar acceder a actividades SIN token (debe retornar 401)
+    jwt_security_test.go:37: ✅ Correctamente bloqueado sin token - Status: 401
+    jwt_security_test.go:44: 
+        📝 PASO 3: Intentar con token INVÁLIDO (debe retornar 401)
+    jwt_security_test.go:55: ✅ Correctamente bloqueado con token inválido - Status: 401
+    jwt_security_test.go:62: 
+        📝 PASO 4: Crear suscripción con token válido
+    jwt_security_test.go:65: ✅ Suscripción creada - ID: 6928a0de5d377ac363522e4e
+    jwt_security_test.go:70: ✅ Usuario puede acceder a su propia suscripción con token válido
+    jwt_security_test.go:74: 
+        📝 PASO 5: Usuario normal intenta crear actividad (requiere admin)
+    jwt_security_test.go:101: ✅ Correctamente bloqueado usuario sin permisos de admin - Status: 403
+    jwt_security_test.go:109: 
+        📝 PASO 6: Admin crea actividad (debe funcionar)
+    jwt_security_test.go:127: ✅ Admin creó actividad exitosamente - Respuesta: map[categoria:yoga cupo:10 descripcion:Intento de creación sin permisos dia:Lunes foto_url:https://images.unsplash.com/photo-1544367567-0f2fcb009e0b horario_final:11:00 horario_inicio:10:00 id:92 instructor:Test Instructor lugares:0 sucursal_id:1 titulo:Actividad No Autorizada]
+    jwt_security_test.go:136: 
+        📝 PASO 7: Usuario normal intenta aprobar pago (requiere admin)
+    jwt_security_test.go:168: ✅ Pago creado - ID: 6928a0dec18923d549b1d229
+    jwt_security_test.go:189: ⚠️  ADVERTENCIA: Usuario normal pudo aprobar pago (debería requerir admin)
+    jwt_security_test.go:195: 
+        📝 PASO 8: Acceder a /inscripciones sin token
+    jwt_security_test.go:207: ✅ Correctamente bloqueado acceso sin token - Status: 401
+    jwt_security_test.go:215: 
+        ================================================================================
+    jwt_security_test.go:216: 🎉 TEST DE VALIDACIÓN DE JWT Y SEGURIDAD COMPLETADO!
+    jwt_security_test.go:217: ================================================================================
+    jwt_security_test.go:218: ✅ Login válido funciona correctamente
+    jwt_security_test.go:219: ✅ Requests sin token son bloqueados
+    jwt_security_test.go:220: ✅ Tokens inválidos son rechazados
+    jwt_security_test.go:221: ✅ Usuarios pueden acceder a sus propios recursos
+    jwt_security_test.go:222: ✅ Endpoints de admin están protegidos
+    jwt_security_test.go:223: ✅ Separación de permisos funcionando
+    jwt_security_test.go:224: ================================================================================
+--- PASS: TestJWTSecurityValidation (0.16s)
+=== RUN   TestPaymentCreationFlow
+    payment_workflow_test.go:13: 🚀 Iniciando test de flujo de pagos
+    payment_workflow_test.go:16: 
+        📝 Paso 1: Registrar usuario y obtener admin token
+    helpers.go:136: ✅ Usuario registrado - Username: user_922498, ID: 30
+    payment_workflow_test.go:18: ✅ Usuario registrado - ID: 30
+    payment_workflow_test.go:21: ✅ Admin logueado
+=== RUN   TestPaymentCreationFlow/Create_cash_payment_for_subscription
+    payment_workflow_test.go:26: ✅ Suscripción creada - ID: 6928a0de5d377ac363522e4f
+=== RUN   TestPaymentCreationFlow/Create_cash_payment_for_subscription/Update_payment_status_to_completed
+=== RUN   TestPaymentCreationFlow/Create_cash_payment_for_subscription/Get_payment_by_ID
+=== RUN   TestPaymentCreationFlow/Create_payment_with_invalid_data
+--- PASS: TestPaymentCreationFlow (0.07s)
+    --- PASS: TestPaymentCreationFlow/Create_cash_payment_for_subscription (0.04s)
+        --- PASS: TestPaymentCreationFlow/Create_cash_payment_for_subscription/Update_payment_status_to_completed (0.01s)
+        --- PASS: TestPaymentCreationFlow/Create_cash_payment_for_subscription/Get_payment_by_ID (0.01s)
+    --- PASS: TestPaymentCreationFlow/Create_payment_with_invalid_data (0.00s)
+=== RUN   TestPaymentListingAndFiltering
+=== RUN   TestPaymentListingAndFiltering/Get_all_payments
+    payment_workflow_test.go:188: Found 109 payments
+=== RUN   TestPaymentListingAndFiltering/Get_payments_by_user
+=== RUN   TestPaymentListingAndFiltering/Get_payments_by_status
+    payment_workflow_test.go:241: Expected status 200, got: 404
+--- FAIL: TestPaymentListingAndFiltering (0.18s)
+    --- PASS: TestPaymentListingAndFiltering/Get_all_payments (0.15s)
+    --- PASS: TestPaymentListingAndFiltering/Get_payments_by_user (0.01s)
+    --- FAIL: TestPaymentListingAndFiltering/Get_payments_by_status (0.00s)
+=== RUN   TestPaymentAuthorizationRules
+    helpers.go:136: ✅ Usuario registrado - Username: user_929680, ID: 31
+    payment_workflow_test.go:260: ✅ Usuario registrado - ID: 31
+=== RUN   TestPaymentAuthorizationRules/Regular_user_cannot_create_payments
+    payment_workflow_test.go:292: Regular user should not be able to create payments
+=== RUN   TestPaymentAuthorizationRules/User_can_view_their_own_payments
+--- FAIL: TestPaymentAuthorizationRules (0.39s)
+    --- FAIL: TestPaymentAuthorizationRules/Regular_user_cannot_create_payments (0.01s)
+    --- PASS: TestPaymentAuthorizationRules/User_can_view_their_own_payments (0.01s)
+=== RUN   TestPlanUpgradeFlow
+    plan_upgrade_test.go:9: 🚀 Iniciando test de integración: Plan Upgrade Flow
+    plan_upgrade_test.go:12: 
+        📝 PASO 1: Login como usuario regular
+    plan_upgrade_test.go:14: ✅ Usuario logueado - ID: 5, Token: Bearer eyJhbGciOiJIU...
+    plan_upgrade_test.go:16: 
+        📝 PASO 2: Login como admin
+    plan_upgrade_test.go:18: ✅ Admin logueado - ID: 1, Token: Bearer eyJhbGciOiJIU...
+    plan_upgrade_test.go:21: 
+        📝 PASO 3: Crear suscripción con Plan Básico (limitado)
+    helpers.go:241: ❌ Error creando suscripción - Status: 400, Body: {"error":"ya tienes una suscripción activa. No puedes crear otra hasta que expire o sea cancelada"}
+--- FAIL: TestPlanUpgradeFlow (0.01s)
+=== RUN   TestRateLimiting
+    rate_limiting_test.go:13: 🚀 Iniciando test de integración: Rate Limiting
+    rate_limiting_test.go:18: 
+        📝 PASO 1: Login normal (debe funcionar)
+    rate_limiting_test.go:38: ⚠️  Login normal falló - Status: 400
+    rate_limiting_test.go:42: 
+        📝 PASO 2: Enviar múltiples requests rápidas para activar rate limiting
+    rate_limiting_test.go:77: ℹ️  Resultados: 0 exitosos, 0 bloqueados
+    rate_limiting_test.go:82: ⚠️  No se activó el rate limiting (puede requerir más requests o configuración)
+    rate_limiting_test.go:115: 
+        📝 PASO 5: Verificar que el rate limiting es por IP/usuario
+    rate_limiting_test.go:138: ℹ️  Status: 400
+    rate_limiting_test.go:142: 
+        ================================================================================
+    rate_limiting_test.go:143: 🎉 TEST DE RATE LIMITING COMPLETADO!
+    rate_limiting_test.go:144: ================================================================================
+    rate_limiting_test.go:145: ✅ Login normal funciona correctamente
+    rate_limiting_test.go:150: ℹ️  Rate limiting no se activó en este test
+    rate_limiting_test.go:152: ✅ Comportamiento de rate limiting verificado
+    rate_limiting_test.go:153: ================================================================================
+    rate_limiting_test.go:154: 
+        ℹ️  NOTA: El rate limiting puede variar según la configuración del servidor
+    rate_limiting_test.go:155: ℹ️  En producción, el límite típico es de 5-10 requests por minuto
+--- PASS: TestRateLimiting (2.23s)
+=== RUN   TestRateLimitingOnDifferentEndpoints
+    rate_limiting_test.go:160: 🚀 Iniciando test: Rate Limiting on Different Endpoints
+    rate_limiting_test.go:166: ✅ Usuario logueado - ID: 5
+    rate_limiting_test.go:169: 
+        📝 Test: Verificar rate limiting en /inscripciones
+    rate_limiting_test.go:196: ℹ️  Rate limiting no se activó en /inscripciones (puede tener límite diferente)
+    rate_limiting_test.go:199: 
+        ================================================================================
+    rate_limiting_test.go:200: 🎉 TEST COMPLETADO!
+    rate_limiting_test.go:201: ================================================================================
+--- PASS: TestRateLimitingOnDifferentEndpoints (1.77s)
+=== RUN   TestSearchAPI_HealthCheck
+    search_api_test.go:45: 🚀 Iniciando test: Search API Health Check
+    search_api_test.go:62: ✅ Search API Status: ok
+    search_api_test.go:63: ✅ Solr: connected
+    search_api_test.go:64: ✅ Cache: connected
+    search_api_test.go:74: ================================================================================
+    search_api_test.go:75: 🎉 TEST HEALTH CHECK COMPLETADO!
+    search_api_test.go:76: ================================================================================
+--- PASS: TestSearchAPI_HealthCheck (0.28s)
+=== RUN   TestSearchAPI_SearchByQuery
+    search_api_test.go:80: 🚀 Iniciando test: Search API - Búsqueda por Query
+    search_api_test.go:82: 
+        📝 PASO 1: Buscar actividades con query 'yoga'
+    search_api_test.go:98: ✅ Búsqueda 'yoga' retornó 12 resultados
+    search_api_test.go:106:    - Yoga Vespertino (categoría: yoga)
+    search_api_test.go:106:    - Yoga Matutino ACTUALIZADO (categoría: yoga)
+    search_api_test.go:106:    - Yoga Matutino Avanzado (categoría: yoga)
+    search_api_test.go:106:    - Yoga Vespertino Relajante (categoría: yoga)
+    search_api_test.go:106:    - Actividad No Autorizada (categoría: yoga)
+    search_api_test.go:109: 
+        📝 PASO 2: Buscar actividades con query 'spinning'
+    search_api_test.go:118: ✅ Búsqueda 'spinning' retornó 3 resultados
+    search_api_test.go:120: 
+        📝 PASO 3: Buscar con query que no existe
+    search_api_test.go:129: ✅ Búsqueda inexistente retornó 0 resultados (esperado: 0)
+    search_api_test.go:131: 
+        ================================================================================
+    search_api_test.go:132: 🎉 TEST BÚSQUEDA POR QUERY COMPLETADO!
+    search_api_test.go:133: ================================================================================
+--- PASS: TestSearchAPI_SearchByQuery (0.14s)
+=== RUN   TestSearchAPI_SearchByCategory
+    search_api_test.go:137: 🚀 Iniciando test: Search API - Búsqueda por Categoría
+    search_api_test.go:142: 
+        📝 Buscando categoría: yoga
+    search_api_test.go:153: ✅ Categoría 'yoga' retornó 12 resultados
+    search_api_test.go:142: 
+        📝 Buscando categoría: spinning
+    search_api_test.go:153: ✅ Categoría 'spinning' retornó 3 resultados
+    search_api_test.go:142: 
+        📝 Buscando categoría: funcional
+    search_api_test.go:153: ✅ Categoría 'funcional' retornó 3 resultados
+    search_api_test.go:142: 
+        📝 Buscando categoría: pilates
+    search_api_test.go:153: ✅ Categoría 'pilates' retornó 2 resultados
+    search_api_test.go:163: 
+        ================================================================================
+    search_api_test.go:164: 🎉 TEST BÚSQUEDA POR CATEGORÍA COMPLETADO!
+    search_api_test.go:165: ================================================================================
+--- PASS: TestSearchAPI_SearchByCategory (0.23s)
+=== RUN   TestSearchAPI_SearchPagination
+    search_api_test.go:169: 🚀 Iniciando test: Search API - Paginación
+    search_api_test.go:171: 
+        📝 PASO 1: Obtener página 1 con 5 elementos
+    search_api_test.go:181: ✅ Página 1: 5 resultados de 51 total
+    search_api_test.go:182:    - Page: 1, PageSize: 5, TotalPages: 11
+    search_api_test.go:192: 
+        📝 PASO 2: Obtener página 2
+    search_api_test.go:202: ✅ Página 2: 5 resultados
+    search_api_test.go:209: ✅ Páginas contienen resultados diferentes
+    search_api_test.go:213: 
+        📝 PASO 3: Verificar página fuera de rango
+    search_api_test.go:223: ✅ Página 9999: 0 resultados (esperado: 0)
+    search_api_test.go:225: 
+        ================================================================================
+    search_api_test.go:226: 🎉 TEST PAGINACIÓN COMPLETADO!
+    search_api_test.go:227: ================================================================================
+--- PASS: TestSearchAPI_SearchPagination (0.15s)
+=== RUN   TestSearchAPI_SearchByDay
+    search_api_test.go:231: 🚀 Iniciando test: Search API - Búsqueda por Día
+    search_api_test.go:246: ✅ Día 'Lunes' retornó 11 resultados
+    search_api_test.go:246: ✅ Día 'Martes' retornó 3 resultados
+    search_api_test.go:246: ✅ Día 'Miercoles' retornó 3 resultados
+    search_api_test.go:246: ✅ Día 'Jueves' retornó 3 resultados
+    search_api_test.go:246: ✅ Día 'Viernes' retornó 2 resultados
+    search_api_test.go:249: 
+        ================================================================================
+    search_api_test.go:250: 🎉 TEST BÚSQUEDA POR DÍA COMPLETADO!
+    search_api_test.go:251: ================================================================================
+--- PASS: TestSearchAPI_SearchByDay (0.21s)
+=== RUN   TestSearchAPI_CombinedFilters
+    search_api_test.go:255: 🚀 Iniciando test: Search API - Filtros Combinados
+    search_api_test.go:257: 
+        📝 PASO 1: Buscar yoga del Lunes
+    search_api_test.go:267: ✅ 'yoga' + 'Lunes' retornó 11 resultados
+    search_api_test.go:270:    - Yoga Vespertino (yoga, Lunes)
+    search_api_test.go:270:    - Yoga Matutino ACTUALIZADO (yoga, Lunes)
+    search_api_test.go:270:    - Yoga Matutino Avanzado (yoga, Lunes)
+    search_api_test.go:273: 
+        📝 PASO 2: Buscar spinning categoría específica
+    search_api_test.go:283: ✅ Categoría 'spinning' retornó 3 resultados
+    search_api_test.go:285: 
+        ================================================================================
+    search_api_test.go:286: 🎉 TEST FILTROS COMBINADOS COMPLETADO!
+    search_api_test.go:287: ================================================================================
+--- PASS: TestSearchAPI_CombinedFilters (0.45s)
+=== RUN   TestSearchAPI_SearchPerformance
+    search_api_test.go:291: 🚀 Iniciando test: Search API - Performance
+    search_api_test.go:296: 
+        📝 Ejecutando 5 búsquedas para medir tiempo promedio...
+    search_api_test.go:310:    - Búsqueda 'yoga': 18.0828ms
+    search_api_test.go:310:    - Búsqueda 'spinning': 23.9946ms
+    search_api_test.go:310:    - Búsqueda 'funcional': 45.9479ms
+    search_api_test.go:310:    - Búsqueda 'clase': 71.7999ms
+    search_api_test.go:310:    - Búsqueda 'matutino': 89.3644ms
+    search_api_test.go:314: 
+        ✅ Tiempo promedio de búsqueda: 49.83792ms
+    search_api_test.go:319: ✅ Performance dentro de parámetros aceptables (<500ms)
+    search_api_test.go:322: 
+        ================================================================================
+    search_api_test.go:323: 🎉 TEST PERFORMANCE COMPLETADO!
+    search_api_test.go:324: ================================================================================
+--- PASS: TestSearchAPI_SearchPerformance (0.25s)
+=== RUN   TestSearchAPI_EmptyQuery
+    search_api_test.go:328: 🚀 Iniciando test: Search API - Query Vacío
+    search_api_test.go:330: 
+        📝 PASO 1: Búsqueda sin parámetros (listar todo)
+    search_api_test.go:344: ✅ Búsqueda sin filtros retornó 51 resultados
+    search_api_test.go:345:    - Mostrando página 1 de 3
+    search_api_test.go:351: 
+        ================================================================================
+    search_api_test.go:352: 🎉 TEST QUERY VACÍO COMPLETADO!
+    search_api_test.go:353: ================================================================================
+--- PASS: TestSearchAPI_EmptyQuery (0.04s)
+=== RUN   TestSearchAPI_SpecialCharacters
+    search_api_test.go:357: 🚀 Iniciando test: Search API - Caracteres Especiales
+    search_api_test.go:382: ✅ Query 'yoga%20matutino' retornó 12 resultados
+    search_api_test.go:382: ✅ Query 'clase+especial' retornó 9 resultados
+    search_api_test.go:382: ✅ Query 'María' retornó 1 resultados
+    search_api_test.go:382: ✅ Query 'González' retornó 1 resultados
+    search_api_test.go:385: 
+        ================================================================================
+    search_api_test.go:386: 🎉 TEST CARACTERES ESPECIALES COMPLETADO!
+    search_api_test.go:387: ================================================================================
+--- PASS: TestSearchAPI_SpecialCharacters (0.20s)
+=== RUN   TestSolrSearch
+    solr_search_test.go:12: 🚀 Iniciando test de integración: Solr Search
+    solr_search_test.go:15: 
+        📝 PASO 1: Login como admin
+    solr_search_test.go:17: ✅ Admin logueado - ID: 1
+    solr_search_test.go:22: 
+        📝 PASO 2: Crear actividades de prueba con diferentes características
+    solr_search_test.go:107: ✅ Actividad 1 creada - 'Yoga Matutino Avanzado' (ID: 93)
+    solr_search_test.go:107: ✅ Actividad 2 creada - 'Spinning Intenso' (ID: 94)
+    solr_search_test.go:107: ✅ Actividad 3 creada - 'Yoga Vespertino Relajante' (ID: 95)
+    solr_search_test.go:107: ✅ Actividad 4 creada - 'Funcional Matutino' (ID: 96)
+    solr_search_test.go:114: 
+        ℹ️  Esperando indexación de Solr...
+    solr_search_test.go:118: 
+        📝 PASO 3: Buscar actividades por título parcial 'Yoga'
+    solr_search_test.go:130: ✅ Búsqueda por 'Yoga' retornó 6 resultados
+    solr_search_test.go:137:    - Yoga Matutino ACTUALIZADO
+    solr_search_test.go:137:    - Yoga Vespertino
+    solr_search_test.go:137:    - Yoga Matutino Avanzado
+    solr_search_test.go:137:    - Yoga Vespertino Relajante
+    solr_search_test.go:137:    - Yoga Matutino Avanzado
+    solr_search_test.go:137:    - Yoga Vespertino Relajante
+    solr_search_test.go:142: ✅ Se encontraron 6 actividades de Yoga
+    solr_search_test.go:148: 
+        📝 PASO 4: Buscar actividades por categoría 'spinning'
+    solr_search_test.go:160: ✅ Búsqueda por categoría 'spinning' retornó 4 resultados
+    solr_search_test.go:168:    - Spinning Intenso (categoría: spinning)
+    solr_search_test.go:168:    - Spinning Matutino (categoría: spinning)
+    solr_search_test.go:168:    - Spinning Intenso (categoría: spinning)
+    solr_search_test.go:168:    - Spinning Intenso (categoría: spinning)
+    solr_search_test.go:172: 
+        📝 PASO 5: Buscar actividades matutinas (horario contiene '08:00' o '07:00')
+    solr_search_test.go:184: ✅ Búsqueda por horario '08' retornó 0 resultados
+    solr_search_test.go:196: 
+        📝 PASO 6: Búsqueda combinada: titulo='Yoga' y categoria='yoga'
+    solr_search_test.go:208: ✅ Búsqueda combinada retornó 6 resultados
+    solr_search_test.go:216:    - Yoga Matutino ACTUALIZADO (categoría: yoga)
+    solr_search_test.go:216:    - Yoga Vespertino (categoría: yoga)
+    solr_search_test.go:216:    - Yoga Matutino Avanzado (categoría: yoga)
+    solr_search_test.go:216:    - Yoga Vespertino Relajante (categoría: yoga)
+    solr_search_test.go:216:    - Yoga Matutino Avanzado (categoría: yoga)
+    solr_search_test.go:216:    - Yoga Vespertino Relajante (categoría: yoga)
+    solr_search_test.go:220: 
+        📝 PASO 7: Listar todas las actividades (sin filtros)
+    solr_search_test.go:232: ✅ Total de actividades en el sistema: 0
+    solr_search_test.go:235: 
+        ================================================================================
+    solr_search_test.go:236: 🎉 TEST DE BÚSQUEDA CON SOLR COMPLETADO!
+    solr_search_test.go:237: ================================================================================
+    solr_search_test.go:238: ✅ 4 actividades de prueba creadas
+    solr_search_test.go:239: ✅ Búsqueda por título funcionando
+    solr_search_test.go:240: ✅ Búsqueda por categoría funcionando
+    solr_search_test.go:241: ✅ Búsqueda por horario funcionando
+    solr_search_test.go:242: ✅ Búsqueda combinada funcionando
+    solr_search_test.go:243: ✅ Total de 0 actividades disponibles
+    solr_search_test.go:244: ================================================================================
+--- PASS: TestSolrSearch (0.24s)
+=== RUN   TestSubscriptionCancellation
+    subscription_cancellation_test.go:13: 🚀 Iniciando test de integración: Subscription Cancellation
+    subscription_cancellation_test.go:16: 
+        📝 PASO 1: Login de usuario y admin
+    subscription_cancellation_test.go:18: ✅ Admin logueado - ID: 1
+    subscription_cancellation_test.go:21: ✅ Usuario logueado - ID: 5
+    subscription_cancellation_test.go:24: 
+        📝 PASO 2: Crear y activar suscripción Premium
+    helpers.go:241: ❌ Error creando suscripción - Status: 400, Body: {"error":"ya tienes una suscripción activa. No puedes crear otra hasta que expire o sea cancelada"}
+--- FAIL: TestSubscriptionCancellation (0.02s)
+=== RUN   TestSubscriptionExpirationAndRenewal
+    subscription_expiration_test.go:12: 🚀 Iniciando test de integración: Subscription Expiration and Renewal
+    subscription_expiration_test.go:15: 
+        📝 PASO 1: Login como usuario regular
+    subscription_expiration_test.go:17: ✅ Usuario logueado - ID: 5
+    subscription_expiration_test.go:19: 
+        📝 PASO 2: Login como admin
+    subscription_expiration_test.go:21: ✅ Admin logueado - ID: 1
+    subscription_expiration_test.go:24: 
+        📝 PASO 3: Crear suscripción con Plan Premium
+    helpers.go:241: ❌ Error creando suscripción - Status: 400, Body: {"error":"ya tienes una suscripción activa. No puedes crear otra hasta que expire o sea cancelada"}
+--- FAIL: TestSubscriptionExpirationAndRenewal (0.01s)
+=== RUN   TestUnsubscribeAndResubscribe
+    unsubscribe_resubscribe_test.go:13: 🚀 Iniciando test de integración: Unsubscribe and Resubscribe
+    unsubscribe_resubscribe_test.go:16: 
+        📝 PASO 1: Login y activación de suscripción
+    unsubscribe_resubscribe_test.go:18: ✅ Admin logueado - ID: 1
+    unsubscribe_resubscribe_test.go:21: ✅ Usuario logueado - ID: 5
+    helpers.go:241: ❌ Error creando suscripción - Status: 400, Body: {"error":"ya tienes una suscripción activa. No puedes crear otra hasta que expire o sea cancelada"}
+--- FAIL: TestUnsubscribeAndResubscribe (0.02s)
+=== RUN   TestUserRegistrationFlow
+=== RUN   TestUserRegistrationFlow/Register_new_user
+=== RUN   TestUserRegistrationFlow/Cannot_register_duplicate_username
+=== RUN   TestUserRegistrationFlow/Cannot_register_duplicate_email
+=== RUN   TestUserRegistrationFlow/Login_with_new_user
+=== RUN   TestUserRegistrationFlow/Login_with_wrong_password
+=== RUN   TestUserRegistrationFlow/Validate_password_requirements
+=== RUN   TestUserRegistrationFlow/Validate_password_requirements/too_short
+=== RUN   TestUserRegistrationFlow/Validate_password_requirements/no_uppercase
+=== RUN   TestUserRegistrationFlow/Validate_password_requirements/no_lowercase
+=== RUN   TestUserRegistrationFlow/Validate_password_requirements/no_number
+=== RUN   TestUserRegistrationFlow/Validate_password_requirements/no_special_char
+--- PASS: TestUserRegistrationFlow (0.14s)
+    --- PASS: TestUserRegistrationFlow/Register_new_user (0.03s)
+    --- PASS: TestUserRegistrationFlow/Cannot_register_duplicate_username (0.01s)
+    --- PASS: TestUserRegistrationFlow/Cannot_register_duplicate_email (0.02s)
+    --- PASS: TestUserRegistrationFlow/Login_with_new_user (0.02s)
+    --- PASS: TestUserRegistrationFlow/Login_with_wrong_password (0.01s)
+    --- PASS: TestUserRegistrationFlow/Validate_password_requirements (0.06s)
+        --- PASS: TestUserRegistrationFlow/Validate_password_requirements/too_short (0.01s)
+        --- PASS: TestUserRegistrationFlow/Validate_password_requirements/no_uppercase (0.01s)
+        --- PASS: TestUserRegistrationFlow/Validate_password_requirements/no_lowercase (0.01s)
+        --- PASS: TestUserRegistrationFlow/Validate_password_requirements/no_number (0.01s)
+        --- PASS: TestUserRegistrationFlow/Validate_password_requirements/no_special_char (0.01s)
+=== RUN   TestUserProfileManagement
+--- FAIL: TestUserProfileManagement (0.01s)
+panic: interface conversion: interface {} is nil, not string [recovered]
+	panic: interface conversion: interface {} is nil, not string
+
+goroutine 501 [running]:
+testing.tRunner.func1.2({0x7a3a20, 0xc0001862d0})
+	C:/Program Files/Go/src/testing/testing.go:1734 +0x219
+testing.tRunner.func1()
+	C:/Program Files/Go/src/testing/testing.go:1737 +0x359
+panic({0x7a3a20?, 0xc0001862d0?})
+	C:/Program Files/Go/src/runtime/panic.go:792 +0x132
+github.com/yourusername/gym-management/tests/integration.TestUserProfileManagement(0xc0002a2a80)
+	C:/Users/eli_v/ivo/backend/tests/integration/user_registration_flow_test.go:251 +0x755
+testing.tRunner(0xc0002a2a80, 0x826c98)
+	C:/Program Files/Go/src/testing/testing.go:1792 +0xcb
+created by testing.(*T).Run in goroutine 1
+	C:/Program Files/Go/src/testing/testing.go:1851 +0x3f6
+exit status 2
+FAIL	github.com/yourusername/gym-management/tests/integration	11.020s

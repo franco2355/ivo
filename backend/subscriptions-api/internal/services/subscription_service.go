@@ -169,10 +169,13 @@ func (s *SubscriptionService) GetSubscriptionsByUserID(ctx context.Context, user
 		"usuario_id": userID,
 	}
 
+	fmt.Printf("🔍 [GetSubscriptionsByUserID] Buscando suscripciones para usuario: %s\n", userID)
 	subscriptions, err := s.subscriptionRepo.FindAll(ctx, filters)
 	if err != nil {
+		fmt.Printf("❌ [GetSubscriptionsByUserID] Error: %v\n", err)
 		return nil, err
 	}
+	fmt.Printf("✅ [GetSubscriptionsByUserID] Encontradas %d suscripciones\n", len(subscriptions))
 
 	var responses []*dtos.SubscriptionResponse
 	for _, subscription := range subscriptions {
@@ -387,4 +390,44 @@ func (s *SubscriptionService) CancelSubscriptionByRefund(ctx context.Context, su
 	s.eventPublisher.PublishSubscriptionEvent("cancelled_by_refund", subscriptionID, eventData)
 
 	return nil
+}
+
+// ============================================================================
+// MÉTODOS PARA EXPIRACIÓN AUTOMÁTICA DE SUSCRIPCIONES
+// ============================================================================
+
+// ExpireOverdueSubscriptions - Marca como expiradas las suscripciones vencidas
+// Este método debería ejecutarse periódicamente (ej: cada hora con un cron job)
+func (s *SubscriptionService) ExpireOverdueSubscriptions(ctx context.Context) (int, error) {
+	// Buscar suscripciones activas con fecha de vencimiento pasada
+	expiredSubscriptions, err := s.subscriptionRepo.FindExpiredSubscriptions(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("error buscando suscripciones vencidas: %w", err)
+	}
+
+	count := 0
+	for _, subscription := range expiredSubscriptions {
+		// Actualizar estado a "expirada"
+		err := s.subscriptionRepo.UpdateStatus(ctx, subscription.ID, "expirada", subscription.PagoID)
+		if err != nil {
+			fmt.Printf("⚠️ Error al expirar suscripción %s: %v\n", subscription.ID.Hex(), err)
+			continue
+		}
+
+		// Publicar evento de expiración
+		eventData := map[string]interface{}{
+			"usuario_id":         subscription.UsuarioID,
+			"plan_id":            subscription.PlanID.Hex(),
+			"fecha_vencimiento":  subscription.FechaVencimiento,
+		}
+		s.eventPublisher.PublishSubscriptionEvent("expired", subscription.ID.Hex(), eventData)
+
+		count++
+	}
+
+	if count > 0 {
+		fmt.Printf("✅ Se expiraron %d suscripciones vencidas\n", count)
+	}
+
+	return count, nil
 }

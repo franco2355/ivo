@@ -12,6 +12,7 @@ type Config struct {
 	Port          string
 	MongoURI      string
 	MongoDatabase string
+	JWTSecret     string
 	MercadoPago   MercadoPagoConfig
 	Stripe        StripeConfig
 	RabbitMQ      RabbitMQConfig
@@ -47,6 +48,7 @@ func LoadConfig() *Config {
 		Port:          getEnv("PORT", "8083"),
 		MongoURI:      getEnv("MONGO_URI", "mongodb://localhost:27017"),
 		MongoDatabase: getEnv("MONGO_DATABASE", "payments"),
+		JWTSecret:     getEnv("JWT_SECRET", "your-secret-key"),
 
 		// Mercado Pago
 		MercadoPago: MercadoPagoConfig{

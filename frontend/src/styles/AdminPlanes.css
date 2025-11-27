@@ -5,6 +5,37 @@
     @apply py-8;
   }
 
+  /* Selector de categorías */
+  .categorias-selector {
+    @apply grid gap-3 mt-2;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .categoria-checkbox {
+    @apply flex items-center gap-2 p-3 border-2 border-[#e0e0e0] rounded-lg cursor-pointer transition-all duration-200;
+    background-color: #fafafa;
+  }
+
+  .categoria-checkbox:hover {
+    @apply border-[#c0c0c0];
+    background-color: #f0f0f0;
+  }
+
+  .categoria-checkbox.selected {
+    @apply border-primary;
+    background-color: #e8f5e9;
+  }
+
+  .categoria-checkbox input[type="checkbox"] {
+    @apply cursor-pointer;
+    width: 18px;
+    height: 18px;
+  }
+
+  .categoria-checkbox span {
+    @apply text-sm font-medium text-[#333];
+  }
+
   .admin-planes-header {
     @apply flex justify-between items-center mb-8;
   }

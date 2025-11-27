@@ -161,4 +161,12 @@ func registerRoutes(
 		subscriptionRoutes.PATCH("/:id/status", subscriptionController.UpdateSubscriptionStatus)
 		subscriptionRoutes.DELETE("/:id", subscriptionController.CancelSubscription)
 	}
+
+	// Rutas admin para gestión de suscripciones
+	adminSubscriptionRoutes := router.Group("/subscriptions")
+	adminSubscriptionRoutes.Use(middleware.JWTAuth(cfg.JWTSecret))
+	adminSubscriptionRoutes.Use(middleware.RequireRole("admin"))
+	{
+		adminSubscriptionRoutes.POST("/expire-overdue", subscriptionController.ExpireOverdueSubscriptions)
+	}
 }

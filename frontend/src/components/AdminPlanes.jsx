@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/AdminPlanes.css';
 import { useToastContext } from '../context/ToastContext';
 import { handleSessionExpired, isAuthError } from '../utils/auth';
-import { SUBSCRIPTIONS_API } from '../config/api';
+import { SUBSCRIPTIONS_API, SEARCH_API } from '../config/api';
 
 const API_URL = SUBSCRIPTIONS_API.base;
 
@@ -363,6 +363,7 @@ const AdminPlanes = () => {
 // Componente FormularioPlan
 const FormularioPlan = ({ planInicial, onGuardar, onCancelar, toast }) => {
     const isEdit = !!planInicial;
+    const [categorias, setCategorias] = useState([]);
 
     const [formData, setFormData] = useState({
         id: planInicial?.id || null,
@@ -374,10 +375,29 @@ const FormularioPlan = ({ planInicial, onGuardar, onCancelar, toast }) => {
         max_clases_semana: planInicial?.max_clases_semana || 0,
         activo: planInicial?.activo !== undefined ? planInicial.activo : true,
         beneficios: planInicial?.beneficios || [],
-        color: planInicial?.color || '#4CAF50'
+        color: planInicial?.color || '#4CAF50',
+        actividades_permitidas: planInicial?.actividades_permitidas || []
     });
 
     const [nuevoBeneficio, setNuevoBeneficio] = useState('');
+
+    // Cargar categorías disponibles
+    useEffect(() => {
+        const fetchCategorias = async () => {
+            try {
+                const response = await fetch(SEARCH_API.categories);
+                if (response.ok) {
+                    const data = await response.json();
+                    setCategorias(data.categories || []);
+                }
+            } catch (error) {
+                console.error("Error al cargar categorías:", error);
+                // Fallback: categorías por defecto
+                setCategorias(['yoga', 'spinning', 'funcional', 'pilates', 'crossfit', 'baile', 'boxeo', 'stretching']);
+            }
+        };
+        fetchCategorias();
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -505,6 +525,44 @@ const FormularioPlan = ({ planInicial, onGuardar, onCancelar, toast }) => {
                     onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                 />
             </div>
+
+            {/* Campo para actividades permitidas - solo visible si el plan es "limitado" */}
+            {formData.tipo_acceso === 'limitado' && (
+                <div className="form-group">
+                    <label>
+                        Actividades Permitidas
+                        <span style={{ fontSize: '0.85em', color: '#666', marginLeft: '8px' }}>
+                            (Selecciona las categorías que este plan puede acceder)
+                        </span>
+                    </label>
+                    <div className="categorias-selector">
+                        {categorias.map((categoria) => {
+                            const categoriaLower = categoria.toLowerCase();
+                            const isSelected = formData.actividades_permitidas.includes(categoriaLower);
+                            return (
+                                <label key={categoria} className={`categoria-checkbox ${isSelected ? 'selected' : ''}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={(e) => {
+                                            const newActividades = e.target.checked
+                                                ? [...formData.actividades_permitidas, categoriaLower]
+                                                : formData.actividades_permitidas.filter(a => a !== categoriaLower);
+                                            setFormData({ ...formData, actividades_permitidas: newActividades });
+                                        }}
+                                    />
+                                    <span>{categoria.charAt(0).toUpperCase() + categoria.slice(1)}</span>
+                                </label>
+                            );
+                        })}
+                    </div>
+                    {formData.actividades_permitidas.length === 0 && (
+                        <p style={{ color: '#ff9800', fontSize: '0.9em', marginTop: '8px' }}>
+                            ⚠️ Sin actividades seleccionadas, el usuario no podrá inscribirse en ninguna actividad
+                        </p>
+                    )}
+                </div>
+            )}
 
             <div className="form-group">
                 <label>Beneficios</label>

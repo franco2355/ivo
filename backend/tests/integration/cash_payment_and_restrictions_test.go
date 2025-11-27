@@ -33,11 +33,11 @@ func TestCashPaymentFlowWithPlanRestrictions(t *testing.T) {
 	t.Log("🚀 Iniciando test de integración completo: Cash Payment + Plan Restrictions")
 
 	// ============================================================================
-	// PASO 1: Login como usuario regular
+	// PASO 1: Registrar nuevo usuario (generado aleatoriamente)
 	// ============================================================================
-	t.Log("\n📝 PASO 1: Login como usuario regular")
-	userToken, userID := loginUser(t, userUsername, userPassword, false)
-	t.Logf("✅ Usuario logueado - ID: %d, Token: %s...", userID, userToken[:20])
+	t.Log("\n📝 PASO 1: Registrar nuevo usuario con datos válidos")
+	userToken, userID, userData := registerUser(t)
+	t.Logf("✅ Usuario registrado y logueado - Username: %s, ID: %d", userData.Username, userID)
 
 	// ============================================================================
 	// PASO 2: Login como admin

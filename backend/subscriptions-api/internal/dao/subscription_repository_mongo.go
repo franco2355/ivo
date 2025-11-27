@@ -49,17 +49,41 @@ func (r *SubscriptionRepositoryMongo) FindByID(ctx context.Context, id primitive
 }
 
 func (r *SubscriptionRepositoryMongo) FindAll(ctx context.Context, filters map[string]interface{}) ([]*entities.Subscription, error) {
-	cursor, err := r.collection.Find(ctx, filters)
+	fmt.Printf("🔍 [FindAll] Filtros recibidos: %+v\n", filters)
+
+	// Usar bson.D para mantener control sobre los tipos
+	var bsonFilter bson.D
+	for k, v := range filters {
+		fmt.Printf("  - Campo %s: valor=%v tipo=%T\n", k, v, v)
+		// IMPORTANTE: Asegurar que usuario_id se mantenga como string usando primitive.E
+		if k == "usuario_id" {
+			if strVal, ok := v.(string); ok {
+				// Usar primitive.E para control explícito de tipos
+				bsonFilter = append(bsonFilter, primitive.E{Key: k, Value: strVal})
+				fmt.Printf("  ✅ usuario_id añadido como string usando primitive.E: %q\n", strVal)
+			} else {
+				bsonFilter = append(bsonFilter, primitive.E{Key: k, Value: v})
+			}
+		} else {
+			bsonFilter = append(bsonFilter, primitive.E{Key: k, Value: v})
+		}
+	}
+
+	fmt.Printf("🔍 [FindAll] Filtros BSON finales (bson.D): %+v\n", bsonFilter)
+	cursor, err := r.collection.Find(ctx, bsonFilter)
 	if err != nil {
+		fmt.Printf("❌ [FindAll] Error en Find: %v\n", err)
 		return nil, fmt.Errorf("error al listar suscripciones: %w", err)
 	}
 	defer cursor.Close(ctx)
 
 	var subscriptions []*entities.Subscription
 	if err := cursor.All(ctx, &subscriptions); err != nil {
+		fmt.Printf("❌ [FindAll] Error al decodificar: %v\n", err)
 		return nil, fmt.Errorf("error al decodificar suscripciones: %w", err)
 	}
 
+	fmt.Printf("✅ [FindAll] Encontradas %d suscripciones en MongoDB\n", len(subscriptions))
 	return subscriptions, nil
 }
 
@@ -80,6 +104,26 @@ func (r *SubscriptionRepositoryMongo) FindActiveByUserID(ctx context.Context, us
 	}
 
 	return &subscription, nil
+}
+
+func (r *SubscriptionRepositoryMongo) FindExpiredSubscriptions(ctx context.Context) ([]*entities.Subscription, error) {
+	filter := bson.M{
+		"estado":            "activa",
+		"fecha_vencimiento": bson.M{"$lt": time.Now()},
+	}
+
+	cursor, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("error al buscar suscripciones expiradas: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var subscriptions []*entities.Subscription
+	if err := cursor.All(ctx, &subscriptions); err != nil {
+		return nil, fmt.Errorf("error al decodificar suscripciones expiradas: %w", err)
+	}
+
+	return subscriptions, nil
 }
 
 func (r *SubscriptionRepositoryMongo) Update(ctx context.Context, id primitive.ObjectID, subscription *entities.Subscription) error {

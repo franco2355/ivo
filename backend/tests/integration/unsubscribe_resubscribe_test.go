@@ -13,12 +13,12 @@ func TestUnsubscribeAndResubscribe(t *testing.T) {
 	t.Log("🚀 Iniciando test de integración: Unsubscribe and Resubscribe")
 
 	// ==================== PASO 1: Setup ====================
-	t.Log("\n📝 PASO 1: Login y activación de suscripción")
+	t.Log("\n📝 PASO 1: Registrar usuario y admin")
 	adminToken, adminID := login(t, "admin", "admin123")
 	t.Logf("✅ Admin logueado - ID: %d", adminID)
 
-	userToken, userID := login(t, "testuser", "password123")
-	t.Logf("✅ Usuario logueado - ID: %d", userID)
+	userToken, userID, userData := registerUser(t)
+	t.Logf("✅ Usuario registrado - ID: %d, Username: %s", userID, userData.Username)
 
 	// Activar suscripción
 	subscriptionID := createSubscription(t, userToken, userID, PlanPremiumID)

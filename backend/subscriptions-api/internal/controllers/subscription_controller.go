@@ -125,3 +125,18 @@ func (c *SubscriptionController) HealthCheck(ctx *gin.Context) {
 
 	ctx.JSON(statusCode, healthStatus)
 }
+
+// ExpireOverdueSubscriptions - Endpoint para expirar suscripciones vencidas manualmente
+// POST /subscriptions/expire-overdue (solo admin)
+func (c *SubscriptionController) ExpireOverdueSubscriptions(ctx *gin.Context) {
+	count, err := c.subscriptionService.ExpireOverdueSubscriptions(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Proceso de expiración completado",
+		"expired_count": count,
+	})
+}

@@ -217,6 +217,56 @@ func (r *MySQLSearchRepository) GetAllActivities() ([]dtos.SearchDocument, error
 	return results, nil
 }
 
+// GetActivityByID - Obtiene una actividad específica por ID
+func (r *MySQLSearchRepository) GetActivityByID(activityID string) (dtos.SearchDocument, error) {
+	query := `
+		SELECT
+			a.id_actividad,
+			a.titulo,
+			a.descripcion,
+			a.categoria,
+			a.instructor,
+			a.dia,
+			TIME_FORMAT(a.horario_inicio, '%H:%i') as horario_inicio,
+			TIME_FORMAT(a.horario_final, '%H:%i') as horario_final,
+			a.cupo,
+			COALESCE(s.nombre, '') as sucursal_nombre,
+			a.sucursal_id
+		FROM actividades a
+		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal
+		WHERE a.id_actividad = ? AND a.deleted_at IS NULL`
+
+	var doc dtos.SearchDocument
+	var horarioInicio, horarioFinal string
+	var sucursalID sql.NullString
+
+	err := r.db.QueryRow(query, activityID).Scan(
+		&doc.ID,
+		&doc.Titulo,
+		&doc.Descripcion,
+		&doc.Categoria,
+		&doc.Instructor,
+		&doc.Dia,
+		&horarioInicio,
+		&horarioFinal,
+		&doc.CupoDisponible,
+		&doc.SucursalNombre,
+		&sucursalID,
+	)
+	if err != nil {
+		return dtos.SearchDocument{}, fmt.Errorf("error getting activity by ID: %w", err)
+	}
+
+	doc.Type = "activity"
+	doc.HorarioInicio = horarioInicio
+	doc.HorarioFinal = horarioFinal
+	if sucursalID.Valid {
+		doc.SucursalID = sucursalID.String
+	}
+
+	return doc, nil
+}
+
 // Close - Cierra la conexión a la base de datos
 func (r *MySQLSearchRepository) Close() error {
 	return r.db.Close()

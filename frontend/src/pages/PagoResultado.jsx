@@ -91,7 +91,7 @@ const PagoResultado = () => {
 
     const handleContinue = () => {
         if (status === 'success' || status === 'pending') {
-            navigate('/mi-suscripcion');
+            navigate('/dashboard');
         } else {
             navigate('/planes');
         }
@@ -187,7 +187,7 @@ const PagoResultado = () => {
                         style={{ backgroundColor: content.color }}
                     >
                         {status === 'success' || status === 'pending'
-                            ? 'Ver mi suscripción'
+                            ? 'Ir al Dashboard'
                             : 'Volver a planes'
                         }
                     </button>

@@ -188,9 +188,14 @@ const AdminPagos = () => {
         }
     };
 
-    const pagosFiltrados = filtroEstado === 'all'
+    // Filtrar y ordenar pagos (más recientes primero)
+    const pagosFiltrados = (filtroEstado === 'all'
         ? pagos
-        : pagos.filter(pago => pago.status === filtroEstado);
+        : pagos.filter(pago => pago.status === filtroEstado)
+    ).sort((a, b) => {
+        // Ordenar por fecha descendente (más reciente primero)
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
 
     // Calcular paginación
     const totalPaginas = Math.ceil(pagosFiltrados.length / pagosPorPagina);
@@ -325,7 +330,13 @@ const AdminPagos = () => {
                                         </span>
                                     </td>
                                     <td className="fecha-cell">
-                                        {new Date(pago.created_at).toLocaleDateString('es-AR')}
+                                        {new Date(pago.created_at).toLocaleDateString('es-AR', {
+                                            year: 'numeric',
+                                            month: '2-digit',
+                                            day: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
                                     </td>
                                     <td className="acciones-cell">
                                         {pago.status === 'pending' && pago.payment_gateway === 'cash' && (

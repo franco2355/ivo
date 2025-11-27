@@ -225,21 +225,16 @@ const Pagos = () => {
                                 </div>
                             )}
 
-                            <div className="pago-acciones">
-                                {pago.status === 'completed' && (
-                                    <button className="btn-descargar-recibo">
-                                        📄 Descargar Recibo
-                                    </button>
-                                )}
-                                {pago.status === 'pending' && (
+                            {pago.status === 'pending' && (
+                                <div className="pago-acciones">
                                     <button
                                         className="btn-completar-pago"
                                         onClick={() => navigate(`/checkout/${pago.entity_id}`)}
                                     >
                                         Completar Pago
                                     </button>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
