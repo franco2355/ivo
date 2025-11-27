@@ -26,8 +26,9 @@ const EditarActividadModal = ({ actividad, onClose, onSave }) => {
     useEffect(() => {
         if (actividad) {
             // Asegurarse de que todos los campos necesarios estén presentes y que el cupo sea un número
+            // Soportar tanto id_actividad como id (la API ahora retorna "id")
             const actividadData = {
-                id_actividad: actividad.id_actividad,
+                id_actividad: actividad.id_actividad || actividad.id,
                 titulo: actividad.titulo || '',
                 descripcion: actividad.descripcion || '',
                 cupo: parseInt(actividad.cupo, 10) || 0,

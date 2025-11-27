@@ -114,6 +114,8 @@
 
   .modal-content-plan {
     @apply bg-white p-8 rounded-card max-w-[500px] relative;
+    max-height: 90vh;
+    overflow-y: auto;
   }
 
   .modal-content-plan h3 {
@@ -261,5 +263,32 @@
 
   .modal-close:hover {
     @apply text-black;
+  }
+
+  /* Estilos de paginación */
+  .paginacion-container {
+    @apply flex items-center justify-between mt-6 p-4 bg-white rounded-lg;
+  }
+
+  .btn-paginacion {
+    @apply px-6 py-3 bg-[#333] text-white border-none rounded-lg font-semibold cursor-pointer transition-all duration-300;
+  }
+
+  .btn-paginacion:hover:not(:disabled) {
+    @apply bg-[#555];
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-paginacion:disabled {
+    @apply bg-[#ddd] text-[#999] cursor-not-allowed;
+  }
+
+  .paginacion-info {
+    @apply flex flex-col items-center gap-1 text-[#333] font-semibold;
+  }
+
+  .paginacion-total {
+    @apply text-sm text-gray font-normal;
   }
 }

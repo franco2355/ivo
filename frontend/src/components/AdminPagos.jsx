@@ -16,6 +16,8 @@ const AdminPagos = () => {
         fallidos: 0,
         montoTotal: 0
     });
+    const [paginaActual, setPaginaActual] = useState(1);
+    const pagosPorPagina = 10;
 
     useEffect(() => {
         fetchPagos();
@@ -190,6 +192,17 @@ const AdminPagos = () => {
         ? pagos
         : pagos.filter(pago => pago.status === filtroEstado);
 
+    // Calcular paginación
+    const totalPaginas = Math.ceil(pagosFiltrados.length / pagosPorPagina);
+    const indiceInicio = (paginaActual - 1) * pagosPorPagina;
+    const indiceFin = indiceInicio + pagosPorPagina;
+    const pagosPaginados = pagosFiltrados.slice(indiceInicio, indiceFin);
+
+    // Resetear página cuando cambia el filtro
+    useEffect(() => {
+        setPaginaActual(1);
+    }, [filtroEstado]);
+
     if (loading) {
         return (
             <div className="admin-pagos-container">
@@ -270,22 +283,23 @@ const AdminPagos = () => {
                     <p>No hay pagos para mostrar</p>
                 </div>
             ) : (
-                <div className="pagos-table-container">
-                    <table className="pagos-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Usuario</th>
-                                <th>Concepto</th>
-                                <th>Monto</th>
-                                <th>Gateway</th>
-                                <th>Estado</th>
-                                <th>Fecha</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pagosFiltrados.map((pago) => (
+                <>
+                    <div className="pagos-table-container">
+                        <table className="pagos-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuario</th>
+                                    <th>Concepto</th>
+                                    <th>Monto</th>
+                                    <th>Gateway</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pagosPaginados.map((pago) => (
                                 <tr key={pago.id}>
                                     <td className="id-cell">{pago.id.substring(0, 8)}...</td>
                                     <td>{usuarios[pago.user_id] || `Usuario #${pago.user_id}`}</td>
@@ -346,6 +360,35 @@ const AdminPagos = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Controles de paginación */}
+                {totalPaginas > 1 && (
+                    <div className="paginacion-container">
+                        <button
+                            className="btn-paginacion"
+                            onClick={() => setPaginaActual(prev => Math.max(prev - 1, 1))}
+                            disabled={paginaActual === 1}
+                        >
+                            ← Anterior
+                        </button>
+
+                        <div className="paginacion-info">
+                            Página {paginaActual} de {totalPaginas}
+                            <span className="paginacion-total">
+                                ({pagosFiltrados.length} pagos)
+                            </span>
+                        </div>
+
+                        <button
+                            className="btn-paginacion"
+                            onClick={() => setPaginaActual(prev => Math.min(prev + 1, totalPaginas))}
+                            disabled={paginaActual === totalPaginas}
+                        >
+                            Siguiente →
+                        </button>
+                    </div>
+                )}
+                </>
             )}
         </div>
     );

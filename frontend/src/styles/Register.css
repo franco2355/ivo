@@ -32,12 +32,16 @@
     letter-spacing: 1px;
   }
 
+  .input-row {
+    @apply grid grid-cols-2 gap-4 mb-4;
+  }
+
   .input-group {
-    @apply mb-6 w-full relative;
+    @apply w-full relative;
   }
 
   .password-hint {
-    @apply block mt-2 text-sm text-gray-400 italic;
+    @apply block mb-4 text-sm text-gray-400 italic text-center;
   }
 
   .password-hint.error {
@@ -127,6 +131,14 @@
 
     .back-button {
       @apply text-xl;
+    }
+
+    .input-row {
+      @apply grid-cols-1 gap-0;
+    }
+
+    .input-group {
+      @apply mb-4;
     }
   }
 }

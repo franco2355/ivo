@@ -15,6 +15,8 @@ const AdminPlanes = () => {
     const [planEditando, setPlanEditando] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [paginaActual, setPaginaActual] = useState(1);
+    const planesPorPagina = 10;
 
     // Cargar planes desde la API cuando el componente se monta
     useEffect(() => {
@@ -232,73 +234,110 @@ const AdminPlanes = () => {
                     <div className="spinner"></div>
                     <p>Cargando planes...</p>
                 </div>
-            ) : (
-                <div className="planes-table-container">
-                    <table className="planes-table">
-                        <thead>
-                            <tr>
-                                <th>ID (MongoDB)</th>
-                                <th>Nombre</th>
-                                <th>Precio</th>
-                                <th>Tipo Acceso</th>
-                                <th>Duración</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {planes.map((plan) => (
-                                <tr key={plan.id}>
-                                    <td><code style={{ fontSize: '10px' }}>{plan.id}</code></td>
-                                    <td>
-                                        <div className="plan-nombre-cell">
-                                            <span className="plan-color" style={{ backgroundColor: plan.color || '#4CAF50' }}></span>
-                                            {plan.nombre}
-                                            {plan.popular && <span className="badge-popular">Popular</span>}
-                                        </div>
-                                    </td>
-                                    <td className="precio-cell">${plan.precio_mensual?.toFixed(2)}</td>
-                                    <td>
-                                        <span className={`badge-acceso ${plan.tipo_acceso}`}>
-                                            {plan.tipo_acceso}
-                                        </span>
-                                    </td>
-                                    <td>{plan.duracion_dias} días</td>
-                                    <td>
-                                        <label className="toggle-switch">
-                                            <input
-                                                type="checkbox"
-                                                checked={plan.activo}
-                                                onChange={() => handleToggleActivo(plan.id, plan.activo)}
-                                            />
-                                            <span className="toggle-slider-small"></span>
-                                            <span className="toggle-label-small">
-                                                {plan.activo ? 'Activo' : 'Inactivo'}
-                                            </span>
-                                        </label>
-                                    </td>
-                                    <td className="acciones-cell">
-                                        <button
-                                            className="btn-icon btn-editar"
-                                            onClick={() => handleEditar(plan)}
-                                            title="Editar"
-                                        >
-                                            Editar
-                                        </button>
-                                        <button
-                                            className="btn-icon btn-eliminar"
-                                            onClick={() => handleEliminar(plan.id)}
-                                            title="Eliminar"
-                                        >
-                                            Eliminar
-                                        </button>
-                                    </td>
+            ) : planes.length > 0 ? (
+                <>
+                    <div className="planes-table-container">
+                        <table className="planes-table">
+                            <thead>
+                                <tr>
+                                    <th>ID (MongoDB)</th>
+                                    <th>Nombre</th>
+                                    <th>Precio</th>
+                                    <th>Tipo Acceso</th>
+                                    <th>Duración</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                            </thead>
+                            <tbody>
+                                {(() => {
+                                    const totalPaginas = Math.ceil(planes.length / planesPorPagina);
+                                    const indiceInicio = (paginaActual - 1) * planesPorPagina;
+                                    const indiceFin = indiceInicio + planesPorPagina;
+                                    const planesPaginados = planes.slice(indiceInicio, indiceFin);
+
+                                    return planesPaginados.map((plan) => (
+                                        <tr key={plan.id}>
+                                            <td><code style={{ fontSize: '10px' }}>{plan.id}</code></td>
+                                            <td>
+                                                <div className="plan-nombre-cell">
+                                                    <span className="plan-color" style={{ backgroundColor: plan.color || '#4CAF50' }}></span>
+                                                    {plan.nombre}
+                                                    {plan.popular && <span className="badge-popular">Popular</span>}
+                                                </div>
+                                            </td>
+                                            <td className="precio-cell">${plan.precio_mensual?.toFixed(2)}</td>
+                                            <td>
+                                                <span className={`badge-acceso ${plan.tipo_acceso}`}>
+                                                    {plan.tipo_acceso}
+                                                </span>
+                                            </td>
+                                            <td>{plan.duracion_dias} días</td>
+                                            <td>
+                                                <label className="toggle-switch">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={plan.activo}
+                                                        onChange={() => handleToggleActivo(plan.id, plan.activo)}
+                                                    />
+                                                    <span className="toggle-slider-small"></span>
+                                                    <span className="toggle-label-small">
+                                                        {plan.activo ? 'Activo' : 'Inactivo'}
+                                                    </span>
+                                                </label>
+                                            </td>
+                                            <td className="acciones-cell">
+                                                <button
+                                                    className="btn-icon btn-editar"
+                                                    onClick={() => handleEditar(plan)}
+                                                    title="Editar"
+                                                >
+                                                    Editar
+                                                </button>
+                                                <button
+                                                    className="btn-icon btn-eliminar"
+                                                    onClick={() => handleEliminar(plan.id)}
+                                                    title="Eliminar"
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ));
+                                })()}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Controles de paginación */}
+                    {Math.ceil(planes.length / planesPorPagina) > 1 && (
+                        <div className="paginacion-container">
+                            <button
+                                className="btn-paginacion"
+                                onClick={() => setPaginaActual(prev => Math.max(prev - 1, 1))}
+                                disabled={paginaActual === 1}
+                            >
+                                ← Anterior
+                            </button>
+
+                            <div className="paginacion-info">
+                                Página {paginaActual} de {Math.ceil(planes.length / planesPorPagina)}
+                                <span className="paginacion-total">
+                                    ({planes.length} planes)
+                                </span>
+                            </div>
+
+                            <button
+                                className="btn-paginacion"
+                                onClick={() => setPaginaActual(prev => Math.min(prev + 1, Math.ceil(planes.length / planesPorPagina)))}
+                                disabled={paginaActual === Math.ceil(planes.length / planesPorPagina)}
+                            >
+                                Siguiente →
+                            </button>
+                        </div>
+                    )}
+                </>
+            ) : null}
 
             {mostrarModal && (
                 <div className="modal-overlay" onClick={() => setMostrarModal(false)}>

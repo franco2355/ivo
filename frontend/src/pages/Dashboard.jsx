@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMockSuscripcionByUserId } from '../data/mockData';
-import { PAYMENTS_API, ACTIVITIES_API } from '../config/api';
+import { PAYMENTS_API, ACTIVITIES_API, SUBSCRIPTIONS_API } from '../config/api';
 import { normalizePaymentStatus } from '../utils/paymentStatus';
 import { handleSessionExpired, isAuthError } from '../utils/auth';
 import { useToastContext } from '../context/ToastContext';
@@ -35,9 +34,36 @@ const Dashboard = () => {
                 return;
             }
 
-            // Obtener suscripción (mock)
-            const subData = getMockSuscripcionByUserId(userId);
-            setSuscripcion(subData);
+            // Obtener suscripción activa del usuario
+            try {
+                console.log('[Dashboard] Cargando suscripción activa...');
+                const subResponse = await fetch(SUBSCRIPTIONS_API.activeSubscription(userId), {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    }
+                });
+
+                console.log('[Dashboard] Suscripción response:', subResponse.status);
+
+                if (isAuthError(subResponse)) {
+                    handleSessionExpired(toast, navigate);
+                    return;
+                } else if (subResponse.ok) {
+                    const subData = await subResponse.json();
+                    console.log('[Dashboard] Suscripción recibida:', subData);
+                    setSuscripcion(subData);
+                } else if (subResponse.status === 404) {
+                    // No tiene suscripción activa
+                    console.log('[Dashboard] Usuario sin suscripción activa');
+                    setSuscripcion(null);
+                } else {
+                    console.error('[Dashboard] Error al obtener suscripción:', subResponse.status);
+                    setSuscripcion(null);
+                }
+            } catch (error) {
+                console.error('[Dashboard] ❌ Error al cargar suscripción:', error);
+                setSuscripcion(null);
+            }
 
             // Obtener inscripciones del usuario (backend principal)
             try {

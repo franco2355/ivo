@@ -107,7 +107,7 @@ graph LR
     subgraph "Capa de Gateways (Strategy)"
         FACTORY[Gateway Factory]
         GW_MP[MercadoPago Gateway]
-        GW_MOCK[Mock Gateway]
+        GW_CASH[Cash Gateway]
     end
 
     subgraph "Capa de Datos"
@@ -127,7 +127,7 @@ graph LR
     SERVICE --> REPO
 
     FACTORY -.->|Crea| GW_MP
-    FACTORY -.->|Crea| GW_MOCK
+    FACTORY -.->|Crea| GW_CASH
 
     GW_MP -->|API REST| MERCADOPAGO[MercadoPago API]
 
@@ -195,7 +195,7 @@ graph TD
 ```
 PaymentGateway (Interface)
     ├── MercadoPagoGateway
-    └── MockGateway
+    └── CashGateway
 ```
 
 ### Factory Pattern

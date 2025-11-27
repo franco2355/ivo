@@ -123,9 +123,14 @@ const Header = () => {
                                 )}
                             </div>
                         ) : (
-                            <a href="/login" className="login-button">
-                                Iniciar Sesión
-                            </a>
+                            <div className="auth-buttons">
+                                <a href="/login" className="login-button">
+                                    Iniciar Sesión
+                                </a>
+                                <a href="/register" className="register-button">
+                                    Registrarse
+                                </a>
+                            </div>
                         )}
                     </div>
                 </nav>

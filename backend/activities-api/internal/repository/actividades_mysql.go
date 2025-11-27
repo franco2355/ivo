@@ -96,7 +96,7 @@ func NewMySQLActividadesRepository(cfg config.MySQLConfig) *MySQLActividadesRepo
 		                          WHERE i.actividad_id = a.id_actividad
 		                          AND i.is_activa = true), 0) AS lugares
 		FROM actividades a
-		WHERE a.activa = true
+		WHERE a.activa = true AND a.deleted_at IS NULL
 	`
 	if err := db.Exec(createViewSQL).Error; err != nil {
 		log.Printf("Warning: Could not create view actividades_lugares: %v", err)

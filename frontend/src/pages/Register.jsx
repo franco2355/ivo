@@ -233,108 +233,122 @@ const Register = () => {
 
                 {error && <div className="error-message">{error}</div>}
 
-                <div className="input-group">
-                    <input
-                        type="text"
-                        name="nombre"
-                        placeholder="Nombre"
-                        value={formData.nombre}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        disabled={isLoading}
-                        required
-                        className={fieldErrors.nombre && touched.nombre ? 'input-error' : ''}
-                    />
-                    {fieldErrors.nombre && touched.nombre && (
-                        <small className="field-error">{fieldErrors.nombre}</small>
-                    )}
+                {/* Fila 1: Nombre y Apellido */}
+                <div className="input-row">
+                    <div className="input-group">
+                        <input
+                            type="text"
+                            name="nombre"
+                            placeholder="Nombre"
+                            value={formData.nombre}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            disabled={isLoading}
+                            required
+                            className={fieldErrors.nombre && touched.nombre ? 'input-error' : ''}
+                        />
+                        {fieldErrors.nombre && touched.nombre && (
+                            <small className="field-error">{fieldErrors.nombre}</small>
+                        )}
+                    </div>
+
+                    <div className="input-group">
+                        <input
+                            type="text"
+                            name="apellido"
+                            placeholder="Apellido"
+                            value={formData.apellido}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            disabled={isLoading}
+                            required
+                            className={fieldErrors.apellido && touched.apellido ? 'input-error' : ''}
+                        />
+                        {fieldErrors.apellido && touched.apellido && (
+                            <small className="field-error">{fieldErrors.apellido}</small>
+                        )}
+                    </div>
                 </div>
 
-                <div className="input-group">
-                    <input
-                        type="text"
-                        name="apellido"
-                        placeholder="Apellido"
-                        value={formData.apellido}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        disabled={isLoading}
-                        required
-                        className={fieldErrors.apellido && touched.apellido ? 'input-error' : ''}
-                    />
-                    {fieldErrors.apellido && touched.apellido && (
-                        <small className="field-error">{fieldErrors.apellido}</small>
-                    )}
+                {/* Fila 2: Usuario y Email */}
+                <div className="input-row">
+                    <div className="input-group">
+                        <input
+                            type="text"
+                            name="username"
+                            placeholder="Usuario"
+                            value={formData.username}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            disabled={isLoading}
+                            required
+                            className={fieldErrors.username && touched.username ? 'input-error' : ''}
+                        />
+                        {fieldErrors.username && touched.username && (
+                            <small className="field-error">{fieldErrors.username}</small>
+                        )}
+                    </div>
+
+                    <div className="input-group">
+                        <input
+                            type="email"
+                            name="email"
+                            placeholder="Email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            disabled={isLoading}
+                            required
+                            className={fieldErrors.email && touched.email ? 'input-error' : ''}
+                        />
+                        {fieldErrors.email && touched.email && (
+                            <small className="field-error">{fieldErrors.email}</small>
+                        )}
+                    </div>
                 </div>
 
-                <div className="input-group">
-                    <input
-                        type="text"
-                        name="username"
-                        placeholder="Usuario"
-                        value={formData.username}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        disabled={isLoading}
-                        required
-                        className={fieldErrors.username && touched.username ? 'input-error' : ''}
-                    />
-                    {fieldErrors.username && touched.username && (
-                        <small className="field-error">{fieldErrors.username}</small>
-                    )}
+                {/* Fila 3: Contraseña y Confirmar Contraseña */}
+                <div className="input-row">
+                    <div className="input-group">
+                        <input
+                            type="password"
+                            name="password"
+                            placeholder="Contraseña"
+                            value={formData.password}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            disabled={isLoading}
+                            required
+                            minLength={8}
+                            className={fieldErrors.password && touched.password ? 'input-error' : ''}
+                        />
+                        {fieldErrors.password && touched.password && (
+                            <small className="field-error">{fieldErrors.password}</small>
+                        )}
+                    </div>
+
+                    <div className="input-group">
+                        <input
+                            type="password"
+                            name="confirmPassword"
+                            placeholder="Confirmar Contraseña"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            disabled={isLoading}
+                            required
+                            className={fieldErrors.confirmPassword && touched.confirmPassword ? 'input-error' : ''}
+                        />
+                        {fieldErrors.confirmPassword && touched.confirmPassword && (
+                            <small className="field-error">{fieldErrors.confirmPassword}</small>
+                        )}
+                    </div>
                 </div>
 
-                <div className="input-group">
-                    <input
-                        type="email"
-                        name="email"
-                        placeholder="Email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        disabled={isLoading}
-                        required
-                        className={fieldErrors.email && touched.email ? 'input-error' : ''}
-                    />
-                    {fieldErrors.email && touched.email && (
-                        <small className="field-error">{fieldErrors.email}</small>
-                    )}
-                </div>
-
-                <div className="input-group">
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Contraseña"
-                        value={formData.password}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        disabled={isLoading}
-                        required
-                        minLength={8}
-                        className={fieldErrors.password && touched.password ? 'input-error' : ''}
-                    />
-                    <small className={fieldErrors.password && touched.password ? "password-hint error" : "password-hint"}>
-                        {fieldErrors.password && touched.password ? fieldErrors.password : "Debe tener: 8+ caracteres, mayúscula, minúscula, número y carácter especial"}
-                    </small>
-                </div>
-
-                <div className="input-group">
-                    <input
-                        type="password"
-                        name="confirmPassword"
-                        placeholder="Confirmar Contraseña"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        disabled={isLoading}
-                        required
-                        className={fieldErrors.confirmPassword && touched.confirmPassword ? 'input-error' : ''}
-                    />
-                    {fieldErrors.confirmPassword && touched.confirmPassword && (
-                        <small className="field-error">{fieldErrors.confirmPassword}</small>
-                    )}
-                </div>
+                {/* Hint de contraseña (debajo de las contraseñas) */}
+                <small className={fieldErrors.password && touched.password ? "password-hint error" : "password-hint"}>
+                    {fieldErrors.password && touched.password ? fieldErrors.password : "Debe tener: 8+ caracteres, mayúscula, minúscula, número y carácter especial"}
+                </small>
 
                 <button type="submit" disabled={isLoading}>
                     {isLoading ? "Registrando..." : "Registrarse"}

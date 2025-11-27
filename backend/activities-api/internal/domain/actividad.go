@@ -17,6 +17,7 @@ type Actividad struct {
 	Categoria     string     `json:"categoria"`
 	SucursalID    *uint      `json:"sucursal_id,omitempty"` // TODO: Agregar cuando se cree entidad Sucursal
 	Lugares       uint       `json:"lugares,omitempty"`     // Campo calculado (cupos disponibles)
+	Activa        bool       `json:"activa"`
 	CreatedAt     time.Time  `json:"created_at,omitempty"`
 	UpdatedAt     time.Time  `json:"updated_at,omitempty"`
 	DeletedAt     *time.Time `json:"deleted_at,omitempty"` // Soft delete

@@ -6,7 +6,9 @@
   }
 
   .modal-content {
-    @apply bg-dark p-6 rounded-lg w-4/5 max-w-[500px] max-h-[85vh] overflow-y-auto relative;
+    @apply bg-dark p-6 rounded-lg w-4/5 max-w-[500px] relative;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
 

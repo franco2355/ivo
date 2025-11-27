@@ -216,7 +216,7 @@ func createPaymentWithGatewayHandler(service *services.PaymentService) gin.Handl
 			Amount         float64                `json:"amount" binding:"required,gt=0"`
 			Currency       string                 `json:"currency" binding:"required"`
 			PaymentMethod  string                 `json:"payment_method" binding:"required"`
-			PaymentGateway string                 `json:"payment_gateway" binding:"required"` // "mercadopago", "mock"
+			PaymentGateway string                 `json:"payment_gateway" binding:"required"` // "mercadopago", "cash"
 			CallbackURL    string                 `json:"callback_url,omitempty"`
 			WebhookURL     string                 `json:"webhook_url,omitempty"`
 			Metadata       map[string]interface{} `json:"metadata,omitempty"`

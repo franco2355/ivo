@@ -172,6 +172,30 @@
     background: rgba(255, 255, 255, 0.1);
   }
 
+  /* Auth Buttons Container */
+  .auth-buttons {
+    @apply flex items-center gap-3;
+  }
+
+  /* Register Button */
+  .register-button {
+    @apply px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 no-underline;
+    background: transparent;
+    color: white;
+    border: 2px solid rgba(76, 175, 80, 0.5);
+  }
+
+  .register-button:hover {
+    background: rgba(76, 175, 80, 0.1);
+    border-color: #4CAF50;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+  }
+
+  .register-button:active {
+    transform: translateY(0);
+  }
+
   /* Login Button */
   .login-button {
     @apply px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 no-underline;
@@ -212,6 +236,15 @@
     .header-title {
       @apply text-xl;
     }
+
+    .auth-buttons {
+      @apply gap-2;
+    }
+
+    .register-button,
+    .login-button {
+      @apply px-4 py-2 text-xs;
+    }
   }
 
   @media (max-width: 640px) {
@@ -225,6 +258,11 @@
 
     .nav-link {
       @apply px-2 py-1;
+    }
+
+    .register-button,
+    .login-button {
+      @apply px-3 py-1.5;
     }
   }
 }

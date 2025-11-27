@@ -19,7 +19,7 @@ Esta documentación describe la arquitectura genérica y extensible implementada
 
 - **Extensibilidad**: Agregar nuevas pasarelas sin modificar código existente
 - **Desacoplamiento**: La lógica de negocio no conoce detalles de implementación de pasarelas
-- **Testabilidad**: Facilitar testing con mocks sin depender de APIs reales
+- **Testabilidad**: Facilitar testing unitario con implementaciones de prueba
 - **Mantenibilidad**: Cada pasarela aislada en su propio módulo
 - **Flexibilidad**: Cambiar de pasarela en runtime según necesidades del cliente
 
@@ -141,7 +141,7 @@ func NewPaymentService(repo Repository, factory *GatewayFactory) *PaymentService
 │         ┌───────────┴───────────┬──────────────┬──────────┐      │
 │         ▼                       ▼              ▼          ▼      │
 │  ┌─────────────┐      ┌─────────────┐   ┌──────────┐ ┌───────┐ │
-│  │ Mercado Pago│      │   Stripe    │   │  PayPal  │ │ Mock  │ │
+│  │ Mercado Pago│      │   Stripe    │   │  PayPal  │ │ Cash  │ │
 │  │  Gateway    │      │  Gateway    │   │ Gateway  │ │Gateway│ │
 │  └──────┬──────┘      └──────┬──────┘   └────┬─────┘ └───┬───┘ │
 │         │                    │               │           │      │
@@ -150,7 +150,7 @@ func NewPaymentService(repo Repository, factory *GatewayFactory) *PaymentService
 ├─────────────────────────────────────────────────────────────────┤
 │  SERVICIOS EXTERNOS                                              │
 │                                                                   │
-│  [Mercado Pago API]    [Stripe API]    [PayPal API]    [Memory] │
+│  [Mercado Pago API]    [Stripe API]    [PayPal API]   [Manual] │
 └───────────────────────────────────────────────────────────────────┘
 
 ┌───────────────────────────────────────────────────────────────────┐
@@ -280,8 +280,8 @@ internal/gateways/
 │   └── stripe_gateway.go       # Implementación Stripe
 ├── paypal/
 │   └── paypal_gateway.go       # Implementación PayPal
-└── mock/
-    └── mock_gateway.go         # Mock para testing
+└── cash/
+    └── cash_gateway.go         # Gateway para pagos en efectivo (manual)
 ```
 
 ### 4. DTOs Genéricos

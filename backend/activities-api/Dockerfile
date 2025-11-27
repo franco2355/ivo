@@ -21,14 +21,19 @@ FROM alpine:latest
 
 WORKDIR /root/
 
-# Install ca-certificates for HTTPS
-RUN apk --no-cache add ca-certificates
+# Install ca-certificates for HTTPS and netcat for connection checking
+RUN apk --no-cache add ca-certificates netcat-openbsd
 
 # Copy binary from builder
 COPY --from=builder /app/activities-api .
+
+# Copy wait script and entrypoint
+COPY --from=builder /app/wait-for-rabbitmq.sh /wait-for-rabbitmq.sh
+COPY entrypoint.sh .
+RUN chmod +x /wait-for-rabbitmq.sh entrypoint.sh
 
 # Expose port
 EXPOSE 8082
 
 # Run
-CMD ["./activities-api"]
+ENTRYPOINT ["./entrypoint.sh"]

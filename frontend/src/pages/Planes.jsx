@@ -76,11 +76,15 @@ const Planes = () => {
             if (data && Array.isArray(data.plans)) {
                 console.log('[Planes] Planes cargados:', data.plans.length);
 
+                // Filtrar solo planes activos
+                let planesActivos = data.plans.filter(plan => plan.activo === true);
+                console.log('[Planes] Planes activos:', planesActivos.length);
+
                 // Filtrar el plan al que ya está suscrito (si existe)
-                let planesDisponibles = data.plans;
+                let planesDisponibles = planesActivos;
                 if (activeSuscripcion && activeSuscripcion.plan_id) {
-                    planesDisponibles = data.plans.filter(plan => plan._id !== activeSuscripcion.plan_id);
-                    console.log('[Planes] Plan activo filtrado en carga inicial. Planes disponibles:', planesDisponibles.length);
+                    planesDisponibles = planesActivos.filter(plan => plan._id !== activeSuscripcion.plan_id);
+                    console.log('[Planes] Plan activo filtrado. Planes disponibles:', planesDisponibles.length);
                 }
 
                 setPlanes(planesDisponibles);

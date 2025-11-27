@@ -22,7 +22,7 @@ func NewGatewayFactory(cfg *config.Config) *GatewayFactory {
 
 // CreateGateway - Crea una instancia del gateway solicitado
 // Parámetros:
-//   - gatewayName: Identificador del gateway ("mercadopago", "stripe", "mock", etc.)
+//   - gatewayName: Identificador del gateway ("mercadopago", "stripe", "cash", etc.)
 // Retorna:
 //   - PaymentGateway: Instancia del gateway configurado
 //   - error: Si el gateway no está soportado o falta configuración
@@ -39,9 +39,6 @@ func (f *GatewayFactory) CreateGateway(gatewayName string) (PaymentGateway, erro
 	case "paypal":
 		// TODO: Implementar PayPal en el futuro
 		return nil, fmt.Errorf("gateway 'paypal' aún no implementado")
-	case "mock":
-		// Gateway simulado para testing sin APIs reales
-		return NewMockGateway(), nil
 	default:
 		return nil, fmt.Errorf("gateway no soportado: %s", gatewayName)
 	}
@@ -113,7 +110,6 @@ func (f *GatewayFactory) GetSupportedGateways() []string {
 		"mercadopago",
 		"cash",     // Pagos en efectivo (manual, en sucursal)
 		"efectivo", // Alias para cash
-		"mock",     // Para testing
 		// "stripe",  // TODO: Futuro
 		// "paypal",  // TODO: Futuro
 	}

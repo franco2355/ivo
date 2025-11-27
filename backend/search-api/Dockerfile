@@ -13,12 +13,17 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o search-api ./cmd/api
 
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates netcat-openbsd
 
 WORKDIR /root/
 
 COPY --from=builder /app/search-api .
 
+# Copy wait script and entrypoint
+COPY --from=builder /app/wait-for-rabbitmq.sh /wait-for-rabbitmq.sh
+COPY entrypoint.sh .
+RUN chmod +x /wait-for-rabbitmq.sh entrypoint.sh
+
 EXPOSE 8084
 
-CMD ["./search-api"]
+ENTRYPOINT ["./entrypoint.sh"]
