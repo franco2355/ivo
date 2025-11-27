@@ -16,9 +16,9 @@ import (
 // Orquesta: Repository (persistencia) + GatewayFactory (gateways externos) + RabbitMQ (eventos)
 // Patrón: Facade + Orchestration + Event-Driven
 type PaymentService struct {
-	paymentRepo     repository.PaymentRepository
-	gatewayFactory  *gateways.GatewayFactory
-	eventPublisher  EventPublisher // Interface para publicar eventos (RabbitMQ, Kafka, etc.)
+	paymentRepo    repository.PaymentRepository
+	gatewayFactory *gateways.GatewayFactory
+	eventPublisher EventPublisher // Interface para publicar eventos (RabbitMQ, Kafka, etc.)
 }
 
 // EventPublisher - Interface para publicar eventos de pagos (Strategy Pattern)
@@ -51,6 +51,33 @@ func (s *PaymentService) ProcessRecurringPayment(
 	frequency int,
 	frequencyType string,
 ) (dtos.PaymentResponse, error) {
+	// 0. VALIDACIÓN DE IDEMPOTENCIA ⭐
+	// Si el cliente envió un idempotency_key, verificar si ya existe un pago con ese key
+	if req.IdempotencyKey != "" {
+		existing, err := s.paymentRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
+		if err == nil && existing != nil {
+			// Ya existe un pago con este idempotency key, retornar el pago original
+			fmt.Printf("⚠️ Pago duplicado detectado (idempotency_key=%s), retornando pago original ID=%s\n", req.IdempotencyKey, existing.ID.Hex())
+			return dtos.ToPaymentResponse(
+				existing.ID,
+				existing.EntityType,
+				existing.EntityID,
+				existing.UserID,
+				existing.Amount,
+				existing.Currency,
+				existing.Status,
+				existing.PaymentMethod,
+				existing.PaymentGateway,
+				existing.TransactionID,
+				existing.IdempotencyKey,
+				existing.Metadata,
+				existing.CreatedAt,
+				existing.UpdatedAt,
+				existing.ProcessedAt,
+			), nil
+		}
+	}
+
 	// 1. Crear registro en base de datos con estado "pending"
 	payment := entities.Payment{
 		ID:             primitive.NewObjectID(),
@@ -62,7 +89,8 @@ func (s *PaymentService) ProcessRecurringPayment(
 		Status:         gateways.SubscriptionStatusPending,
 		PaymentMethod:  req.PaymentMethod,
 		PaymentGateway: req.PaymentGateway,
-		PaymentType:    "recurring", // Marcar como recurrente
+		PaymentType:    "recurring",        // Marcar como recurrente
+		IdempotencyKey: req.IdempotencyKey, // ⭐ Guardar idempotency key
 		Metadata:       req.Metadata,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
@@ -140,8 +168,7 @@ func (s *PaymentService) ProcessRecurringPayment(
 		payment.Status,
 		payment.PaymentMethod,
 		payment.PaymentGateway,
-		payment.TransactionID,
-		req.Metadata,
+		payment.TransactionID, payment.IdempotencyKey, req.Metadata,
 		payment.CreatedAt,
 		payment.UpdatedAt,
 		payment.ProcessedAt,
@@ -154,6 +181,33 @@ func (s *PaymentService) ProcessPaymentWithGateway(
 	ctx context.Context,
 	req dtos.CreatePaymentRequest,
 ) (dtos.PaymentResponse, error) {
+	// 0. VALIDACIÓN DE IDEMPOTENCIA ⭐
+	// Si el cliente envió un idempotency_key, verificar si ya existe un pago con ese key
+	if req.IdempotencyKey != "" {
+		existing, err := s.paymentRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
+		if err == nil && existing != nil {
+			// Ya existe un pago con este idempotency key, retornar el pago original
+			fmt.Printf("⚠️ Pago duplicado detectado (idempotency_key=%s), retornando pago original ID=%s\n", req.IdempotencyKey, existing.ID.Hex())
+			return dtos.ToPaymentResponse(
+				existing.ID,
+				existing.EntityType,
+				existing.EntityID,
+				existing.UserID,
+				existing.Amount,
+				existing.Currency,
+				existing.Status,
+				existing.PaymentMethod,
+				existing.PaymentGateway,
+				existing.TransactionID,
+				existing.IdempotencyKey,
+				existing.Metadata,
+				existing.CreatedAt,
+				existing.UpdatedAt,
+				existing.ProcessedAt,
+			), nil
+		}
+	}
+
 	// 1. Crear registro en base de datos con estado "pending"
 	payment := entities.Payment{
 		ID:             primitive.NewObjectID(),
@@ -165,7 +219,8 @@ func (s *PaymentService) ProcessPaymentWithGateway(
 		Status:         gateways.StatusPending,
 		PaymentMethod:  req.PaymentMethod,
 		PaymentGateway: req.PaymentGateway,
-		PaymentType:    "one_time", // Marcar como pago único
+		PaymentType:    "one_time",         // Marcar como pago único
+		IdempotencyKey: req.IdempotencyKey, // ⭐ Guardar idempotency key
 		Metadata:       req.Metadata,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
@@ -193,17 +248,17 @@ func (s *PaymentService) ProcessPaymentWithGateway(
 
 	// 3. Preparar request para el gateway
 	gatewayRequest := gateways.PaymentRequest{
-		Amount:         req.Amount,
-		Currency:       req.Currency,
-		Description:    fmt.Sprintf("Pago %s #%s", req.EntityType, req.EntityID),
-		CustomerEmail:  extractCustomerEmail(req.Metadata),
-		CustomerName:   extractCustomerName(req.Metadata),
-		PaymentMethod:  req.PaymentMethod,
-		Metadata:       req.Metadata,
-		CallbackURL:    req.CallbackURL,
-		WebhookURL:     req.WebhookURL,
-		ExternalID:     payment.ID.Hex(),
-		CustomerID:     req.UserID,
+		Amount:        req.Amount,
+		Currency:      req.Currency,
+		Description:   fmt.Sprintf("Pago %s #%s", req.EntityType, req.EntityID),
+		CustomerEmail: extractCustomerEmail(req.Metadata),
+		CustomerName:  extractCustomerName(req.Metadata),
+		PaymentMethod: req.PaymentMethod,
+		Metadata:      req.Metadata,
+		CallbackURL:   req.CallbackURL,
+		WebhookURL:    req.WebhookURL,
+		ExternalID:    payment.ID.Hex(),
+		CustomerID:    req.UserID,
 	}
 
 	// 4. Procesar pago en el gateway externo
@@ -263,8 +318,7 @@ func (s *PaymentService) ProcessPaymentWithGateway(
 		payment.Status,
 		payment.PaymentMethod,
 		payment.PaymentGateway,
-		payment.TransactionID,
-		req.Metadata,
+		payment.TransactionID, payment.IdempotencyKey, req.Metadata,
 		payment.CreatedAt,
 		payment.UpdatedAt,
 		payment.ProcessedAt,
@@ -327,8 +381,7 @@ func (s *PaymentService) SyncPaymentStatus(ctx context.Context, paymentID string
 		payment.Status,
 		payment.PaymentMethod,
 		payment.PaymentGateway,
-		payment.TransactionID,
-		payment.Metadata,
+		payment.TransactionID, payment.IdempotencyKey, payment.Metadata,
 		payment.CreatedAt,
 		payment.UpdatedAt,
 		payment.ProcessedAt,
@@ -415,8 +468,7 @@ func (s *PaymentService) GetPaymentByID(ctx context.Context, paymentID string) (
 		payment.Status,
 		payment.PaymentMethod,
 		payment.PaymentGateway,
-		payment.TransactionID,
-		payment.Metadata,
+		payment.TransactionID, payment.IdempotencyKey, payment.Metadata,
 		payment.CreatedAt,
 		payment.UpdatedAt,
 		payment.ProcessedAt,
@@ -442,8 +494,7 @@ func (s *PaymentService) GetAllPayments(ctx context.Context) ([]dtos.PaymentResp
 			payment.Status,
 			payment.PaymentMethod,
 			payment.PaymentGateway,
-			payment.TransactionID,
-			payment.Metadata,
+			payment.TransactionID, payment.IdempotencyKey, payment.Metadata,
 			payment.CreatedAt,
 			payment.UpdatedAt,
 			payment.ProcessedAt,
@@ -472,8 +523,7 @@ func (s *PaymentService) GetPaymentsByUser(ctx context.Context, userID string) (
 			payment.Status,
 			payment.PaymentMethod,
 			payment.PaymentGateway,
-			payment.TransactionID,
-			payment.Metadata,
+			payment.TransactionID, payment.IdempotencyKey, payment.Metadata,
 			payment.CreatedAt,
 			payment.UpdatedAt,
 			payment.ProcessedAt,
@@ -502,8 +552,7 @@ func (s *PaymentService) GetPaymentsByEntity(ctx context.Context, entityType, en
 			payment.Status,
 			payment.PaymentMethod,
 			payment.PaymentGateway,
-			payment.TransactionID,
-			payment.Metadata,
+			payment.TransactionID, payment.IdempotencyKey, payment.Metadata,
 			payment.CreatedAt,
 			payment.UpdatedAt,
 			payment.ProcessedAt,
@@ -532,8 +581,7 @@ func (s *PaymentService) GetPaymentsByStatus(ctx context.Context, status string)
 			payment.Status,
 			payment.PaymentMethod,
 			payment.PaymentGateway,
-			payment.TransactionID,
-			payment.Metadata,
+			payment.TransactionID, payment.IdempotencyKey, payment.Metadata,
 			payment.CreatedAt,
 			payment.UpdatedAt,
 			payment.ProcessedAt,
@@ -545,6 +593,31 @@ func (s *PaymentService) GetPaymentsByStatus(ctx context.Context, status string)
 
 // CreatePayment - Crea un pago simple sin gateway (para compatibilidad)
 func (s *PaymentService) CreatePayment(ctx context.Context, req dtos.CreatePaymentRequest) (dtos.PaymentResponse, error) {
+	// VALIDACIÓN DE IDEMPOTENCIA ⭐
+	if req.IdempotencyKey != "" {
+		existing, err := s.paymentRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
+		if err == nil && existing != nil {
+			fmt.Printf("⚠️ Pago duplicado detectado (idempotency_key=%s), retornando pago original ID=%s\n", req.IdempotencyKey, existing.ID.Hex())
+			return dtos.ToPaymentResponse(
+				existing.ID,
+				existing.EntityType,
+				existing.EntityID,
+				existing.UserID,
+				existing.Amount,
+				existing.Currency,
+				existing.Status,
+				existing.PaymentMethod,
+				existing.PaymentGateway,
+				existing.TransactionID,
+				existing.IdempotencyKey,
+				existing.Metadata,
+				existing.CreatedAt,
+				existing.UpdatedAt,
+				existing.ProcessedAt,
+			), nil
+		}
+	}
+
 	payment := entities.Payment{
 		ID:             primitive.NewObjectID(),
 		EntityType:     req.EntityType,
@@ -555,6 +628,7 @@ func (s *PaymentService) CreatePayment(ctx context.Context, req dtos.CreatePayme
 		Status:         "pending",
 		PaymentMethod:  req.PaymentMethod,
 		PaymentGateway: req.PaymentGateway,
+		IdempotencyKey: req.IdempotencyKey, // ⭐ Guardar idempotency key
 		Metadata:       req.Metadata,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
@@ -581,8 +655,7 @@ func (s *PaymentService) CreatePayment(ctx context.Context, req dtos.CreatePayme
 		payment.Status,
 		payment.PaymentMethod,
 		payment.PaymentGateway,
-		payment.TransactionID,
-		payment.Metadata,
+		payment.TransactionID, payment.IdempotencyKey, payment.Metadata,
 		payment.CreatedAt,
 		payment.UpdatedAt,
 		payment.ProcessedAt,

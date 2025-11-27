@@ -48,6 +48,20 @@ func (r *PaymentRepositoryMongo) FindByID(ctx context.Context, id primitive.Obje
 	return &payment, nil
 }
 
+func (r *PaymentRepositoryMongo) FindByIdempotencyKey(ctx context.Context, idempotencyKey string) (*entities.Payment, error) {
+	var payment entities.Payment
+
+	err := r.collection.FindOne(ctx, bson.M{"idempotency_key": idempotencyKey}).Decode(&payment)
+	if err == mongo.ErrNoDocuments {
+		return nil, fmt.Errorf("pago no encontrado")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error al buscar pago por idempotency key: %w", err)
+	}
+
+	return &payment, nil
+}
+
 func (r *PaymentRepositoryMongo) FindAll(ctx context.Context) ([]*entities.Payment, error) {
 	cursor, err := r.collection.Find(ctx, bson.M{})
 	if err != nil {

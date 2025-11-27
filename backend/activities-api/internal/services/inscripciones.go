@@ -8,8 +8,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sync"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // InscripcionesService define la interfaz del servicio de inscripciones
@@ -63,81 +64,52 @@ type ResultadoValidacion struct {
 
 // Create inscribe a un usuario en una actividad
 // Migrado de backend/services/inscripcion_service.go:44
-// IMPLEMENTA PROCESAMIENTO CONCURRENTE con Go Routines, Channels y WaitGroup
+// IMPLEMENTA PROCESAMIENTO CONCURRENTE con Go Routines, Errgroup y Context
 func (s *InscripcionesServiceImpl) Create(ctx context.Context, usuarioID, actividadID uint, authToken string) (domain.InscripcionResponse, error) {
-	// PROCESAMIENTO CONCURRENTE - Subdividir validaciones en Go Routines
-	// Crear canal para recibir resultados de las validaciones
-	canalResultados := make(chan ResultadoValidacion, 3)
+	// Crear contexto con timeout de 10 segundos para todas las validaciones
+	validationCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 
-	// WaitGroup para sincronizar las goroutines
-	var wg sync.WaitGroup
+	// ERRGROUP - Manejo coordinado de goroutines con cancelación automática
+	// Si una goroutine falla, las demás son canceladas automáticamente
+	g, gCtx := errgroup.WithContext(validationCtx)
+
+	// Variables compartidas para almacenar resultados (protegidas por errgroup)
+	var actividadValidada *domain.Actividad
 
 	// Goroutine 1: Validar que la actividad existe
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		actividad, err := s.actividadesRepo.GetByID(ctx, actividadID)
+	g.Go(func() error {
+		actividad, err := s.actividadesRepo.GetByID(gCtx, actividadID)
 		if err != nil {
-			canalResultados <- ResultadoValidacion{
-				Nombre:  "actividad",
-				Exitoso: false,
-				Error:   fmt.Errorf("actividad no encontrada: %w", err),
-			}
-			return
+			return fmt.Errorf("actividad no encontrada: %w", err)
 		}
-		canalResultados <- ResultadoValidacion{
-			Nombre:  "actividad",
-			Exitoso: true,
-			Datos:   actividad,
-		}
-	}()
+		actividadValidada = &actividad
+		return nil
+	})
 
 	// Goroutine 2: Validar que el usuario no tenga inscripciones duplicadas
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		inscripciones, err := s.inscripcionesRepo.ListByUser(ctx, usuarioID)
+	g.Go(func() error {
+		inscripciones, err := s.inscripcionesRepo.ListByUser(gCtx, usuarioID)
 		if err != nil {
-			canalResultados <- ResultadoValidacion{
-				Nombre:  "duplicados",
-				Exitoso: false,
-				Error:   fmt.Errorf("error verificando inscripciones: %w", err),
-			}
-			return
+			return fmt.Errorf("error verificando inscripciones: %w", err)
 		}
 
 		// Verificar si ya está inscripto
 		for _, insc := range inscripciones {
 			if insc.ActividadID == actividadID && insc.IsActiva {
-				canalResultados <- ResultadoValidacion{
-					Nombre:  "duplicados",
-					Exitoso: false,
-					Error:   fmt.Errorf("el usuario ya está inscripto a esta actividad"),
-				}
-				return
+				return fmt.Errorf("el usuario ya está inscripto a esta actividad")
 			}
 		}
+		return nil
+	})
 
-		canalResultados <- ResultadoValidacion{
-			Nombre:  "duplicados",
-			Exitoso: true,
-		}
-	}()
-
-	// Goroutine 3: Calcular disponibilidad de cupos
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	// Goroutine 3: Validar disponibilidad de cupos del usuario
+	g.Go(func() error {
 		// Esta validación se podría expandir para verificar cupos en tiempo real
 		// o hacer cálculos más complejos
-		inscripcionesActivas, err := s.inscripcionesRepo.ListByUser(ctx, usuarioID)
+		inscripcionesActivas, err := s.inscripcionesRepo.ListByUser(gCtx, usuarioID)
 		if err != nil {
-			canalResultados <- ResultadoValidacion{
-				Nombre:  "disponibilidad",
-				Exitoso: false,
-				Error:   fmt.Errorf("error verificando disponibilidad: %w", err),
-			}
-			return
+			return fmt.Errorf("error verificando disponibilidad: %w", err)
 		}
 
 		// Simular cálculo de disponibilidad (cantidad de inscripciones activas del usuario)
@@ -148,42 +120,21 @@ func (s *InscripcionesServiceImpl) Create(ctx context.Context, usuarioID, activi
 			}
 		}
 
-		canalResultados <- ResultadoValidacion{
-			Nombre:  "disponibilidad",
-			Exitoso: true,
-			Datos:   conteoActivas,
+		// Ejemplo: podríamos validar un límite máximo aquí
+		// if conteoActivas >= MAX_INSCRIPCIONES {
+		//     return fmt.Errorf("límite de inscripciones alcanzado")
+		// }
+		return nil
+	})
+
+	// Esperar a que todas las validaciones terminen
+	// Si alguna falla, Wait() retorna el primer error y cancela las demás
+	if err := g.Wait(); err != nil {
+		// Manejar error de timeout específicamente
+		if validationCtx.Err() == context.DeadlineExceeded {
+			return domain.InscripcionResponse{}, fmt.Errorf("timeout en validaciones: las validaciones tardaron más de 10 segundos")
 		}
-	}()
-
-	// Cerrar el canal cuando todas las goroutines terminen
-	go func() {
-		wg.Wait()
-		close(canalResultados)
-	}()
-
-	// COMUNICACIÓN mediante CHANNEL - Recolectar resultados
-	var actividadValidada *domain.Actividad
-	erroresValidacion := make(map[string]error)
-
-	// Leer resultados del canal
-	for resultado := range canalResultados {
-		if !resultado.Exitoso {
-			erroresValidacion[resultado.Nombre] = resultado.Error
-		} else {
-			// Guardar datos importantes
-			if resultado.Nombre == "actividad" && resultado.Datos != nil {
-				actividad := resultado.Datos.(domain.Actividad)
-				actividadValidada = &actividad
-			}
-		}
-	}
-
-	// Verificar si hubo errores en las validaciones
-	if len(erroresValidacion) > 0 {
-		// Retornar el primer error encontrado
-		for _, err := range erroresValidacion {
-			return domain.InscripcionResponse{}, err
-		}
+		return domain.InscripcionResponse{}, err
 	}
 
 	// Validación adicional: verificar que obtuvimos la actividad
@@ -192,8 +143,16 @@ func (s *InscripcionesServiceImpl) Create(ctx context.Context, usuarioID, activi
 	}
 
 	// Validación HTTP - Validar suscripción activa (HTTP call to subscriptions-api)
-	activeSub, err := s.getActiveSubscription(ctx, usuarioID, authToken)
+	// Crear contexto con timeout específico para llamadas HTTP (5 segundos)
+	httpCtx, httpCancel := context.WithTimeout(ctx, 5*time.Second)
+	defer httpCancel()
+
+	activeSub, err := s.getActiveSubscription(httpCtx, usuarioID, authToken)
 	if err != nil {
+		// Manejar timeout específicamente
+		if httpCtx.Err() == context.DeadlineExceeded {
+			return domain.InscripcionResponse{}, fmt.Errorf("timeout validando suscripción: el servicio tardó más de 5 segundos en responder")
+		}
 		return domain.InscripcionResponse{}, fmt.Errorf("no tiene suscripción activa: %w", err)
 	}
 
@@ -269,15 +228,13 @@ type Plan struct {
 
 // getActiveSubscription valida que el usuario tenga una suscripción activa
 func (s *InscripcionesServiceImpl) getActiveSubscription(ctx context.Context, userID uint, authToken string) (Subscription, error) {
-	// Crear cliente HTTP con timeout
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
+	// Crear cliente HTTP sin timeout hardcoded (usa el contexto)
+	client := &http.Client{}
 
 	// Construir URL usando el service name de Docker
 	url := fmt.Sprintf("http://subscriptions-api:8081/subscriptions/active/%d", userID)
 
-	// Crear request con contexto
+	// Crear request con contexto (respeta timeout del contexto padre)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return Subscription{}, fmt.Errorf("error creando request: %w", err)
@@ -351,12 +308,12 @@ func (s *InscripcionesServiceImpl) getActiveSubscription(ctx context.Context, us
 
 // getPlanInfo obtiene la información del plan desde subscriptions-api
 func (s *InscripcionesServiceImpl) getPlanInfo(ctx context.Context, planID string, authToken string) (Plan, error) {
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
+	// Crear cliente HTTP sin timeout hardcoded (usa el contexto)
+	client := &http.Client{}
 
 	url := fmt.Sprintf("http://subscriptions-api:8081/plans/%s", planID)
 
+	// Crear request con contexto (respeta timeout del contexto padre)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return Plan{}, fmt.Errorf("error creando request: %w", err)

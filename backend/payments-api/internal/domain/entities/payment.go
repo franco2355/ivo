@@ -21,6 +21,7 @@ type Payment struct {
 	PaymentGateway string                 `bson:"payment_gateway"` // stripe, mercadopago, manual
 	TransactionID  string                 `bson:"transaction_id"`  // ID de transacción/preapproval del gateway
 	PaymentType    string                 `bson:"payment_type,omitempty"` // "one_time" o "recurring" (opcional)
+	IdempotencyKey string                 `bson:"idempotency_key,omitempty"` // UUID para prevenir duplicados (idempotencia)
 	Metadata       map[string]interface{} `bson:"metadata"`        // Información adicional específica del dominio
 	CreatedAt      time.Time              `bson:"created_at"`
 	UpdatedAt      time.Time              `bson:"updated_at"`

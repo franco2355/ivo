@@ -15,6 +15,7 @@ type CreatePaymentRequest struct {
 	Currency       string                 `json:"currency" binding:"required"`
 	PaymentMethod  string                 `json:"payment_method" binding:"required"`
 	PaymentGateway string                 `json:"payment_gateway,omitempty"`
+	IdempotencyKey string                 `json:"idempotency_key,omitempty"` // UUID para prevenir pagos duplicados
 	CallbackURL    string                 `json:"callback_url,omitempty"`
 	WebhookURL     string                 `json:"webhook_url,omitempty"`
 	Metadata       map[string]interface{} `json:"metadata,omitempty"`
@@ -38,6 +39,7 @@ type PaymentResponse struct {
 	PaymentMethod  string                 `json:"payment_method"`
 	PaymentGateway string                 `json:"payment_gateway,omitempty"`
 	TransactionID  string                 `json:"transaction_id,omitempty"`
+	IdempotencyKey string                 `json:"idempotency_key,omitempty"`
 	Metadata       map[string]interface{} `json:"metadata,omitempty"`
 	CreatedAt      time.Time              `json:"created_at"`
 	UpdatedAt      time.Time              `json:"updated_at"`
@@ -45,7 +47,7 @@ type PaymentResponse struct {
 }
 
 // ToPaymentResponse - Convierte una entidad Payment a PaymentResponse
-func ToPaymentResponse(id primitive.ObjectID, entityType, entityID, userID string, amount float64, currency, status, paymentMethod, paymentGateway, transactionID string, metadata map[string]interface{}, createdAt, updatedAt time.Time, processedAt *time.Time) PaymentResponse {
+func ToPaymentResponse(id primitive.ObjectID, entityType, entityID, userID string, amount float64, currency, status, paymentMethod, paymentGateway, transactionID, idempotencyKey string, metadata map[string]interface{}, createdAt, updatedAt time.Time, processedAt *time.Time) PaymentResponse {
 	return PaymentResponse{
 		ID:             id.Hex(),
 		EntityType:     entityType,
@@ -57,6 +59,7 @@ func ToPaymentResponse(id primitive.ObjectID, entityType, entityID, userID strin
 		PaymentMethod:  paymentMethod,
 		PaymentGateway: paymentGateway,
 		TransactionID:  transactionID,
+		IdempotencyKey: idempotencyKey,
 		Metadata:       metadata,
 		CreatedAt:      createdAt,
 		UpdatedAt:      updatedAt,

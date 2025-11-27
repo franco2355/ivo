@@ -50,9 +50,9 @@ type SolrDocument struct {
 // SolrResponse - Respuesta de búsqueda de Solr
 type SolrResponse struct {
 	Response struct {
-		NumFound int              `json:"numFound"`
-		Start    int              `json:"start"`
-		Docs     []SolrDocument   `json:"docs"`
+		NumFound int                      `json:"numFound"`
+		Start    int                      `json:"start"`
+		Docs     []map[string]interface{} `json:"docs"`
 	} `json:"response"`
 }
 
@@ -133,9 +133,9 @@ func (c *SolrClient) Search(req dtos.SearchRequest) ([]dtos.SearchDocument, int,
 
 	// Query principal
 	if req.Query != "" {
-		// Búsqueda en múltiples campos
-		queryStr := fmt.Sprintf("titulo:%s^2 OR descripcion:%s OR categoria:%s OR instructor:%s",
-			req.Query, req.Query, req.Query, req.Query)
+		// Búsqueda en múltiples campos incluyendo día
+		queryStr := fmt.Sprintf("titulo:%s^2 OR descripcion:%s OR categoria:%s OR instructor:%s OR dia:%s",
+			req.Query, req.Query, req.Query, req.Query, req.Query)
 		params.Set("q", queryStr)
 	} else {
 		params.Set("q", "*:*")
@@ -316,58 +316,108 @@ func (c *SolrClient) convertToSolrDocument(doc dtos.SearchDocument) SolrDocument
 	return solrDoc
 }
 
-// convertFromSolrDocument - Convierte SolrDocument a SearchDocument
-func (c *SolrClient) convertFromSolrDocument(solrDoc SolrDocument) dtos.SearchDocument {
-	doc := dtos.SearchDocument{
-		ID: solrDoc.ID,
+// Helper function to extract string value from interface{} (handles both string and []interface{})
+func getStringValue(v interface{}) string {
+	if v == nil {
+		return ""
+	}
+	switch val := v.(type) {
+	case string:
+		return val
+	case []interface{}:
+		if len(val) > 0 {
+			if str, ok := val[0].(string); ok {
+				return str
+			}
+		}
+	}
+	return ""
+}
+
+// Helper function to extract int value from interface{}
+func getIntValue(v interface{}) int {
+	if v == nil {
+		return 0
+	}
+	switch val := v.(type) {
+	case float64:
+		return int(val)
+	case int:
+		return val
+	case []interface{}:
+		if len(val) > 0 {
+			if num, ok := val[0].(float64); ok {
+				return int(num)
+			}
+		}
+	}
+	return 0
+}
+
+// Helper function to extract float64 value from interface{}
+func getFloat64Value(v interface{}) float64 {
+	if v == nil {
+		return 0.0
+	}
+	switch val := v.(type) {
+	case float64:
+		return val
+	case []interface{}:
+		if len(val) > 0 {
+			if num, ok := val[0].(float64); ok {
+				return num
+			}
+		}
+	}
+	return 0.0
+}
+
+// Helper function to extract bool value from interface{}
+func getBoolValue(v interface{}) bool {
+	if v == nil {
+		return false
+	}
+	switch val := v.(type) {
+	case bool:
+		return val
+	case []interface{}:
+		if len(val) > 0 {
+			if b, ok := val[0].(bool); ok {
+				return b
+			}
+		}
+	}
+	return false
+}
+
+// convertFromSolrDocument - Convierte map[string]interface{} de Solr a SearchDocument
+func (c *SolrClient) convertFromSolrDocument(solrDoc map[string]interface{}) dtos.SearchDocument {
+	doc := dtos.SearchDocument{}
+
+	if id, ok := solrDoc["id"].(string); ok {
+		doc.ID = id
 	}
 
-	// Convertir arrays a strings (tomar primer elemento)
-	if len(solrDoc.Type) > 0 {
-		doc.Type = solrDoc.Type[0]
+	doc.Type = getStringValue(solrDoc["type"])
+	doc.Titulo = getStringValue(solrDoc["titulo"])
+	doc.Descripcion = getStringValue(solrDoc["descripcion"])
+	doc.Categoria = getStringValue(solrDoc["categoria"])
+	doc.Instructor = getStringValue(solrDoc["instructor"])
+	doc.Dia = getStringValue(solrDoc["dia"])
+	doc.HorarioInicio = getStringValue(solrDoc["horario_inicio"])
+	doc.HorarioFinal = getStringValue(solrDoc["horario_final"])
+	doc.SucursalNombre = getStringValue(solrDoc["sucursal_nombre"])
+	doc.PlanNombre = getStringValue(solrDoc["plan_nombre"])
+	doc.PlanTipoAcceso = getStringValue(solrDoc["plan_tipo_acceso"])
+
+	sucursalID := getIntValue(solrDoc["sucursal_id"])
+	if sucursalID > 0 {
+		doc.SucursalID = fmt.Sprintf("%d", sucursalID)
 	}
-	if len(solrDoc.Titulo) > 0 {
-		doc.Titulo = solrDoc.Titulo[0]
-	}
-	if len(solrDoc.Descripcion) > 0 {
-		doc.Descripcion = solrDoc.Descripcion[0]
-	}
-	if len(solrDoc.Categoria) > 0 {
-		doc.Categoria = solrDoc.Categoria[0]
-	}
-	if len(solrDoc.Instructor) > 0 {
-		doc.Instructor = solrDoc.Instructor[0]
-	}
-	if len(solrDoc.Dia) > 0 {
-		doc.Dia = solrDoc.Dia[0]
-	}
-	if len(solrDoc.HorarioInicio) > 0 {
-		doc.HorarioInicio = solrDoc.HorarioInicio[0]
-	}
-	if len(solrDoc.HorarioFinal) > 0 {
-		doc.HorarioFinal = solrDoc.HorarioFinal[0]
-	}
-	if len(solrDoc.SucursalID) > 0 {
-		doc.SucursalID = fmt.Sprintf("%d", solrDoc.SucursalID[0])
-	}
-	if len(solrDoc.SucursalNombre) > 0 {
-		doc.SucursalNombre = solrDoc.SucursalNombre[0]
-	}
-	if len(solrDoc.RequierePremium) > 0 {
-		doc.RequierePremium = solrDoc.RequierePremium[0]
-	}
-	if len(solrDoc.CupoDisponible) > 0 {
-		doc.CupoDisponible = solrDoc.CupoDisponible[0]
-	}
-	if len(solrDoc.PlanNombre) > 0 {
-		doc.PlanNombre = solrDoc.PlanNombre[0]
-	}
-	if len(solrDoc.PlanPrecio) > 0 {
-		doc.PlanPrecio = solrDoc.PlanPrecio[0]
-	}
-	if len(solrDoc.PlanTipoAcceso) > 0 {
-		doc.PlanTipoAcceso = solrDoc.PlanTipoAcceso[0]
-	}
+
+	doc.CupoDisponible = getIntValue(solrDoc["cupo_disponible"])
+	doc.RequierePremium = getBoolValue(solrDoc["requiere_premium"])
+	doc.PlanPrecio = getFloat64Value(solrDoc["plan_precio"])
 
 	return doc
 }

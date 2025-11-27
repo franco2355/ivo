@@ -16,6 +16,9 @@ import (
 	"github.com/yourusername/payments-api/internal/gateways"
 	"github.com/yourusername/payments-api/internal/middleware"
 	"github.com/yourusername/payments-api/internal/services"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
@@ -37,6 +40,13 @@ func main() {
 	// Implementación del repository con MongoDB
 	paymentRepo := dao.NewPaymentRepositoryMongo(mongoDB.Database)
 	log.Println("✅ Repository inicializado (MongoDB)")
+
+	// ========== 3.5. CREAR ÍNDICES DE MONGODB ==========
+	if err := createPaymentIndexes(mongoDB); err != nil {
+		log.Printf("⚠️  Error creando índices: %v", err)
+	} else {
+		log.Println("✅ Índices de MongoDB creados/verificados")
+	}
 
 	// ========== 4. CAPA DE GATEWAYS (FACTORY PATTERN) ==========
 	// El factory permite crear instancias de gateways en runtime
@@ -217,6 +227,7 @@ func createPaymentWithGatewayHandler(service *services.PaymentService) gin.Handl
 			Currency       string                 `json:"currency" binding:"required"`
 			PaymentMethod  string                 `json:"payment_method" binding:"required"`
 			PaymentGateway string                 `json:"payment_gateway" binding:"required"` // "mercadopago", "cash"
+			IdempotencyKey string                 `json:"idempotency_key,omitempty"`         // UUID para prevenir duplicados
 			CallbackURL    string                 `json:"callback_url,omitempty"`
 			WebhookURL     string                 `json:"webhook_url,omitempty"`
 			Metadata       map[string]interface{} `json:"metadata,omitempty"`
@@ -236,6 +247,7 @@ func createPaymentWithGatewayHandler(service *services.PaymentService) gin.Handl
 			Currency:       req.Currency,
 			PaymentMethod:  req.PaymentMethod,
 			PaymentGateway: req.PaymentGateway,
+			IdempotencyKey: req.IdempotencyKey, // ⭐ Pasar idempotency key
 			CallbackURL:    req.CallbackURL,
 			WebhookURL:     req.WebhookURL,
 			Metadata:       req.Metadata,
@@ -277,6 +289,7 @@ func createRecurringPaymentHandler(service *services.PaymentService) gin.Handler
 			Currency       string                 `json:"currency" binding:"required"`
 			PaymentMethod  string                 `json:"payment_method" binding:"required"`
 			PaymentGateway string                 `json:"payment_gateway" binding:"required"` // "mercadopago"
+			IdempotencyKey string                 `json:"idempotency_key,omitempty"`         // UUID para prevenir duplicados
 			Frequency      int                    `json:"frequency" binding:"required,gt=0"`  // 1, 2, 3...
 			FrequencyType  string                 `json:"frequency_type" binding:"required"`  // "months", "days", "weeks"
 			Metadata       map[string]interface{} `json:"metadata,omitempty"`
@@ -296,6 +309,7 @@ func createRecurringPaymentHandler(service *services.PaymentService) gin.Handler
 			Currency:       req.Currency,
 			PaymentMethod:  req.PaymentMethod,
 			PaymentGateway: req.PaymentGateway,
+			IdempotencyKey: req.IdempotencyKey, // ⭐ Pasar idempotency key
 			Metadata:       req.Metadata,
 		}
 
@@ -333,4 +347,31 @@ func refundPaymentHandler(service *services.PaymentService) gin.HandlerFunc {
 			"message": "Reembolso procesado exitosamente",
 		})
 	}
+}
+
+// createPaymentIndexes - Crea índices únicos y optimizaciones en la colección de payments
+func createPaymentIndexes(mongoDB *database.MongoDB) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	collection := mongoDB.Database.Collection("payments")
+
+	// Índice único en idempotency_key para prevenir pagos duplicados
+	// sparse: true -> solo indexa documentos que tienen el campo (permite null)
+	indexModel := mongo.IndexModel{
+		Keys: bson.D{{Key: "idempotency_key", Value: 1}},
+		Options: options.Index().
+			SetUnique(true).
+			SetSparse(true).
+			SetName("idx_idempotency_key_unique"),
+	}
+
+	indexName, err := collection.Indexes().CreateOne(ctx, indexModel)
+	if err != nil {
+		log.Printf("⚠️  Error creando índice idempotency_key: %v", err)
+		return err
+	}
+
+	log.Printf("   Índice creado: %s", indexName)
+	return nil
 }

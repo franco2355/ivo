@@ -1,14 +1,15 @@
 module activities-api
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.23.12
+toolchain go1.24.1
 
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/joho/godotenv v1.5.1
 	github.com/streadway/amqp v1.1.0
+	golang.org/x/sync v0.18.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.26.1
 )

@@ -67,7 +67,10 @@ func (c *CacheService) Set(key string, value []byte) error {
 	}
 
 	if err := c.memcached.Set(item); err != nil {
-		return err
+		// Log the error but continue with local cache
+		fmt.Printf("⚠️  Memcached Set failed: %v (using local cache only)\n", err)
+	} else {
+		fmt.Printf("✅ Memcached Set successful for key: %s\n", key)
 	}
 
 	// Guardar en caché local
