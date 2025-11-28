@@ -18,7 +18,13 @@ const Pagos = () => {
     const fetchPagos = async () => {
         try {
             setLoading(true);
-            const response = await fetch(PAYMENTS_API.paymentsByUser(userId));
+            const token = localStorage.getItem('access_token');
+            const response = await fetch(PAYMENTS_API.paymentsByUser(userId), {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                }
+            });
 
             if (!response.ok) {
                 throw new Error("Error al cargar pagos");

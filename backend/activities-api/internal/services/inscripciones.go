@@ -179,6 +179,11 @@ func (s *InscripcionesServiceImpl) Create(ctx context.Context, usuarioID, activi
 		return domain.InscripcionResponse{}, fmt.Errorf("error creating inscripcion: %w", err)
 	}
 
+	// Invalidar cache de actividades para que se reflejen los nuevos cupos
+	if s.actividadesRepo != nil {
+		s.actividadesRepo.InvalidateCache()
+	}
+
 	// Publicar evento a RabbitMQ
 	eventData := map[string]interface{}{
 		"usuario_id":   createdInscripcion.UsuarioID,
@@ -198,6 +203,11 @@ func (s *InscripcionesServiceImpl) Create(ctx context.Context, usuarioID, activi
 func (s *InscripcionesServiceImpl) Deactivate(ctx context.Context, usuarioID, actividadID uint) error {
 	if err := s.inscripcionesRepo.Deactivate(ctx, usuarioID, actividadID); err != nil {
 		return fmt.Errorf("error deactivating inscripcion: %w", err)
+	}
+
+	// Invalidar cache de actividades para reflejar cupos liberados
+	if s.actividadesRepo != nil {
+		s.actividadesRepo.InvalidateCache()
 	}
 
 	// Publicar evento a RabbitMQ

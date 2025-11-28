@@ -16,6 +16,7 @@ func JWTAuthMiddleware(jwtSecret string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// Obtener header Authorization
 		auth := ctx.GetHeader("Authorization")
+		fmt.Printf("[JWT DEBUG] Authorization header: %s\n", auth)
 		if auth == "" {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": "Authorization header required",
@@ -26,11 +27,15 @@ func JWTAuthMiddleware(jwtSecret string) gin.HandlerFunc {
 		// Validar formato "Bearer <token>"
 		parts := strings.SplitN(auth, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
+			fmt.Printf("[JWT DEBUG] Invalid header format. Parts: %v\n", parts)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": "Invalid authorization header format. Expected 'Bearer <token>'",
 			})
 			return
 		}
+
+		fmt.Printf("[JWT DEBUG] Token: %s\n", parts[1][:20]+"...")
+		fmt.Printf("[JWT DEBUG] JWT Secret length: %d\n", len(jwtSecret))
 
 		// Parsear y validar token
 		token, err := jwt.Parse(parts[1], func(token *jwt.Token) (interface{}, error) {
@@ -42,6 +47,7 @@ func JWTAuthMiddleware(jwtSecret string) gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
+			fmt.Printf("[JWT DEBUG] Token validation failed. Error: %v, Valid: %v\n", err, token.Valid)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "Invalid or expired token",
 				"details": err.Error(),

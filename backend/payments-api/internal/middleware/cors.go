@@ -1,12 +1,18 @@
 package middleware
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
+		authHeader := c.Request.Header.Get("Authorization")
+
+		fmt.Printf("[CORS DEBUG] Method: %s, Origin: %s, Auth: %s\n", c.Request.Method, origin, authHeader)
+
 		if origin == "" {
 			origin = "http://localhost:5173"
 		}

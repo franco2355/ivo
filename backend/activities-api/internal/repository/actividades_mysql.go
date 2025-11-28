@@ -24,6 +24,9 @@ type ActividadesRepository interface {
 	Create(ctx context.Context, actividad domain.Actividad, horaInicio, horaFin time.Time) (domain.Actividad, error)
 	Update(ctx context.Context, id uint, actividad domain.Actividad, horaInicio, horaFin time.Time) (domain.Actividad, error)
 	Delete(ctx context.Context, id uint) error
+	// InvalidateCache permite forzar la recarga de actividades
+	// (por ejemplo, después de crear/cancelar inscripciones que afectan los cupos)
+	InvalidateCache()
 }
 
 // cacheEntry estructura para almacenar datos cacheados con timestamp
@@ -150,6 +153,11 @@ func (r *MySQLActividadesRepository) invalidateCache() {
 	r.cacheMutex.Lock()
 	r.cache = nil
 	r.cacheMutex.Unlock()
+}
+
+// InvalidateCache expone la invalidación de cache a través de la interfaz
+func (r *MySQLActividadesRepository) InvalidateCache() {
+	r.invalidateCache()
 }
 
 // GetByID obtiene una actividad por ID (usando la vista)

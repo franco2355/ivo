@@ -1,8 +1,8 @@
 // Script para crear planes de ejemplo en MongoDB
 // Ejecutar con: docker exec gym-mongo mongosh gym_subscriptions /scripts/create_plans_mongo.js
 
-// Cambiar a la base de datos correcta
-use gym_subscriptions;
+// La base de datos ya se selecciona al invocar:
+// mongosh gym_subscriptions /ruta/al/script.js
 
 // Limpiar planes existentes (opcional)
 db.plans.deleteMany({});

@@ -26,30 +26,63 @@ const AdminPagos = () => {
     const fetchPagos = async () => {
         try {
             setLoading(true);
+            const token = localStorage.getItem('access_token');
+
+            console.log('[AdminPagos] ====== DEBUG START ======');
+            console.log('[AdminPagos] Token obtenido:', token ? `${token.substring(0, 30)}...` : 'NO HAY TOKEN');
+            console.log('[AdminPagos] Token completo:', token);
+            console.log('[AdminPagos] Llamando a:', PAYMENTS_API.payments);
+            console.log('[AdminPagos] Headers que se enviarán:', {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            });
+
+            if (!token) {
+                console.error('[AdminPagos] ERROR: No hay token en localStorage');
+                toast.error('No estás autenticado. Por favor, inicia sesión nuevamente.');
+                setLoading(false);
+                return;
+            }
+
+            console.log('[AdminPagos] Haciendo fetch...');
+
             // Obtener todos los pagos (sin filtro de usuario)
-            const response = await fetch(PAYMENTS_API.payments);
+            const response = await fetch(PAYMENTS_API.payments, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log('[AdminPagos] Response status:', response.status);
+            console.log('[AdminPagos] Response headers:', response.headers);
+            console.log('[AdminPagos] ====== DEBUG END ======');
 
             if (!response.ok) {
                 throw new Error("Error al cargar pagos");
             }
 
             const data = await response.json();
-            setPagos(data);
+
+            // Si la API devuelve un objeto con array 'payments', usar ese array
+            const paymentsArray = Array.isArray(data) ? data : (data.payments || []);
+            setPagos(paymentsArray);
 
             // Calcular estadísticas
             const stats = {
-                total: data.length,
-                completados: data.filter(p => p.status === 'completed').length,
-                pendientes: data.filter(p => p.status === 'pending').length,
-                fallidos: data.filter(p => p.status === 'failed').length,
-                montoTotal: data
+                total: paymentsArray.length,
+                completados: paymentsArray.filter(p => p.status === 'completed').length,
+                pendientes: paymentsArray.filter(p => p.status === 'pending').length,
+                fallidos: paymentsArray.filter(p => p.status === 'failed').length,
+                montoTotal: paymentsArray
                     .filter(p => p.status === 'completed')
                     .reduce((sum, p) => sum + (p.amount || 0), 0)
             };
             setEstadisticas(stats);
 
             // Obtener nombres de usuarios únicos
-            const userIds = [...new Set(data.map(p => p.user_id))];
+            const userIds = [...new Set(paymentsArray.map(p => p.user_id))];
             await fetchUsuarios(userIds);
 
         } catch (error) {

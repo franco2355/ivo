@@ -25,13 +25,13 @@ const Checkout = () => {
     const isAdmin = localStorage.getItem("isAdmin") === "true";
     const toast = useToastContext();
 
-    // Bloquear acceso si es admin
-    useEffect(() => {
-        if (isAdmin) {
-            toast.error("Los administradores no pueden comprar planes");
-            navigate('/planes');
-        }
-    }, [isAdmin, navigate, toast]);
+    // Bloquear acceso si es admin (DESACTIVADO PARA PRUEBAS)
+    // useEffect(() => {
+    //     if (isAdmin) {
+    //         toast.error("Los administradores no pueden comprar planes");
+    //         navigate('/planes');
+    //     }
+    // }, [isAdmin, navigate, toast]);
 
     useEffect(() => {
         const fetchPlan = async () => {
@@ -215,6 +215,7 @@ const Checkout = () => {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify(paymentData)
                 });
@@ -257,6 +258,7 @@ const Checkout = () => {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify(paymentData)
                 });

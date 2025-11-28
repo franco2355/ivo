@@ -421,8 +421,9 @@ const Actividades = () => {
 
             // Actualizar la lista de inscripciones
             fetchInscripciones();
-            // Actualizar la lista de actividades para reflejar el cambio en los cupos
-            searchActividades();
+            // Actualizar la lista de actividades usando el backend directo
+            // para reflejar correctamente los cupos disponibles
+            await searchActividadesFallback();
             toast.success("¡Inscripción exitosa!");
         } catch (error) {
             console.error("Error al inscribirse:", error);
@@ -453,7 +454,8 @@ const Actividades = () => {
                 toast.error("Ups! algo salió mal, vuelve a intentarlo más tarde");
             }
 
-            searchActividades();
+            // Volver a cargar actividades desde el backend para actualizar cupos
+            await searchActividadesFallback();
         } catch (error) {
             toast.error("Ups! algo salió mal, vuelve a intentarlo más tarde");
             console.error("Error al desinscribir el usuario:", error);
