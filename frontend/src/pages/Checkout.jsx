@@ -19,6 +19,7 @@ const Checkout = () => {
     const [showCheckout, setShowCheckout] = useState(false);
     const [currentPaymentId, setCurrentPaymentId] = useState(null);
     const [pollingInterval, setPollingInterval] = useState(null);
+    const [activeSuscripcion, setActiveSuscripcion] = useState(null);
     const isSubmitting = useRef(false); // Ref para prevenir doble submit
 
     const userId = localStorage.getItem("idUsuario");
@@ -34,11 +35,13 @@ const Checkout = () => {
     // }, [isAdmin, navigate, toast]);
 
     useEffect(() => {
-        const fetchPlan = async () => {
+        const fetchData = async () => {
             try {
-                console.log('[Checkout] Cargando plan:', planId);
+                const token = localStorage.getItem('access_token');
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-                // Cargar plan desde la API real
+                // Cargar plan
+                console.log('[Checkout] Cargando plan:', planId);
                 const response = await fetch(`${API_URL}/plans/${planId}`);
                 console.log('[Checkout] Response:', response.status);
 
@@ -56,6 +59,22 @@ const Checkout = () => {
                 }
 
                 setPlan(planData);
+
+                // Cargar suscripción activa del usuario
+                if (userId && token) {
+                    try {
+                        const subResponse = await fetch(SUBSCRIPTIONS_API.activeSubscription(userId), { headers });
+                        if (subResponse.ok) {
+                            const subData = await subResponse.json();
+                            if (subData && subData.estado === 'activa') {
+                                setActiveSuscripcion(subData);
+                                console.log('[Checkout] Suscripción activa encontrada:', subData);
+                            }
+                        }
+                    } catch (err) {
+                        console.log('[Checkout] No hay suscripción activa');
+                    }
+                }
             } catch (error) {
                 console.error("[Checkout] Error al cargar plan:", error);
                 toast.error("Error al cargar el plan. Por favor, intenta nuevamente.");
@@ -65,8 +84,8 @@ const Checkout = () => {
             }
         };
 
-        fetchPlan();
-    }, [planId, navigate]);
+        fetchData();
+    }, [planId, navigate, userId]);
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -158,6 +177,37 @@ const Checkout = () => {
             }
 
             console.log('[Checkout] Iniciando proceso de suscripción...');
+
+            // Verificar si tiene una suscripción activa a otro plan
+            if (activeSuscripcion && activeSuscripcion.plan_id !== planId) {
+                const confirmar = window.confirm(
+                    `⚠️ Ya tenés un plan activo: "${activeSuscripcion.plan_nombre}"\n\n` +
+                    `Si continuás, se dará de baja tu plan actual en este instante.\n\n` +
+                    `¿Querés continuar con el cambio de plan?`
+                );
+
+                if (!confirmar) {
+                    setProcessing(false);
+                    isSubmitting.current = false;
+                    return;
+                }
+
+                // Cancelar la suscripción activa
+                console.log('[Checkout] Cancelando suscripción activa:', activeSuscripcion.id);
+                const cancelResponse = await fetch(SUBSCRIPTIONS_API.cancelSubscription(activeSuscripcion.id), {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!cancelResponse.ok) {
+                    throw new Error('Error al cancelar la suscripción actual');
+                }
+
+                console.log('[Checkout] ✅ Suscripción anterior cancelada');
+                toast.info('Tu plan anterior fue dado de baja');
+            }
 
             // 1. Crear suscripción REAL en subscriptions-api
             const subscriptionData = {

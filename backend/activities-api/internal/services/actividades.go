@@ -117,13 +117,19 @@ func (s *ActividadesServiceImpl) Create(ctx context.Context, actividadCreate dom
 		return domain.ActividadResponse{}, fmt.Errorf("error creating actividad: %w", err)
 	}
 
-	// Publicar evento a RabbitMQ
+	// Publicar evento a RabbitMQ con todos los campos para indexación directa
 	eventData := map[string]interface{}{
-		"titulo":      createdActividad.Titulo,
-		"descripcion": createdActividad.Descripcion,
-		"categoria":   createdActividad.Categoria,
-		"dia":         createdActividad.Dia,
-		"instructor":  createdActividad.Instructor,
+		"titulo":          createdActividad.Titulo,
+		"descripcion":     createdActividad.Descripcion,
+		"categoria":       createdActividad.Categoria,
+		"dia":             createdActividad.Dia,
+		"instructor":      createdActividad.Instructor,
+		"horario_inicio":  createdActividad.HorarioInicio,
+		"horario_final":   createdActividad.HorarioFinal,
+		"sucursal_id":     createdActividad.SucursalID,
+		"sucursal_nombre": createdActividad.SucursalNombre,
+		"cupo_disponible": createdActividad.Cupo, // Al crear, cupo disponible = cupo total
+		"foto_url":        createdActividad.FotoUrl,
 	}
 	if err := s.eventPublisher.PublishActivityEvent("create", fmt.Sprintf("%d", createdActividad.ID), eventData); err != nil {
 		// Log el error pero NO fallamos la creación (ya está creada)
@@ -172,13 +178,19 @@ func (s *ActividadesServiceImpl) Update(ctx context.Context, id uint, actividadU
 		return domain.ActividadResponse{}, fmt.Errorf("error updating actividad: %w", err)
 	}
 
-	// Publicar evento a RabbitMQ
+	// Publicar evento a RabbitMQ con todos los campos para indexación directa
 	eventData := map[string]interface{}{
-		"titulo":      updatedActividad.Titulo,
-		"descripcion": updatedActividad.Descripcion,
-		"categoria":   updatedActividad.Categoria,
-		"dia":         updatedActividad.Dia,
-		"instructor":  updatedActividad.Instructor,
+		"titulo":          updatedActividad.Titulo,
+		"descripcion":     updatedActividad.Descripcion,
+		"categoria":       updatedActividad.Categoria,
+		"dia":             updatedActividad.Dia,
+		"instructor":      updatedActividad.Instructor,
+		"horario_inicio":  updatedActividad.HorarioInicio,
+		"horario_final":   updatedActividad.HorarioFinal,
+		"sucursal_id":     updatedActividad.SucursalID,
+		"sucursal_nombre": updatedActividad.SucursalNombre,
+		"cupo_disponible": updatedActividad.CupoDisponible,
+		"foto_url":        updatedActividad.FotoUrl,
 	}
 	if err := s.eventPublisher.PublishActivityEvent("update", fmt.Sprintf("%d", updatedActividad.ID), eventData); err != nil {
 		// Log el error pero NO fallamos la actualización (ya está actualizada)

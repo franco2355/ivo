@@ -145,8 +145,18 @@ func (r *RabbitMQConsumer) handleMessage(msg amqp.Delivery) {
 		}
 		log.Printf("✅ Actividad reindexada por cambio en inscripción\n")
 
+	case "activity":
+		// Para actividades, reindexar desde MySQL para obtener todos los campos
+		err = r.handleActivityEvent(event)
+		if err != nil {
+			log.Printf("❌ Error procesando evento de actividad: %v\n", err)
+			msg.Nack(false, true) // Requeue
+			return
+		}
+		log.Printf("✅ Actividad procesada: %s (action: %s)\n", event.ID, event.Action)
+
 	default:
-		// Para otros eventos (activity, plan, subscription), procesamiento normal
+		// Para otros eventos (plan, subscription), procesamiento normal
 		switch event.Action {
 		case "create", "update":
 			err = r.searchService.IndexFromEvent(event)
@@ -158,7 +168,7 @@ func (r *RabbitMQConsumer) handleMessage(msg amqp.Delivery) {
 			log.Printf("✅ Documento indexado: %s_%s\n", event.Type, event.ID)
 
 		case "delete":
-			docID := event.ID  // Usar solo el ID numérico para consistencia
+			docID := event.ID // Usar solo el ID numérico para consistencia
 			err = r.searchService.DeleteDocument(docID)
 			if err != nil {
 				log.Printf("❌ Error eliminando documento: %v\n", err)
@@ -173,6 +183,24 @@ func (r *RabbitMQConsumer) handleMessage(msg amqp.Delivery) {
 	r.cacheService.InvalidatePattern(event.Type)
 
 	msg.Ack(false)
+}
+
+// handleActivityEvent procesa eventos de actividad indexando directamente desde el evento
+func (r *RabbitMQConsumer) handleActivityEvent(event dtos.RabbitMQEvent) error {
+	switch event.Action {
+	case "create", "update":
+		// Indexar directamente desde el evento (viene con todos los campos)
+		log.Printf("📝 Indexando actividad %s desde evento (action: %s)\n", event.ID, event.Action)
+		return r.searchService.IndexFromEvent(event)
+
+	case "delete":
+		log.Printf("🗑️  Eliminando actividad %s del índice\n", event.ID)
+		return r.searchService.DeleteDocument(event.ID)
+
+	default:
+		log.Printf("⚠️  Acción desconocida para actividad: %s\n", event.Action)
+		return nil
+	}
 }
 
 // handleInscriptionEvent procesa eventos de inscripción reindexando la actividad afectada

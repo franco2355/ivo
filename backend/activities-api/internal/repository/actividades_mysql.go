@@ -90,15 +90,17 @@ func NewMySQLActividadesRepository(cfg config.MySQLConfig) *MySQLActividadesRepo
 	// 	return nil
 	// }
 
-	// Crear vista actividades_lugares si no existe
+	// Crear vista actividades_lugares si no existe (incluye JOIN con sucursales)
 	createViewSQL := `
 		CREATE OR REPLACE VIEW actividades_lugares AS
 		SELECT a.*,
+		       COALESCE(s.nombre, '') AS sucursal_nombre,
 		       a.cupo - COALESCE((SELECT COUNT(*)
 		                          FROM inscripciones i
 		                          WHERE i.actividad_id = a.id_actividad
 		                          AND i.is_activa = true), 0) AS lugares
 		FROM actividades a
+		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal
 		WHERE a.activa = true AND a.deleted_at IS NULL
 	`
 	if err := db.Exec(createViewSQL).Error; err != nil {

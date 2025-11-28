@@ -101,18 +101,19 @@ func ActividadFromDomain(domainAct domain.Actividad, horaInicio, horaFin time.Ti
 // ActividadVista representa la vista MySQL con cupos calculados
 // Migrado de backend/model/actividad.go:45
 type ActividadVista struct {
-	ID            uint      `gorm:"column:id_actividad;primaryKey"`
-	Titulo        string    `gorm:"type:varchar(50)"`
-	Descripcion   string    `gorm:"type:varchar(255)"`
-	Cupo          uint      `gorm:"type:int"`
-	Dia           string    `gorm:"type:varchar(20)"`
-	HorarioInicio time.Time `gorm:"column:horario_inicio;type:time"`
-	HorarioFinal  time.Time `gorm:"column:horario_final;type:time"`
-	FotoUrl       string    `gorm:"column:foto_url;type:varchar(511)"`
-	Instructor    string    `gorm:"type:varchar(50)"`
-	Categoria     string    `gorm:"type:varchar(40)"`
-	Lugares       uint      `gorm:"column:lugares"` // Campo calculado de la vista
-	SucursalID    *uint     `gorm:"column:sucursal_id"`
+	ID             uint      `gorm:"column:id_actividad;primaryKey"`
+	Titulo         string    `gorm:"type:varchar(50)"`
+	Descripcion    string    `gorm:"type:varchar(255)"`
+	Cupo           uint      `gorm:"type:int"`
+	Dia            string    `gorm:"type:varchar(20)"`
+	HorarioInicio  time.Time `gorm:"column:horario_inicio;type:time"`
+	HorarioFinal   time.Time `gorm:"column:horario_final;type:time"`
+	FotoUrl        string    `gorm:"column:foto_url;type:varchar(511)"`
+	Instructor     string    `gorm:"type:varchar(50)"`
+	Categoria      string    `gorm:"type:varchar(40)"`
+	SucursalID     *uint     `gorm:"column:sucursal_id"`
+	SucursalNombre string    `gorm:"column:sucursal_nombre"` // JOIN con sucursales
+	Lugares        uint      `gorm:"column:lugares"`         // Campo calculado de la vista
 }
 
 // TableName especifica el nombre de la vista
@@ -120,20 +121,22 @@ func (ActividadVista) TableName() string {
 	return "actividades_lugares" // Vista que calcula lugares disponibles
 }
 
-// ToDomain convierte vista a domain (incluye lugares disponibles)
+// ToDomain convierte vista a domain (incluye lugares disponibles y nombre de sucursal)
 func (av ActividadVista) ToDomain() domain.Actividad {
 	return domain.Actividad{
-		ID:            av.ID,
-		Titulo:        av.Titulo,
-		Descripcion:   av.Descripcion,
-		Cupo:          av.Cupo,
-		Dia:           av.Dia,
-		HorarioInicio: av.HorarioInicio.Format("15:04"),
-		HorarioFinal:  av.HorarioFinal.Format("15:04"),
-		FotoUrl:       av.FotoUrl,
-		Instructor:    av.Instructor,
-		Categoria:     av.Categoria,
-		Lugares:       av.Lugares, // Incluye cupos disponibles
-		SucursalID:    av.SucursalID,
+		ID:             av.ID,
+		Titulo:         av.Titulo,
+		Descripcion:    av.Descripcion,
+		Cupo:           av.Cupo,
+		Dia:            av.Dia,
+		HorarioInicio:  av.HorarioInicio.Format("15:04"),
+		HorarioFinal:   av.HorarioFinal.Format("15:04"),
+		FotoUrl:        av.FotoUrl,
+		Instructor:     av.Instructor,
+		Categoria:      av.Categoria,
+		SucursalID:     av.SucursalID,
+		SucursalNombre: av.SucursalNombre, // Nombre de la sucursal (JOIN)
+		Lugares:        av.Lugares,        // Cupos disponibles
+		CupoDisponible: av.Lugares,        // Alias para eventos de RabbitMQ
 	}
 }

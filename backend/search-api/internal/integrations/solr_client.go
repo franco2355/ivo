@@ -41,7 +41,8 @@ type SolrDocument struct {
 	SucursalID      []int     `json:"sucursal_id,omitempty"`
 	SucursalNombre  []string  `json:"sucursal_nombre,omitempty"`
 	RequierePremium []bool    `json:"requiere_premium,omitempty"`
-	CupoDisponible  []int     `json:"cupo_disponible,omitempty"`
+	Cupo            []int     `json:"cupo,omitempty"`            // Cupo total
+	CupoDisponible  []int     `json:"cupo_disponible,omitempty"` // Lugares disponibles
 	PlanNombre      []string  `json:"plan_nombre,omitempty"`
 	PlanPrecio      []float64 `json:"plan_precio,omitempty"`
 	PlanTipoAcceso  []string  `json:"plan_tipo_acceso,omitempty"`
@@ -300,9 +301,11 @@ func (c *SolrClient) convertToSolrDocument(doc dtos.SearchDocument) SolrDocument
 	if doc.RequierePremium {
 		solrDoc.RequierePremium = []bool{doc.RequierePremium}
 	}
-	if doc.CupoDisponible > 0 {
-		solrDoc.CupoDisponible = []int{doc.CupoDisponible}
+	// Siempre indexar cupo y cupo_disponible (incluso si es 0)
+	if doc.Cupo > 0 {
+		solrDoc.Cupo = []int{doc.Cupo}
 	}
+	solrDoc.CupoDisponible = []int{doc.CupoDisponible}
 	if doc.PlanNombre != "" {
 		solrDoc.PlanNombre = []string{doc.PlanNombre}
 	}
@@ -415,6 +418,7 @@ func (c *SolrClient) convertFromSolrDocument(solrDoc map[string]interface{}) dto
 		doc.SucursalID = fmt.Sprintf("%d", sucursalID)
 	}
 
+	doc.Cupo = getIntValue(solrDoc["cupo"])
 	doc.CupoDisponible = getIntValue(solrDoc["cupo_disponible"])
 	doc.RequierePremium = getBoolValue(solrDoc["requiere_premium"])
 	doc.PlanPrecio = getFloat64Value(solrDoc["plan_precio"])

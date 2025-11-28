@@ -17,7 +17,8 @@ type SearchDocument struct {
 	SucursalID       string `json:"sucursal_id,omitempty"`
 	SucursalNombre   string `json:"sucursal_nombre,omitempty"`
 	RequierePremium  bool   `json:"requiere_premium,omitempty"`
-	CupoDisponible   int    `json:"cupo_disponible,omitempty"`
+	Cupo             int    `json:"cupo,omitempty"`             // Cupo total
+	CupoDisponible   int    `json:"cupo_disponible,omitempty"` // Lugares disponibles
 
 	// Campos de Plan
 	PlanNombre     string  `json:"plan_nombre,omitempty"`

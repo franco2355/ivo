@@ -220,12 +220,22 @@ func (s *SubscriptionService) CancelSubscription(ctx context.Context, id string)
 		return fmt.Errorf("ID inválido")
 	}
 
+	// Obtener la suscripción para tener el usuario_id
+	subscription, err := s.subscriptionRepo.FindByID(ctx, objID)
+	if err != nil {
+		return fmt.Errorf("suscripción no encontrada: %w", err)
+	}
+
 	if err := s.subscriptionRepo.UpdateStatus(ctx, objID, "cancelada", ""); err != nil {
 		return err
 	}
 
-	// Publicar evento
-	s.eventPublisher.PublishSubscriptionEvent("delete", id, nil)
+	// Publicar evento con usuario_id para que activities-api pueda desinscribir
+	eventData := map[string]interface{}{
+		"usuario_id": subscription.UsuarioID,
+		"plan_id":    subscription.PlanID.Hex(),
+	}
+	s.eventPublisher.PublishSubscriptionEvent("cancelled", id, eventData)
 
 	return nil
 }

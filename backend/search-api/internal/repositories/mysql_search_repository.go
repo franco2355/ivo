@@ -32,7 +32,7 @@ func NewMySQLSearchRepository(dbUser, dbPass, dbHost, dbPort, dbSchema string) (
 
 // SearchActivities - Busca actividades usando MySQL FULLTEXT
 func (r *MySQLSearchRepository) SearchActivities(req dtos.SearchRequest) ([]dtos.SearchDocument, int, error) {
-	// Base query with FULLTEXT search
+	// Base query using view that calculates available spots
 	baseQuery := `
 		SELECT
 			a.id_actividad,
@@ -43,12 +43,12 @@ func (r *MySQLSearchRepository) SearchActivities(req dtos.SearchRequest) ([]dtos
 			a.dia,
 			TIME_FORMAT(a.horario_inicio, '%H:%i') as horario_inicio,
 			TIME_FORMAT(a.horario_final, '%H:%i') as horario_final,
-			a.cupo,
+			a.lugares,
 			COALESCE(s.nombre, '') as sucursal_nombre,
 			a.sucursal_id,
 			COUNT(*) OVER() as total_count
-		FROM actividades a
-		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal WHERE a.deleted_at IS NULL`
+		FROM actividades_lugares a
+		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal`
 
 	var whereClauses []string
 	var args []interface{}
@@ -88,7 +88,7 @@ func (r *MySQLSearchRepository) SearchActivities(req dtos.SearchRequest) ([]dtos
 
 	// Construir query completa
 	if len(whereClauses) > 0 {
-		baseQuery += " AND " + strings.Join(whereClauses, " AND ")
+		baseQuery += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 
 	// Ordenamiento
@@ -168,11 +168,11 @@ func (r *MySQLSearchRepository) GetAllActivities() ([]dtos.SearchDocument, error
 			a.dia,
 			TIME_FORMAT(a.horario_inicio, '%H:%i') as horario_inicio,
 			TIME_FORMAT(a.horario_final, '%H:%i') as horario_final,
-			a.cupo,
+			a.lugares,
 			COALESCE(s.nombre, '') as sucursal_nombre,
 			a.sucursal_id
-		FROM actividades a
-		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal WHERE a.deleted_at IS NULL`
+		FROM actividades_lugares a
+		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal`
 
 	rows, err := r.db.Query(query)
 	if err != nil {
@@ -230,11 +230,12 @@ func (r *MySQLSearchRepository) GetActivityByID(activityID string) (dtos.SearchD
 			TIME_FORMAT(a.horario_inicio, '%H:%i') as horario_inicio,
 			TIME_FORMAT(a.horario_final, '%H:%i') as horario_final,
 			a.cupo,
+			a.lugares,
 			COALESCE(s.nombre, '') as sucursal_nombre,
 			a.sucursal_id
-		FROM actividades a
+		FROM actividades_lugares a
 		LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal
-		WHERE a.id_actividad = ? AND a.deleted_at IS NULL`
+		WHERE a.id_actividad = ?`
 
 	var doc dtos.SearchDocument
 	var horarioInicio, horarioFinal string
@@ -249,6 +250,7 @@ func (r *MySQLSearchRepository) GetActivityByID(activityID string) (dtos.SearchD
 		&doc.Dia,
 		&horarioInicio,
 		&horarioFinal,
+		&doc.Cupo,
 		&doc.CupoDisponible,
 		&doc.SucursalNombre,
 		&sucursalID,

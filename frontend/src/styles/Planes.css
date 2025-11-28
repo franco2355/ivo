@@ -64,6 +64,11 @@
     box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
   }
 
+  .plan-actual-badge.pendiente {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+  }
+
   .plan-card.plan-actual {
     border: 3px solid #2196F3;
     background: linear-gradient(to bottom, #e3f2fd 0%, #ffffff 100%);
@@ -187,6 +192,52 @@
 
   .plan-card.popular .btn-seleccionar-plan:hover {
     box-shadow: 0 8px 25px rgba(255, 152, 0, 0.5);
+  }
+
+  /* Botón del plan actual deshabilitado */
+  .btn-plan-actual-disabled {
+    background: linear-gradient(135deg, #78909c 0%, #607d8b 100%) !important;
+    cursor: not-allowed !important;
+    opacity: 0.8 !important;
+    box-shadow: none !important;
+    pointer-events: none;
+  }
+
+  .btn-plan-actual-disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Botón de completar pago */
+  .btn-completar-pago {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4) !important;
+    cursor: pointer !important;
+  }
+
+  .btn-completar-pago:hover {
+    box-shadow: 0 8px 25px rgba(255, 152, 0, 0.5) !important;
+  }
+
+  /* Botón de renovar suscripción */
+  .btn-renovar {
+    background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%) !important;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4) !important;
+    cursor: pointer !important;
+  }
+
+  .btn-renovar:hover {
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.5) !important;
+  }
+
+  /* Estilo para el botón de cambiar de plan */
+  .btn-cambiar-plan {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4) !important;
+  }
+
+  .btn-cambiar-plan:hover {
+    box-shadow: 0 8px 25px rgba(255, 152, 0, 0.5) !important;
   }
 
   .planes-footer {

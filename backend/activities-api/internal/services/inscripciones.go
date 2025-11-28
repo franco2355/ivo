@@ -18,6 +18,7 @@ type InscripcionesService interface {
 	ListByUser(ctx context.Context, usuarioID uint) ([]domain.InscripcionResponse, error)
 	Create(ctx context.Context, usuarioID, actividadID uint, authToken string) (domain.InscripcionResponse, error)
 	Deactivate(ctx context.Context, usuarioID, actividadID uint) error
+	DeactivateAllByUser(ctx context.Context, usuarioID uint) (int, error)
 }
 
 // InscripcionesServiceImpl implementa InscripcionesService
@@ -443,4 +444,50 @@ func (s *InscripcionesServiceImpl) validateWeeklyActivityLimit(ctx context.Conte
 	fmt.Printf("✅ [validateWeeklyActivityLimit] Dentro del límite (%d/%d)\n",
 		inscripcionesEstaSemana+1, subscription.PlanInfo.ActividadesPorSemana)
 	return nil
+}
+
+// DeactivateAllByUser desactiva todas las inscripciones de un usuario
+// Se llama cuando se cancela la suscripción del usuario
+func (s *InscripcionesServiceImpl) DeactivateAllByUser(ctx context.Context, usuarioID uint) (int, error) {
+	fmt.Printf("🔄 [DeactivateAllByUser] Desactivando todas las inscripciones del usuario %d\n", usuarioID)
+
+	// Obtener todas las inscripciones activas del usuario
+	inscripciones, err := s.inscripcionesRepo.ListByUser(ctx, usuarioID)
+	if err != nil {
+		return 0, fmt.Errorf("error obteniendo inscripciones: %w", err)
+	}
+
+	// Contar inscripciones activas
+	count := 0
+	for _, insc := range inscripciones {
+		if insc.IsActiva {
+			// Desactivar cada inscripción
+			if err := s.inscripcionesRepo.Deactivate(ctx, usuarioID, insc.ActividadID); err != nil {
+				fmt.Printf("⚠️ [DeactivateAllByUser] Error desactivando inscripción actividad %d: %v\n", insc.ActividadID, err)
+				continue
+			}
+			count++
+			fmt.Printf("✅ [DeactivateAllByUser] Inscripción desactivada - Actividad ID: %d\n", insc.ActividadID)
+
+			// Publicar evento para cada desinscripción
+			eventData := map[string]interface{}{
+				"usuario_id":   usuarioID,
+				"actividad_id": insc.ActividadID,
+				"reason":       "subscription_cancelled",
+			}
+			inscripcionID := fmt.Sprintf("%d_%d", usuarioID, insc.ActividadID)
+			if err := s.eventPublisher.PublishInscriptionEvent("delete", inscripcionID, eventData); err != nil {
+				fmt.Printf("⚠️ [DeactivateAllByUser] Error publicando evento: %v\n", err)
+			}
+		}
+	}
+
+	// Invalidar cache de actividades para reflejar cupos liberados
+	if s.actividadesRepo != nil && count > 0 {
+		s.actividadesRepo.InvalidateCache()
+		fmt.Printf("🔄 [DeactivateAllByUser] Cache invalidado\n")
+	}
+
+	fmt.Printf("✅ [DeactivateAllByUser] Total inscripciones desactivadas para usuario %d: %d\n", usuarioID, count)
+	return count, nil
 }

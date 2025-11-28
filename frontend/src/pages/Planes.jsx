@@ -32,12 +32,30 @@ const Planes = () => {
 
     const cargarSuscripcionActiva = async () => {
         try {
-            const response = await fetch(SUBSCRIPTIONS_API.activeSubscription(userId));
+            const token = localStorage.getItem('access_token');
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+            // Primero intentar obtener suscripción activa
+            const response = await fetch(SUBSCRIPTIONS_API.activeSubscription(userId), { headers });
             if (response.ok) {
                 const data = await response.json();
                 if (data && data.estado === 'activa') {
                     setActiveSuscripcion(data);
                     console.log('[Planes] Suscripción activa encontrada:', data);
+                    return;
+                }
+            }
+
+            // Si no hay activa, buscar si hay pendiente de pago
+            const allResponse = await fetch(SUBSCRIPTIONS_API.subscriptionsByUser(userId), { headers });
+            if (allResponse.ok) {
+                const allData = await allResponse.json();
+                if (allData && Array.isArray(allData)) {
+                    const pendiente = allData.find(s => s.estado === 'pendiente_pago');
+                    if (pendiente) {
+                        setActiveSuscripcion(pendiente);
+                        console.log('[Planes] Suscripción pendiente de pago encontrada:', pendiente);
+                    }
                 }
             }
         } catch (error) {
@@ -100,55 +118,19 @@ const Planes = () => {
             return;
         }
 
-        // Verificar si ya tiene este plan activo
+        // Verificar si ya tiene este plan activo o pendiente
         if (activeSuscripcion && activeSuscripcion.plan_id === planId) {
-            toast.info(`Ya tienes una suscripción activa al ${activeSuscripcion.plan_nombre}`);
+            if (activeSuscripcion.estado === 'pendiente_pago') {
+                // Redirigir a Mi Suscripción para completar el pago
+                navigate('/mi-suscripcion');
+            } else {
+                toast.info(`Ya tienes una suscripción activa al ${activeSuscripcion.plan_nombre}`);
+            }
             return;
         }
 
-        // Si tiene una suscripción activa a otro plan, confirmar el cambio
-        if (activeSuscripcion && activeSuscripcion.plan_id !== planId) {
-            const planNuevo = planes.find(p => p.id === planId);
-            const confirmar = window.confirm(
-                `¿Querés cambiar tu plan "${activeSuscripcion.plan_nombre}" por "${planNuevo?.nombre}"?\n\n` +
-                `Importante: Tu suscripción actual será cancelada y se creará una nueva. ` +
-                `El cambio es inmediato.`
-            );
-
-            if (!confirmar) {
-                return;
-            }
-
-            try {
-                // Cancelar suscripción actual
-                const token = localStorage.getItem('access_token');
-                const cancelResponse = await fetch(SUBSCRIPTIONS_API.cancelSubscription(activeSuscripcion.id), {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!cancelResponse.ok) {
-                    throw new Error('Error al cancelar la suscripción actual');
-                }
-
-                toast.success('Suscripción anterior cancelada. Procediendo con el nuevo plan...');
-
-                // Esperar un momento para que se procese la cancelación
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                // Actualizar estado local
-                setActiveSuscripcion(null);
-            } catch (error) {
-                console.error('Error al cancelar suscripción:', error);
-                toast.error('Error al cambiar de plan. Por favor, intentá nuevamente.');
-                return;
-            }
-        }
-
         // Navegar al checkout con el plan seleccionado
+        // La confirmación de cancelación del plan actual se hace en el Checkout al momento del pago
         navigate(`/checkout/${planId}`);
     };
 
@@ -207,7 +189,9 @@ const Planes = () => {
                         className={`plan-card ${plan.popular ? 'popular' : ''} ${activeSuscripcion && activeSuscripcion.plan_id === plan.id ? 'plan-actual' : ''}`}
                     >
                         {activeSuscripcion && activeSuscripcion.plan_id === plan.id && (
-                            <div className="plan-actual-badge">Tu Plan Actual</div>
+                            <div className={`plan-actual-badge ${activeSuscripcion.estado === 'pendiente_pago' ? 'pendiente' : ''}`}>
+                                {activeSuscripcion.estado === 'pendiente_pago' ? 'Pendiente de Pago' : 'Tu Plan Actual'}
+                            </div>
                         )}
                         {plan.popular && <div className="popular-badge">Más Popular</div>}
                         {plan.ahorro && <div className="ahorro-badge">{plan.ahorro}</div>}
@@ -273,18 +257,23 @@ const Planes = () => {
                                 Solo para usuarios
                             </button>
                         ) : activeSuscripcion && activeSuscripcion.plan_id === plan.id ? (
-                            <button
-                                className="btn-seleccionar-plan"
-                                style={{
-                                    backgroundColor: '#2196F3',
-                                    cursor: 'not-allowed',
-                                    opacity: 0.7
-                                }}
-                                disabled
-                                title="Este es tu plan actual"
-                            >
-                                Plan Actual
-                            </button>
+                            activeSuscripcion.estado === 'pendiente_pago' ? (
+                                <button
+                                    className="btn-seleccionar-plan btn-completar-pago"
+                                    onClick={() => navigate('/mi-suscripcion')}
+                                    title="Ir a completar el pago"
+                                >
+                                    Completar Pago
+                                </button>
+                            ) : (
+                                <button
+                                    className="btn-seleccionar-plan btn-renovar"
+                                    onClick={() => navigate(`/checkout/${plan.id}`)}
+                                    title="Renovar tu suscripción actual"
+                                >
+                                    Renovar Suscripción
+                                </button>
+                            )
                         ) : activeSuscripcion ? (
                             <button
                                 className="btn-seleccionar-plan btn-cambiar-plan"
@@ -295,7 +284,7 @@ const Planes = () => {
                                 onClick={() => handleSelectPlan(plan.id)}
                                 title="Cambiar a este plan"
                             >
-                                Cambiar a este plan
+                                Cambiar de plan
                             </button>
                         ) : (
                             <button

@@ -21,7 +21,8 @@ const Actividades = () => {
         busqueda: "",
         categoria: "",
         dia: "",
-        soloInscripto: false
+        soloInscripto: false,
+        soloMiPlan: false
     });
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     const isAdmin = localStorage.getItem("isAdmin") === "true";
@@ -71,7 +72,7 @@ const Actividades = () => {
     // Ejecutar búsqueda cuando cambien los filtros (con debounce en búsqueda)
     useEffect(() => {
         searchActividades();
-    }, [debouncedBusqueda, filtros.categoria, filtros.dia, filtros.soloInscripto, inscripciones]);
+    }, [debouncedBusqueda, filtros.categoria, filtros.dia, filtros.soloInscripto, filtros.soloMiPlan, inscripciones, suscripcionActiva]);
 
     const searchActividades = async () => {
         try {
@@ -89,7 +90,9 @@ const Actividades = () => {
             const searchUrl = SEARCH_API.buildSearchUrl(searchParams);
             console.log("🔍 Search URL:", searchUrl);
 
-            const response = await fetch(searchUrl);
+            const response = await fetch(searchUrl, {
+                headers: { 'Cache-Control': 'no-cache' }
+            });
 
             if (response.ok) {
                 const data = await response.json();
@@ -110,6 +113,16 @@ const Actividades = () => {
                         return match;
                     });
                     console.log("  - Actividades filtradas:", results.length);
+                }
+
+                // Filtrar solo actividades permitidas por el plan
+                if (filtros.soloMiPlan && suscripcionActiva?.plan_info) {
+                    const plan = suscripcionActiva.plan_info;
+                    if (plan.tipo_acceso === "limitado" && plan.actividades_permitidas) {
+                        results = results.filter(actividad =>
+                            plan.actividades_permitidas.includes(actividad.categoria)
+                        );
+                    }
                 }
 
                 // Mapear campos de Search API a formato esperado por el frontend
@@ -133,8 +146,8 @@ const Actividades = () => {
                         dia: actividad.dia,
                         hora_inicio: extractTime(actividad.horario_inicio),
                         hora_fin: extractTime(actividad.horario_final),
-                        cupo: actividad.cupo_disponible || actividad.cupo,
-                        lugares: actividad.cupo_disponible || actividad.lugares,
+                        cupo: actividad.cupo || 20, // Cupo total (default 20 si no viene)
+                        lugares: actividad.cupo_disponible ?? actividad.lugares, // Lugares disponibles
                         foto_url: actividad.foto_url,
                         sucursal_id: actividad.sucursal_id
                     };
@@ -171,7 +184,8 @@ const Actividades = () => {
                 const data = await response.json();
                 console.log("📋 Fallback - Activities loaded:", data);
 
-                let results = data || [];
+                // La API devuelve {data: Array, ...} - extraer el array
+                let results = data.data || data || [];
 
                 // Filtrar por búsqueda (título, descripción, instructor)
                 if (debouncedBusqueda) {
@@ -209,7 +223,17 @@ const Actividades = () => {
                     console.log("Actividades después del filtro:", results.map(a => a.id));
                 }
 
-                // Mapear campos
+                // Filtrar solo actividades permitidas por el plan
+                if (filtros.soloMiPlan && suscripcionActiva?.plan_info) {
+                    const plan = suscripcionActiva.plan_info;
+                    if (plan.tipo_acceso === "limitado" && plan.actividades_permitidas) {
+                        results = results.filter(actividad =>
+                            plan.actividades_permitidas.includes(actividad.categoria)
+                        );
+                    }
+                }
+
+                // Mapear campos (Activities API devuelve 'lugares', no 'cupo_disponible')
                 const mappedResults = results.map(actividad => ({
                     // Mantener ambos IDs por compatibilidad con el resto del frontend
                     id: actividad.id,
@@ -219,12 +243,13 @@ const Actividades = () => {
                     categoria: actividad.categoria,
                     instructor: actividad.instructor,
                     dia: actividad.dia,
-                    hora_inicio: actividad.horario_inicio,
-                    hora_fin: actividad.horario_final,
-                    cupo: actividad.cupo,
-                    lugares: actividad.lugares,
+                    hora_inicio: actividad.horario_inicio || actividad.hora_inicio,
+                    hora_fin: actividad.horario_final || actividad.hora_fin,
+                    cupo: actividad.cupo || 20, // Cupo total
+                    lugares: actividad.lugares ?? actividad.cupo_disponible, // Lugares disponibles
                     foto_url: actividad.foto_url,
-                    sucursal_id: actividad.sucursal_id
+                    sucursal_id: actividad.sucursal_id,
+                    sucursal_nombre: actividad.sucursal_nombre
                 }));
 
                 console.log("✅ ACTIVIDADES MAPEADAS:", mappedResults);
@@ -421,16 +446,17 @@ const Actividades = () => {
 
             // Actualizar la lista de inscripciones
             fetchInscripciones();
-            // Actualizar la lista de actividades usando el backend directo
-            // para reflejar correctamente los cupos disponibles
-            await searchActividadesFallback();
+            // Pequeño delay para dar tiempo a Solr de reindexar
+            await new Promise(resolve => setTimeout(resolve, 500));
+            // Actualizar la lista de actividades desde Search API
+            await searchActividades();
             toast.success("¡Inscripción exitosa!");
         } catch (error) {
             console.error("Error al inscribirse:", error);
             toast.error(error.message);
         }
     };
-    
+
     const handleUnenrolling = async (id_actividad) => {
         try {
             const response = await fetch(ACTIVITIES_API.inscripciones, {
@@ -447,15 +473,16 @@ const Actividades = () => {
             if (response.status == 204) {
                 toast.success("Inscripción cancelada exitosamente");
                 fetchInscripciones();
+                // Pequeño delay para dar tiempo a Solr de reindexar
+                await new Promise(resolve => setTimeout(resolve, 500));
+                // Actualizar la lista de actividades desde Search API
+                await searchActividades();
             } else if (isAuthError(response)) {
                 handleSessionExpired(toast, navigate);
                 return;
             } else {
                 toast.error("Ups! algo salió mal, vuelve a intentarlo más tarde");
             }
-
-            // Volver a cargar actividades desde el backend para actualizar cupos
-            await searchActividadesFallback();
         } catch (error) {
             toast.error("Ups! algo salió mal, vuelve a intentarlo más tarde");
             console.error("Error al desinscribir el usuario:", error);
@@ -566,22 +593,42 @@ const Actividades = () => {
                     <option value="Domingo">Domingo</option>
                 </select>
                 {isLoggedIn && !isAdmin && (
-                    <div className="toggle-wrapper">
-                        <label className="toggle-label">
-                            <input
-                                type="checkbox"
-                                name="soloInscripto"
-                                checked={filtros.soloInscripto}
-                                onChange={(e) => setFiltros(prev => ({
-                                    ...prev,
-                                    soloInscripto: e.target.checked
-                                }))}
-                                className="toggle-input"
-                            />
-                            <span className="toggle-slider"></span>
-                            <span className="toggle-text">Solo inscriptas</span>
-                        </label>
-                    </div>
+                    <>
+                        <div className="toggle-wrapper">
+                            <label className="toggle-label">
+                                <input
+                                    type="checkbox"
+                                    name="soloInscripto"
+                                    checked={filtros.soloInscripto}
+                                    onChange={(e) => setFiltros(prev => ({
+                                        ...prev,
+                                        soloInscripto: e.target.checked
+                                    }))}
+                                    className="toggle-input"
+                                />
+                                <span className="toggle-slider"></span>
+                                <span className="toggle-text">Solo inscriptas</span>
+                            </label>
+                        </div>
+                        {suscripcionActiva?.plan_info && (
+                            <div className="toggle-wrapper">
+                                <label className="toggle-label">
+                                    <input
+                                        type="checkbox"
+                                        name="soloMiPlan"
+                                        checked={filtros.soloMiPlan}
+                                        onChange={(e) => setFiltros(prev => ({
+                                            ...prev,
+                                            soloMiPlan: e.target.checked
+                                        }))}
+                                        className="toggle-input"
+                                    />
+                                    <span className="toggle-slider"></span>
+                                    <span className="toggle-text">Solo mi plan</span>
+                                </label>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 

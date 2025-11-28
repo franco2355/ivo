@@ -4,6 +4,7 @@ import (
 	"activities-api/internal/clients"
 	"activities-api/internal/config"
 	"activities-api/internal/controllers"
+	"activities-api/internal/handlers"
 	"activities-api/internal/middleware"
 	"activities-api/internal/repository"
 	"activities-api/internal/services"
@@ -57,6 +58,21 @@ func main() {
 	actividadesService := services.NewActividadesService(actividadesRepo, eventPublisher)
 	inscripcionesService := services.NewInscripcionesService(inscripcionesRepo, actividadesRepo, eventPublisher)
 	// TODO: sucursalesService := services.NewSucursalesService(sucursalesRepo)
+
+	// ========== RABBITMQ SUBSCRIPTION CONSUMER ==========
+	// Escuchar eventos de suscripciones canceladas para desinscribir usuarios
+	subscriptionHandler := handlers.NewSubscriptionEventHandler(inscripcionesService)
+	subscriptionConsumer, err := clients.NewRabbitMQSubscriptionConsumer(cfg.RabbitMQURL, cfg.RabbitMQExchange, subscriptionHandler)
+	if err != nil {
+		log.Printf("⚠️ Warning: No se pudo inicializar consumer de suscripciones: %v", err)
+	} else {
+		if err := subscriptionConsumer.Start(); err != nil {
+			log.Printf("⚠️ Warning: Error iniciando consumer de suscripciones: %v", err)
+		} else {
+			defer subscriptionConsumer.Close()
+			log.Println("✅ Subscription Consumer iniciado - Escuchando eventos de cancelación de suscripciones")
+		}
+	}
 
 	// ========== CAPA DE PRESENTACIÓN (CONTROLLERS) ==========
 	// Crear controllers con dependency injection

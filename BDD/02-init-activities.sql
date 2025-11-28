@@ -121,6 +121,7 @@ ON DUPLICATE KEY UPDATE titulo=titulo;
 -- VISTA: actividades_lugares
 -- Calcula los lugares disponibles para cada actividad
 -- Formula: cupo - cantidad de inscripciones activas
+-- Incluye JOIN con sucursales para obtener el nombre
 -- =====================================================
 CREATE OR REPLACE VIEW actividades_lugares AS
 SELECT
@@ -135,6 +136,7 @@ SELECT
     a.instructor,
     a.categoria,
     a.sucursal_id,
+    COALESCE(s.nombre, '') AS sucursal_nombre,
     a.activa,
     a.created_at,
     a.updated_at,
@@ -147,6 +149,7 @@ SELECT
         ), 0)
     ) AS lugares
 FROM actividades a
+LEFT JOIN sucursales s ON a.sucursal_id = s.id_sucursal
 WHERE a.deleted_at IS NULL;
 
 -- =====================================================
