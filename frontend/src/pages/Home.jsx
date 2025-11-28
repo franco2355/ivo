@@ -35,46 +35,6 @@ const Home = () => {
                 </div>
             </div>
 
-            {/* Features Section */}
-            <div className="features-section">
-                <h2 className="section-title">¿Por Qué Elegirnos?</h2>
-                <div className="features-grid">
-                    <div className="feature-card">
-                        <div className="feature-icon">🏋️</div>
-                        <h3>Equipamiento Moderno</h3>
-                        <p>Maquinaria de última generación para tu entrenamiento</p>
-                    </div>
-                    <div className="feature-card">
-                        <div className="feature-icon">👥</div>
-                        <h3>Entrenadores Certificados</h3>
-                        <p>Profesionales que te guiarán en cada paso</p>
-                    </div>
-                    <div className="feature-card">
-                        <div className="feature-icon">⏰</div>
-                        <h3>Horarios Flexibles</h3>
-                        <p>Abierto desde las 6 AM hasta las 11 PM</p>
-                    </div>
-                    <div className="feature-card">
-                        <div className="feature-icon">📍</div>
-                        <h3>Múltiples Sucursales</h3>
-                        <p>Encontrá la más cercana a vos</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* CTA Section */}
-            <div className="cta-section">
-                <div className="cta-content">
-                    <h2>¿Listo para empezar?</h2>
-                    <p>Unite hoy y obtené tu primera clase gratis</p>
-                    <button
-                        className="btn-cta-large"
-                        onClick={() => navigate('/register')}
-                    >
-                        Registrate Ahora
-                    </button>
-                </div>
-            </div>
         </div>
     );
 };

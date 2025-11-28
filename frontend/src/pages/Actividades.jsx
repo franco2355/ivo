@@ -448,8 +448,8 @@ const Actividades = () => {
 
             // Actualizar la lista de inscripciones
             fetchInscripciones();
-            // Pequeño delay para dar tiempo a Solr de reindexar
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Delay para dar tiempo a RabbitMQ + Solr + flush caché
+            await new Promise(resolve => setTimeout(resolve, 1500));
             // Actualizar la lista de actividades desde Search API
             await searchActividades();
             toast.success("¡Inscripción exitosa!");
@@ -475,8 +475,8 @@ const Actividades = () => {
             if (response.status == 204) {
                 toast.success("Inscripción cancelada exitosamente");
                 fetchInscripciones();
-                // Pequeño delay para dar tiempo a Solr de reindexar
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Delay para dar tiempo a RabbitMQ + Solr + flush caché
+                await new Promise(resolve => setTimeout(resolve, 1500));
                 // Actualizar la lista de actividades desde Search API
                 await searchActividades();
             } else if (isAuthError(response)) {

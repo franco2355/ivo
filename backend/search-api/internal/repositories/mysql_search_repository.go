@@ -43,6 +43,7 @@ func (r *MySQLSearchRepository) SearchActivities(req dtos.SearchRequest) ([]dtos
 			a.dia,
 			TIME_FORMAT(a.horario_inicio, '%H:%i') as horario_inicio,
 			TIME_FORMAT(a.horario_final, '%H:%i') as horario_final,
+			a.cupo,
 			a.lugares,
 			COALESCE(s.nombre, '') as sucursal_nombre,
 			a.sucursal_id,
@@ -130,6 +131,7 @@ func (r *MySQLSearchRepository) SearchActivities(req dtos.SearchRequest) ([]dtos
 			&doc.Dia,
 			&horarioInicio,
 			&horarioFinal,
+			&doc.Cupo,
 			&doc.CupoDisponible,
 			&doc.SucursalNombre,
 			&sucursalID,
@@ -168,6 +170,7 @@ func (r *MySQLSearchRepository) GetAllActivities() ([]dtos.SearchDocument, error
 			a.dia,
 			TIME_FORMAT(a.horario_inicio, '%H:%i') as horario_inicio,
 			TIME_FORMAT(a.horario_final, '%H:%i') as horario_final,
+			a.cupo,
 			a.lugares,
 			COALESCE(s.nombre, '') as sucursal_nombre,
 			a.sucursal_id
@@ -196,6 +199,7 @@ func (r *MySQLSearchRepository) GetAllActivities() ([]dtos.SearchDocument, error
 			&doc.Dia,
 			&horarioInicio,
 			&horarioFinal,
+			&doc.Cupo,
 			&doc.CupoDisponible,
 			&doc.SucursalNombre,
 			&sucursalID,
@@ -267,6 +271,19 @@ func (r *MySQLSearchRepository) GetActivityByID(activityID string) (dtos.SearchD
 	}
 
 	return doc, nil
+}
+
+// GetCupoDisponible - Obtiene solo el cupo disponible de una actividad (optimizado)
+func (r *MySQLSearchRepository) GetCupoDisponible(activityID string) (int, error) {
+	query := `SELECT lugares FROM actividades_lugares WHERE id_actividad = ?`
+
+	var cupoDisponible int
+	err := r.db.QueryRow(query, activityID).Scan(&cupoDisponible)
+	if err != nil {
+		return 0, fmt.Errorf("error getting cupo_disponible: %w", err)
+	}
+
+	return cupoDisponible, nil
 }
 
 // Close - Cierra la conexión a la base de datos

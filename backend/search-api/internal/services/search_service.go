@@ -290,6 +290,37 @@ func (s *SearchService) ReindexActivityByID(activityID string) error {
 	return s.IndexDocument(activity)
 }
 
+// UpdateActivityCupo actualiza solo el cupo_disponible de una actividad (partial update optimizado)
+func (s *SearchService) UpdateActivityCupo(activityID string) error {
+	if s.mysqlRepo == nil {
+		return fmt.Errorf("mysql repository not available")
+	}
+
+	// Solo obtener cupo_disponible desde MySQL (query optimizada)
+	cupoDisponible, err := s.mysqlRepo.GetCupoDisponible(activityID)
+	if err != nil {
+		return fmt.Errorf("error obteniendo cupo_disponible: %w", err)
+	}
+
+	// Actualizar cache local
+	s.mu.Lock()
+	if doc, exists := s.documents[activityID]; exists {
+		doc.CupoDisponible = cupoDisponible
+		s.documents[activityID] = doc
+	}
+	s.mu.Unlock()
+
+	// Partial update en Solr (solo actualiza cupo_disponible)
+	if s.useSolr && s.solrClient != nil {
+		if err := s.solrClient.PartialUpdateCupo(activityID, cupoDisponible); err != nil {
+			log.Printf("⚠️  Error en partial update de Solr: %v", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
 // GetStats retorna estadísticas del índice
 func (s *SearchService) GetStats() map[string]interface{} {
 	s.mu.RLock()

@@ -65,8 +65,6 @@ func NewRabbitMQConsumer(url, exchange, queueName string, searchService *service
 	// Bind a todos los eventos relevantes
 	bindings := []string{
 		"activity.*",
-		"plan.*",
-		"subscription.*",
 		"inscription.*",
 	}
 
@@ -136,14 +134,16 @@ func (r *RabbitMQConsumer) handleMessage(msg amqp.Delivery) {
 	// Procesar según el tipo de evento
 	switch event.Type {
 	case "inscription":
-		// Cuando cambia una inscripción, reindexar la actividad afectada
+		// Cuando cambia una inscripción, actualizar cupo de la actividad afectada
 		err = r.handleInscriptionEvent(event)
 		if err != nil {
 			log.Printf("❌ Error procesando evento de inscripción: %v\n", err)
 			msg.Nack(false, true) // Requeue
 			return
 		}
-		log.Printf("✅ Actividad reindexada por cambio en inscripción\n")
+		// Flush TODO el caché porque cambió el cupo de una actividad
+		r.cacheService.FlushAll()
+		log.Printf("✅ Actividad actualizada por cambio en inscripción\n")
 
 	case "activity":
 		// Para actividades, reindexar desde MySQL para obtener todos los campos
@@ -156,27 +156,8 @@ func (r *RabbitMQConsumer) handleMessage(msg amqp.Delivery) {
 		log.Printf("✅ Actividad procesada: %s (action: %s)\n", event.ID, event.Action)
 
 	default:
-		// Para otros eventos (plan, subscription), procesamiento normal
-		switch event.Action {
-		case "create", "update":
-			err = r.searchService.IndexFromEvent(event)
-			if err != nil {
-				log.Printf("❌ Error indexando documento: %v\n", err)
-				msg.Nack(false, true) // Requeue
-				return
-			}
-			log.Printf("✅ Documento indexado: %s_%s\n", event.Type, event.ID)
-
-		case "delete":
-			docID := event.ID // Usar solo el ID numérico para consistencia
-			err = r.searchService.DeleteDocument(docID)
-			if err != nil {
-				log.Printf("❌ Error eliminando documento: %v\n", err)
-				msg.Nack(false, true)
-				return
-			}
-			log.Printf("🗑️  Documento eliminado: %s\n", docID)
-		}
+		// Eventos no manejados específicamente - ignorar
+		log.Printf("⏭️  Evento ignorado: %s.%s (ID: %s)\n", event.Type, event.Action, event.ID)
 	}
 
 	// Invalidar caché relacionado
@@ -185,13 +166,13 @@ func (r *RabbitMQConsumer) handleMessage(msg amqp.Delivery) {
 	msg.Ack(false)
 }
 
-// handleActivityEvent procesa eventos de actividad indexando directamente desde el evento
+// handleActivityEvent procesa eventos de actividad obteniendo datos frescos desde MySQL
 func (r *RabbitMQConsumer) handleActivityEvent(event dtos.RabbitMQEvent) error {
 	switch event.Action {
 	case "create", "update":
-		// Indexar directamente desde el evento (viene con todos los campos)
-		log.Printf("📝 Indexando actividad %s desde evento (action: %s)\n", event.ID, event.Action)
-		return r.searchService.IndexFromEvent(event)
+		// Obtener datos frescos desde MySQL (más robusto que parsear el evento)
+		log.Printf("📝 Reindexando actividad %s desde MySQL (action: %s)\n", event.ID, event.Action)
+		return r.searchService.ReindexActivityByID(event.ID)
 
 	case "delete":
 		log.Printf("🗑️  Eliminando actividad %s del índice\n", event.ID)
@@ -203,7 +184,7 @@ func (r *RabbitMQConsumer) handleActivityEvent(event dtos.RabbitMQEvent) error {
 	}
 }
 
-// handleInscriptionEvent procesa eventos de inscripción reindexando la actividad afectada
+// handleInscriptionEvent procesa eventos de inscripción actualizando solo el cupo (partial update)
 func (r *RabbitMQConsumer) handleInscriptionEvent(event dtos.RabbitMQEvent) error {
 	// Extraer actividad_id del evento
 	actividadID, ok := event.Data["actividad_id"]
@@ -226,10 +207,10 @@ func (r *RabbitMQConsumer) handleInscriptionEvent(event dtos.RabbitMQEvent) erro
 		return nil
 	}
 
-	log.Printf("🔄 Reindexando actividad %s por cambio en inscripción\n", actividadIDStr)
+	log.Printf("⚡ Partial update: actualizando cupo_disponible de actividad %s\n", actividadIDStr)
 
-	// Reindexar la actividad desde MySQL para obtener cupo actualizado
-	return r.searchService.ReindexActivityByID(actividadIDStr)
+	// Solo actualizar cupo_disponible (partial update optimizado)
+	return r.searchService.UpdateActivityCupo(actividadIDStr)
 }
 
 // Close cierra las conexiones

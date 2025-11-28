@@ -127,7 +127,7 @@
   }
 
   .filtros-container {
-    @apply flex items-center gap-3 justify-center p-5 bg-white rounded-xl w-full max-w-[900px] mx-auto box-border;
+    @apply flex items-center gap-3 justify-center p-5 bg-white rounded-xl w-full max-w-[1100px] mx-auto box-border flex-wrap;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   }
 
@@ -363,7 +363,7 @@
   }
 
   .toggle-wrapper {
-    @apply flex items-center ml-4;
+    @apply flex items-center ml-2 flex-shrink-0;
   }
 
   .toggle-label {
@@ -390,10 +390,10 @@
   }
 
   .toggle-input:checked + .toggle-slider::before {
-    transform: translateX(12px);
+    transform: translateX(20px);
   }
 
   .toggle-text {
-    @apply text-[#222] text-base font-medium ml-0.5;
+    @apply text-[#222] text-base font-medium ml-0.5 whitespace-nowrap;
   }
 }

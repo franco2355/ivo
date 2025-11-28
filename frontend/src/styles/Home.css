@@ -3,12 +3,12 @@
 @layer components {
   .home-container {
     @apply w-full flex flex-col items-center overflow-x-hidden;
+    height: calc(100vh - 60px); /* 60px del header */
   }
 
   /* Hero Section */
   .hero-section {
-    @apply w-full relative flex items-center justify-center;
-    min-height: calc(100vh - 80px);
+    @apply w-full relative flex items-center justify-center flex-1;
   }
 
   .img-gym {
@@ -85,81 +85,6 @@
     }
   }
 
-  /* Features Section */
-  .features-section {
-    @apply w-full py-24 px-6 bg-white;
-  }
-
-  .section-title {
-    @apply text-center text-[#333] font-bold mb-16;
-    font-size: clamp(2rem, 5vw, 3rem);
-  }
-
-  .features-grid {
-    @apply grid gap-8 max-w-[1200px] mx-auto;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  }
-
-  .feature-card {
-    @apply bg-white p-8 rounded-2xl text-center transition-all duration-300;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-  }
-
-  .feature-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
-  }
-
-  .feature-icon {
-    @apply text-[4rem] mb-4;
-  }
-
-  .feature-card h3 {
-    @apply text-2xl font-bold text-[#333] mb-3;
-  }
-
-  .feature-card p {
-    @apply text-gray text-lg leading-relaxed;
-  }
-
-  /* CTA Section */
-  .cta-section {
-    @apply w-full py-24 px-6 relative;
-    background: linear-gradient(135deg, #4CAF50 0%, #388e3c 100%);
-  }
-
-  .cta-content {
-    @apply text-center text-white max-w-[800px] mx-auto;
-  }
-
-  .cta-content h2 {
-    @apply text-white font-black mb-4;
-    font-size: clamp(2.5rem, 5vw, 4rem);
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  }
-
-  .cta-content p {
-    @apply text-white text-2xl mb-10 font-medium;
-    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
-  }
-
-  .btn-cta-large {
-    @apply bg-white text-primary px-12 py-6 border-none rounded-xl text-xl font-black cursor-pointer transition-all duration-300;
-    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
-    min-width: 250px;
-  }
-
-  .btn-cta-large:hover {
-    @apply bg-gray-lighter;
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.3);
-  }
-
-  .btn-cta-large:active {
-    transform: translateY(-2px) scale(1.03);
-  }
-
   /* Responsive */
   @media (max-width: 768px) {
     .hero-buttons {
@@ -169,18 +94,6 @@
     .btn-primary-hero,
     .btn-secondary-hero {
       @apply w-full;
-    }
-
-    .features-section {
-      @apply py-16;
-    }
-
-    .section-title {
-      @apply mb-10;
-    }
-
-    .cta-section {
-      @apply py-16;
     }
   }
 }

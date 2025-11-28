@@ -111,6 +111,25 @@ func (c *CacheService) InvalidatePattern(pattern string) {
 	}
 }
 
+// FlushAll invalida TODO el caché (local y memcached)
+func (c *CacheService) FlushAll() {
+	c.localMu.Lock()
+	defer c.localMu.Unlock()
+
+	// Borrar todas las claves conocidas de memcached
+	for key := range c.localCache {
+		c.memcached.Delete(key)
+	}
+
+	// Limpiar caché local
+	c.localCache = make(map[string]*cacheEntry)
+
+	// También intentar flush de memcached
+	c.memcached.FlushAll()
+
+	fmt.Println("🗑️  Cache flushed (local + memcached)")
+}
+
 // GenerateCacheKey genera una clave de caché desde un objeto
 func GenerateCacheKey(prefix string, obj interface{}) string {
 	data, _ := json.Marshal(obj)

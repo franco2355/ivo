@@ -1,0 +1,1076 @@
+{
+	"info": {
+		"_postman_id": "gym-management-collection",
+		"name": "Gym Management API",
+		"description": "Colección completa de APIs del sistema de gestión de gimnasio",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "users_url",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "activities_url",
+			"value": "http://localhost:8082"
+		},
+		{
+			"key": "subscriptions_url",
+			"value": "http://localhost:8081"
+		},
+		{
+			"key": "payments_url",
+			"value": "http://localhost:8083"
+		},
+		{
+			"key": "search_url",
+			"value": "http://localhost:8084"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "admin_token",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "🔐 Auth",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('token', jsonData.token);",
+									"    console.log('Token guardado:', jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"password123\",\n    \"email\": \"testuser@example.com\",\n    \"nombre\": \"Test\",\n    \"apellido\": \"User\"\n}"
+						},
+						"url": {
+							"raw": "{{users_url}}/register",
+							"host": ["{{users_url}}"],
+							"path": ["register"]
+						}
+					}
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('token', jsonData.token);",
+									"    console.log('Token guardado:', jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{users_url}}/login",
+							"host": ["{{users_url}}"],
+							"path": ["login"]
+						}
+					}
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('admin_token', jsonData.token);",
+									"    pm.collectionVariables.set('token', jsonData.token);",
+									"    console.log('Admin token guardado:', jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{users_url}}/login",
+							"host": ["{{users_url}}"],
+							"path": ["login"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "👤 Users API",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{users_url}}/healthz",
+							"host": ["{{users_url}}"],
+							"path": ["healthz"]
+						}
+					}
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{users_url}}/users/1",
+							"host": ["{{users_url}}"],
+							"path": ["users", "1"]
+						}
+					}
+				},
+				{
+					"name": "List Users (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{users_url}}/users",
+							"host": ["{{users_url}}"],
+							"path": ["users"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🏋️ Activities API",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{activities_url}}/healthz",
+							"host": ["{{activities_url}}"],
+							"path": ["healthz"]
+						}
+					}
+				},
+				{
+					"name": "List Actividades",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{activities_url}}/actividades",
+							"host": ["{{activities_url}}"],
+							"path": ["actividades"]
+						}
+					}
+				},
+				{
+					"name": "Search Actividades",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{activities_url}}/actividades/buscar?titulo=yoga&categoria=fitness",
+							"host": ["{{activities_url}}"],
+							"path": ["actividades", "buscar"],
+							"query": [
+								{
+									"key": "titulo",
+									"value": "yoga"
+								},
+								{
+									"key": "categoria",
+									"value": "fitness"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Actividad by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{activities_url}}/actividades/1",
+							"host": ["{{activities_url}}"],
+							"path": ["actividades", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Actividad (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"titulo\": \"Clase de Spinning\",\n    \"descripcion\": \"Clase intensa de ciclismo indoor\",\n    \"categoria\": \"cardio\",\n    \"horario\": \"18:00\",\n    \"duracion\": 45,\n    \"cupo_maximo\": 20,\n    \"id_sucursal\": 1,\n    \"es_premium\": false\n}"
+						},
+						"url": {
+							"raw": "{{activities_url}}/actividades",
+							"host": ["{{activities_url}}"],
+							"path": ["actividades"]
+						}
+					}
+				},
+				{
+					"name": "Update Actividad (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"titulo\": \"Clase de Spinning Avanzado\",\n    \"cupo_maximo\": 25\n}"
+						},
+						"url": {
+							"raw": "{{activities_url}}/actividades/1",
+							"host": ["{{activities_url}}"],
+							"path": ["actividades", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Actividad (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{activities_url}}/actividades/1",
+							"host": ["{{activities_url}}"],
+							"path": ["actividades", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📝 Inscripciones",
+			"item": [
+				{
+					"name": "List Mis Inscripciones",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{activities_url}}/inscripciones",
+							"host": ["{{activities_url}}"],
+							"path": ["inscripciones"]
+						}
+					}
+				},
+				{
+					"name": "Create Inscripción",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actividad_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{activities_url}}/inscripciones",
+							"host": ["{{activities_url}}"],
+							"path": ["inscripciones"]
+						}
+					}
+				},
+				{
+					"name": "Delete Inscripción",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actividad_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{activities_url}}/inscripciones",
+							"host": ["{{activities_url}}"],
+							"path": ["inscripciones"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📋 Plans",
+			"item": [
+				{
+					"name": "List Plans",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{subscriptions_url}}/plans",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["plans"]
+						}
+					}
+				},
+				{
+					"name": "Get Plan by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{subscriptions_url}}/plans/1",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["plans", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Plan (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Plan Premium\",\n    \"description\": \"Acceso completo a todas las actividades\",\n    \"price\": 5000,\n    \"duration_days\": 30,\n    \"max_activities\": -1,\n    \"includes_premium\": true,\n    \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{subscriptions_url}}/plans",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["plans"]
+						}
+					}
+				},
+				{
+					"name": "Update Plan (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"price\": 5500,\n    \"description\": \"Acceso completo actualizado\"\n}"
+						},
+						"url": {
+							"raw": "{{subscriptions_url}}/plans/1",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["plans", "1"]
+						}
+					}
+				},
+				{
+					"name": "Toggle Plan Status (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{subscriptions_url}}/plans/1/status",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["plans", "1", "status"]
+						}
+					}
+				},
+				{
+					"name": "Delete Plan (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{subscriptions_url}}/plans/1",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["plans", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📦 Subscriptions",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{subscriptions_url}}/healthz",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["healthz"]
+						}
+					}
+				},
+				{
+					"name": "Create Subscription",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"plan_id\": \"plan_id_here\",\n    \"user_id\": \"1\"\n}"
+						},
+						"url": {
+							"raw": "{{subscriptions_url}}/subscriptions",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["subscriptions"]
+						}
+					}
+				},
+				{
+					"name": "Get Subscription by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{subscriptions_url}}/subscriptions/1",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["subscriptions", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Active Subscription by User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{subscriptions_url}}/subscriptions/active/1",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["subscriptions", "active", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Subscriptions by User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{subscriptions_url}}/subscriptions/user/1",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["subscriptions", "user", "1"]
+						}
+					}
+				},
+				{
+					"name": "Update Subscription Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{subscriptions_url}}/subscriptions/1/status",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["subscriptions", "1", "status"]
+						}
+					}
+				},
+				{
+					"name": "Cancel Subscription",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{subscriptions_url}}/subscriptions/1",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["subscriptions", "1"]
+						}
+					}
+				},
+				{
+					"name": "Expire Overdue Subscriptions (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{subscriptions_url}}/subscriptions/expire-overdue",
+							"host": ["{{subscriptions_url}}"],
+							"path": ["subscriptions", "expire-overdue"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "💳 Payments",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{payments_url}}/healthz",
+							"host": ["{{payments_url}}"],
+							"path": ["healthz"]
+						}
+					}
+				},
+				{
+					"name": "Create Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"entity_type\": \"subscription\",\n    \"entity_id\": \"sub_123\",\n    \"user_id\": \"1\",\n    \"amount\": 5000,\n    \"currency\": \"ARS\",\n    \"payment_method\": \"credit_card\"\n}"
+						},
+						"url": {
+							"raw": "{{payments_url}}/payments",
+							"host": ["{{payments_url}}"],
+							"path": ["payments"]
+						}
+					}
+				},
+				{
+					"name": "Process Payment (Checkout Pro)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"entity_type\": \"subscription\",\n    \"entity_id\": \"sub_123\",\n    \"user_id\": \"1\",\n    \"amount\": 5000,\n    \"currency\": \"ARS\",\n    \"payment_method\": \"credit_card\",\n    \"payment_gateway\": \"mercadopago\",\n    \"callback_url\": \"http://localhost:3000/payment/success\",\n    \"webhook_url\": \"http://localhost:8083/webhooks/mercadopago\"\n}"
+						},
+						"url": {
+							"raw": "{{payments_url}}/payments/process",
+							"host": ["{{payments_url}}"],
+							"path": ["payments", "process"]
+						}
+					}
+				},
+				{
+					"name": "Process Cash Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"entity_type\": \"subscription\",\n    \"entity_id\": \"sub_123\",\n    \"user_id\": \"1\",\n    \"amount\": 5000,\n    \"currency\": \"ARS\",\n    \"payment_method\": \"cash\",\n    \"payment_gateway\": \"cash\"\n}"
+						},
+						"url": {
+							"raw": "{{payments_url}}/payments/process",
+							"host": ["{{payments_url}}"],
+							"path": ["payments", "process"]
+						}
+					}
+				},
+				{
+					"name": "Create Recurring Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"entity_type\": \"subscription\",\n    \"entity_id\": \"sub_123\",\n    \"user_id\": \"1\",\n    \"amount\": 5000,\n    \"currency\": \"ARS\",\n    \"payment_method\": \"credit_card\",\n    \"payment_gateway\": \"mercadopago\",\n    \"frequency\": 1,\n    \"frequency_type\": \"months\"\n}"
+						},
+						"url": {
+							"raw": "{{payments_url}}/payments/recurring",
+							"host": ["{{payments_url}}"],
+							"path": ["payments", "recurring"]
+						}
+					}
+				},
+				{
+					"name": "Get All Payments (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{payments_url}}/payments",
+							"host": ["{{payments_url}}"],
+							"path": ["payments"]
+						}
+					}
+				},
+				{
+					"name": "Get Payment by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{payments_url}}/payments/payment_id_here",
+							"host": ["{{payments_url}}"],
+							"path": ["payments", "payment_id_here"]
+						}
+					}
+				},
+				{
+					"name": "Get Payments by User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{payments_url}}/payments/user/1",
+							"host": ["{{payments_url}}"],
+							"path": ["payments", "user", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Payments by Status (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{payments_url}}/payments/status/pending",
+							"host": ["{{payments_url}}"],
+							"path": ["payments", "status", "pending"]
+						}
+					}
+				},
+				{
+					"name": "Sync Payment Status",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{payments_url}}/payments/payment_id_here/sync",
+							"host": ["{{payments_url}}"],
+							"path": ["payments", "payment_id_here", "sync"]
+						}
+					}
+				},
+				{
+					"name": "Update Payment Status (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"completed\"\n}"
+						},
+						"url": {
+							"raw": "{{payments_url}}/payments/payment_id_here/status",
+							"host": ["{{payments_url}}"],
+							"path": ["payments", "payment_id_here", "status"]
+						}
+					}
+				},
+				{
+					"name": "Approve Cash Payment (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{payments_url}}/payments/payment_id_here/approve",
+							"host": ["{{payments_url}}"],
+							"path": ["payments", "payment_id_here", "approve"]
+						}
+					}
+				},
+				{
+					"name": "Reject Cash Payment (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{payments_url}}/payments/payment_id_here/reject",
+							"host": ["{{payments_url}}"],
+							"path": ["payments", "payment_id_here", "reject"]
+						}
+					}
+				},
+				{
+					"name": "Refund Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 5000\n}"
+						},
+						"url": {
+							"raw": "{{payments_url}}/payments/payment_id_here/refund",
+							"host": ["{{payments_url}}"],
+							"path": ["payments", "payment_id_here", "refund"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🔍 Search API",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{search_url}}/healthz",
+							"host": ["{{search_url}}"],
+							"path": ["healthz"]
+						}
+					}
+				},
+				{
+					"name": "Quick Search (GET)",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{search_url}}/search?q=yoga&categoria=fitness",
+							"host": ["{{search_url}}"],
+							"path": ["search"],
+							"query": [
+								{
+									"key": "q",
+									"value": "yoga"
+								},
+								{
+									"key": "categoria",
+									"value": "fitness"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Advanced Search (POST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"yoga\",\n    \"filters\": {\n        \"categoria\": \"fitness\",\n        \"es_premium\": false\n    },\n    \"page\": 1,\n    \"page_size\": 10\n}"
+						},
+						"url": {
+							"raw": "{{search_url}}/search",
+							"host": ["{{search_url}}"],
+							"path": ["search"]
+						}
+					}
+				},
+				{
+					"name": "Get Stats",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{search_url}}/search/stats",
+							"host": ["{{search_url}}"],
+							"path": ["search", "stats"]
+						}
+					}
+				},
+				{
+					"name": "Get Categories",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{search_url}}/search/categories",
+							"host": ["{{search_url}}"],
+							"path": ["search", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Get Document by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{search_url}}/search/1",
+							"host": ["{{search_url}}"],
+							"path": ["search", "1"]
+						}
+					}
+				},
+				{
+					"name": "Index Document",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"act_123\",\n    \"titulo\": \"Clase de Pilates\",\n    \"descripcion\": \"Ejercicios de control corporal\",\n    \"categoria\": \"fitness\",\n    \"horario\": \"10:00\",\n    \"cupo_disponible\": 15,\n    \"es_premium\": false\n}"
+						},
+						"url": {
+							"raw": "{{search_url}}/search/index",
+							"host": ["{{search_url}}"],
+							"path": ["search", "index"]
+						}
+					}
+				},
+				{
+					"name": "Delete Document",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{search_url}}/search/1",
+							"host": ["{{search_url}}"],
+							"path": ["search", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🔔 Webhooks",
+			"item": [
+				{
+					"name": "MercadoPago Webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"action\": \"payment.updated\",\n    \"data\": {\n        \"id\": \"12345678\"\n    },\n    \"type\": \"payment\"\n}"
+						},
+						"url": {
+							"raw": "{{payments_url}}/webhooks/mercadopago",
+							"host": ["{{payments_url}}"],
+							"path": ["webhooks", "mercadopago"]
+						}
+					}
+				}
+			]
+		}
+	]
+}

@@ -134,9 +134,14 @@ func (c *SolrClient) Search(req dtos.SearchRequest) ([]dtos.SearchDocument, int,
 
 	// Query principal
 	if req.Query != "" {
-		// Búsqueda en múltiples campos incluyendo día
+		// Escapar caracteres especiales de Solr y agregar wildcard para búsqueda parcial
+		query := escapeSolrQuery(req.Query)
+		// Agregar wildcard (*) para búsquedas parciales (ej: "funci" -> "funci*")
+		queryWithWildcard := query + "*"
+
+		// Búsqueda en múltiples campos con wildcard para matches parciales
 		queryStr := fmt.Sprintf("titulo:%s^2 OR descripcion:%s OR categoria:%s OR instructor:%s OR dia:%s",
-			req.Query, req.Query, req.Query, req.Query, req.Query)
+			queryWithWildcard, queryWithWildcard, queryWithWildcard, queryWithWildcard, queryWithWildcard)
 		params.Set("q", queryStr)
 	} else {
 		params.Set("q", "*:*")
@@ -238,6 +243,56 @@ func (c *SolrClient) DeleteDocument(id string) error {
 	}
 
 	return nil
+}
+
+// PartialUpdateCupo - Actualiza solo el campo cupo_disponible de un documento (atomic update)
+func (c *SolrClient) PartialUpdateCupo(id string, cupoDisponible int) error {
+	// Solr atomic update format: {"id": "X", "field": {"set": value}}
+	updateDoc := map[string]interface{}{
+		"id":              id,
+		"cupo_disponible": map[string]interface{}{"set": cupoDisponible},
+	}
+
+	payload := []map[string]interface{}{updateDoc}
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("error marshaling partial update: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/update?commit=true", c.baseURL)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("error creating partial update request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error sending partial update to Solr: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("solr partial update failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// escapeSolrQuery - Escapa caracteres especiales de Solr para evitar errores de sintaxis
+func escapeSolrQuery(query string) string {
+	// Caracteres especiales de Solr que necesitan ser escapados
+	specialChars := []string{"+", "-", "&&", "||", "!", "(", ")", "{", "}", "[", "]", "^", "\"", "~", "?", ":", "\\", "/"}
+
+	result := query
+	for _, char := range specialChars {
+		result = strings.ReplaceAll(result, char, "\\"+char)
+	}
+
+	// Convertir a minúsculas para búsqueda case-insensitive
+	return strings.ToLower(result)
 }
 
 // Ping - Verifica la conectividad con Solr
