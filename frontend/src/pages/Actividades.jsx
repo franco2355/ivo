@@ -72,7 +72,9 @@ const Actividades = () => {
     // Ejecutar búsqueda cuando cambien los filtros (con debounce en búsqueda)
     useEffect(() => {
         searchActividades();
-    }, [debouncedBusqueda, filtros.categoria, filtros.dia, filtros.soloInscripto, filtros.soloMiPlan, inscripciones, suscripcionActiva]);
+        // Nota: NO incluir inscripciones ni suscripcionActiva como dependencias
+        // porque son objetos que cambian de referencia y causan loops de peticiones
+    }, [debouncedBusqueda, filtros.categoria, filtros.dia, filtros.soloInscripto, filtros.soloMiPlan]);
 
     const searchActividades = async () => {
         try {
